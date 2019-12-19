@@ -1,0 +1,2849 @@
+{
+  "copyright" : "NHL and the NHL Shield are registered trademarks of the National Hockey League. NHL and NHL team marks are the property of the NHL and its teams. © NHL 2019. All Rights Reserved.",
+  "teams" : {
+    "away" : {
+      "team" : {
+        "id" : 9,
+        "name" : "Ottawa Senators",
+        "link" : "/api/v1/teams/9"
+      },
+      "teamStats" : {
+        "teamSkaterStats" : {
+          "goals" : 3,
+          "pim" : 10,
+          "shots" : 26,
+          "powerPlayPercentage" : "0.0",
+          "powerPlayGoals" : 0.0,
+          "powerPlayOpportunities" : 3.0,
+          "faceOffWinPercentage" : "57.5",
+          "blocked" : 17,
+          "takeaways" : 7,
+          "giveaways" : 8,
+          "hits" : 44
+        }
+      },
+      "players" : {
+        "ID8467950" : {
+          "person" : {
+            "id" : 8467950,
+            "fullName" : "Craig Anderson",
+            "link" : "/api/v1/people/8467950",
+            "firstName" : "Craig",
+            "lastName" : "Anderson",
+            "primaryNumber" : "41",
+            "birthDate" : "1981-05-21",
+            "currentAge" : 38,
+            "birthCity" : "Park Ridge",
+            "birthStateProvince" : "IL",
+            "birthCountry" : "USA",
+            "nationality" : "USA",
+            "height" : "6' 2\"",
+            "weight" : 186,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "G",
+              "name" : "Goalie",
+              "type" : "Goalie",
+              "abbreviation" : "G"
+            }
+          },
+          "jerseyNumber" : "41",
+          "position" : {
+            "code" : "G",
+            "name" : "Goalie",
+            "type" : "Goalie",
+            "abbreviation" : "G"
+          },
+          "stats" : {
+            "goalieStats" : {
+              "timeOnIce" : "58:27",
+              "assists" : 0,
+              "goals" : 0,
+              "pim" : 0,
+              "shots" : 42,
+              "saves" : 37,
+              "powerPlaySaves" : 9,
+              "shortHandedSaves" : 0,
+              "evenSaves" : 28,
+              "shortHandedShotsAgainst" : 0,
+              "evenShotsAgainst" : 32,
+              "powerPlayShotsAgainst" : 10,
+              "decision" : "L",
+              "savePercentage" : 88.09523809523809,
+              "powerPlaySavePercentage" : 90.0,
+              "evenStrengthSavePercentage" : 87.5
+            }
+          }
+        },
+        "ID8480073" : {
+          "person" : {
+            "id" : 8480073,
+            "fullName" : "Erik Brannstrom",
+            "link" : "/api/v1/people/8480073",
+            "firstName" : "Erik",
+            "lastName" : "Brannstrom",
+            "primaryNumber" : "26",
+            "birthDate" : "1999-09-02",
+            "currentAge" : 20,
+            "birthCity" : "Eksjo",
+            "birthCountry" : "SWE",
+            "nationality" : "SWE",
+            "height" : "5' 9\"",
+            "weight" : 181,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : true,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "D",
+              "name" : "Defenseman",
+              "type" : "Defenseman",
+              "abbreviation" : "D"
+            }
+          },
+          "jerseyNumber" : "26",
+          "position" : {
+            "code" : "D",
+            "name" : "Defenseman",
+            "type" : "Defenseman",
+            "abbreviation" : "D"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "15:57",
+              "assists" : 0,
+              "goals" : 0,
+              "shots" : 1,
+              "hits" : 4,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 0,
+              "giveaways" : 1,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 2,
+              "plusMinus" : 0,
+              "evenTimeOnIce" : "13:40",
+              "powerPlayTimeOnIce" : "2:17",
+              "shortHandedTimeOnIce" : "0:00"
+            }
+          }
+        },
+        "ID8476919" : {
+          "person" : {
+            "id" : 8476919,
+            "fullName" : "Chris Tierney",
+            "link" : "/api/v1/people/8476919",
+            "firstName" : "Chris",
+            "lastName" : "Tierney",
+            "primaryNumber" : "71",
+            "birthDate" : "1994-07-01",
+            "currentAge" : 25,
+            "birthCity" : "Keswick",
+            "birthStateProvince" : "ON",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "6' 1\"",
+            "weight" : 195,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "C",
+              "name" : "Center",
+              "type" : "Forward",
+              "abbreviation" : "C"
+            }
+          },
+          "jerseyNumber" : "71",
+          "position" : {
+            "code" : "C",
+            "name" : "Center",
+            "type" : "Forward",
+            "abbreviation" : "C"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "17:41",
+              "assists" : 1,
+              "goals" : 0,
+              "shots" : 1,
+              "hits" : 5,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffPct" : 60.0,
+              "faceOffWins" : 9,
+              "faceoffTaken" : 15,
+              "takeaways" : 0,
+              "giveaways" : 1,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 2,
+              "plusMinus" : 1,
+              "evenTimeOnIce" : "12:03",
+              "powerPlayTimeOnIce" : "3:09",
+              "shortHandedTimeOnIce" : "2:29"
+            }
+          }
+        },
+        "ID8477407" : {
+          "person" : {
+            "id" : 8477407,
+            "fullName" : "Anthony Duclair",
+            "link" : "/api/v1/people/8477407",
+            "firstName" : "Anthony",
+            "lastName" : "Duclair",
+            "primaryNumber" : "10",
+            "birthDate" : "1995-08-26",
+            "currentAge" : 24,
+            "birthCity" : "Pointe-Claire",
+            "birthStateProvince" : "QC",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "5' 11\"",
+            "weight" : 198,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "L",
+              "name" : "Left Wing",
+              "type" : "Forward",
+              "abbreviation" : "LW"
+            }
+          },
+          "jerseyNumber" : "10",
+          "position" : {
+            "code" : "L",
+            "name" : "Left Wing",
+            "type" : "Forward",
+            "abbreviation" : "LW"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "16:53",
+              "assists" : 0,
+              "goals" : 0,
+              "shots" : 3,
+              "hits" : 4,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffPct" : 100.0,
+              "faceOffWins" : 1,
+              "faceoffTaken" : 1,
+              "takeaways" : 0,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : 1,
+              "evenTimeOnIce" : "10:10",
+              "powerPlayTimeOnIce" : "3:23",
+              "shortHandedTimeOnIce" : "3:20"
+            }
+          }
+        },
+        "ID8476419" : {
+          "person" : {
+            "id" : 8476419,
+            "fullName" : "Jean-Gabriel Pageau",
+            "link" : "/api/v1/people/8476419",
+            "firstName" : "Jean-Gabriel",
+            "lastName" : "Pageau",
+            "primaryNumber" : "44",
+            "birthDate" : "1992-11-11",
+            "currentAge" : 27,
+            "birthCity" : "Ottawa",
+            "birthStateProvince" : "ON",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "5' 10\"",
+            "weight" : 180,
+            "active" : true,
+            "alternateCaptain" : true,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "R",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "C",
+              "name" : "Center",
+              "type" : "Forward",
+              "abbreviation" : "C"
+            }
+          },
+          "jerseyNumber" : "44",
+          "position" : {
+            "code" : "C",
+            "name" : "Center",
+            "type" : "Forward",
+            "abbreviation" : "C"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "13:12",
+              "assists" : 1,
+              "goals" : 0,
+              "shots" : 0,
+              "hits" : 1,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffPct" : 53.33,
+              "faceOffWins" : 8,
+              "faceoffTaken" : 15,
+              "takeaways" : 1,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : 1,
+              "evenTimeOnIce" : "9:36",
+              "powerPlayTimeOnIce" : "0:01",
+              "shortHandedTimeOnIce" : "3:35"
+            }
+          }
+        },
+        "ID8468493" : {
+          "person" : {
+            "id" : 8468493,
+            "fullName" : "Ron Hainsey",
+            "link" : "/api/v1/people/8468493",
+            "firstName" : "Ron",
+            "lastName" : "Hainsey",
+            "primaryNumber" : "81",
+            "birthDate" : "1981-03-24",
+            "currentAge" : 38,
+            "birthCity" : "Bolton",
+            "birthStateProvince" : "CT",
+            "birthCountry" : "USA",
+            "nationality" : "USA",
+            "height" : "6' 3\"",
+            "weight" : 201,
+            "active" : true,
+            "alternateCaptain" : true,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "D",
+              "name" : "Defenseman",
+              "type" : "Defenseman",
+              "abbreviation" : "D"
+            }
+          },
+          "jerseyNumber" : "81",
+          "position" : {
+            "code" : "D",
+            "name" : "Defenseman",
+            "type" : "Defenseman",
+            "abbreviation" : "D"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "17:33",
+              "assists" : 0,
+              "goals" : 0,
+              "shots" : 0,
+              "hits" : 2,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 0,
+              "giveaways" : 1,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 2,
+              "plusMinus" : 0,
+              "evenTimeOnIce" : "12:50",
+              "powerPlayTimeOnIce" : "0:00",
+              "shortHandedTimeOnIce" : "4:43"
+            }
+          }
+        },
+        "ID8474697" : {
+          "person" : {
+            "id" : 8474697,
+            "fullName" : "Mark Borowiecki",
+            "link" : "/api/v1/people/8474697",
+            "firstName" : "Mark",
+            "lastName" : "Borowiecki",
+            "primaryNumber" : "74",
+            "birthDate" : "1989-07-12",
+            "currentAge" : 30,
+            "birthCity" : "Ottawa",
+            "birthStateProvince" : "ON",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "6' 2\"",
+            "weight" : 204,
+            "active" : true,
+            "alternateCaptain" : true,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "D",
+              "name" : "Defenseman",
+              "type" : "Defenseman",
+              "abbreviation" : "D"
+            }
+          },
+          "jerseyNumber" : "74",
+          "position" : {
+            "code" : "D",
+            "name" : "Defenseman",
+            "type" : "Defenseman",
+            "abbreviation" : "D"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "15:47",
+              "assists" : 1,
+              "goals" : 0,
+              "shots" : 1,
+              "hits" : 1,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 0,
+              "giveaways" : 1,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 1,
+              "plusMinus" : 1,
+              "evenTimeOnIce" : "12:30",
+              "powerPlayTimeOnIce" : "0:00",
+              "shortHandedTimeOnIce" : "3:17"
+            }
+          }
+        },
+        "ID8471676" : {
+          "person" : {
+            "id" : 8471676,
+            "fullName" : "Bobby Ryan",
+            "link" : "/api/v1/people/8471676",
+            "firstName" : "Bobby",
+            "lastName" : "Ryan",
+            "primaryNumber" : "9",
+            "birthDate" : "1987-03-17",
+            "currentAge" : 32,
+            "birthCity" : "Cherry Hill",
+            "birthStateProvince" : "NJ",
+            "birthCountry" : "USA",
+            "nationality" : "USA",
+            "height" : "6' 2\"",
+            "weight" : 208,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "R",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "R",
+              "name" : "Right Wing",
+              "type" : "Forward",
+              "abbreviation" : "RW"
+            }
+          },
+          "jerseyNumber" : "9",
+          "position" : {
+            "code" : "R",
+            "name" : "Right Wing",
+            "type" : "Forward",
+            "abbreviation" : "RW"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "15:16",
+              "assists" : 0,
+              "goals" : 1,
+              "shots" : 3,
+              "hits" : 4,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffPct" : 100.0,
+              "faceOffWins" : 1,
+              "faceoffTaken" : 1,
+              "takeaways" : 2,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : 1,
+              "evenTimeOnIce" : "12:39",
+              "powerPlayTimeOnIce" : "2:37",
+              "shortHandedTimeOnIce" : "0:00"
+            }
+          }
+        },
+        "ID8474589" : {
+          "person" : {
+            "id" : 8474589,
+            "fullName" : "Tyler Ennis",
+            "link" : "/api/v1/people/8474589",
+            "firstName" : "Tyler",
+            "lastName" : "Ennis",
+            "primaryNumber" : "63",
+            "birthDate" : "1989-10-06",
+            "currentAge" : 30,
+            "birthCity" : "Edmonton",
+            "birthStateProvince" : "AB",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "5' 9\"",
+            "weight" : 161,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "C",
+              "name" : "Center",
+              "type" : "Forward",
+              "abbreviation" : "C"
+            }
+          },
+          "jerseyNumber" : "63",
+          "position" : {
+            "code" : "C",
+            "name" : "Center",
+            "type" : "Forward",
+            "abbreviation" : "C"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "19:27",
+              "assists" : 0,
+              "goals" : 0,
+              "shots" : 1,
+              "hits" : 1,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 2,
+              "faceOffPct" : 100.0,
+              "faceOffWins" : 1,
+              "faceoffTaken" : 1,
+              "takeaways" : 0,
+              "giveaways" : 1,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 2,
+              "plusMinus" : -3,
+              "evenTimeOnIce" : "14:56",
+              "powerPlayTimeOnIce" : "3:25",
+              "shortHandedTimeOnIce" : "1:06"
+            }
+          }
+        },
+        "ID8479458" : {
+          "person" : {
+            "id" : 8479458,
+            "fullName" : "Nikita Zaitsev",
+            "link" : "/api/v1/people/8479458",
+            "firstName" : "Nikita",
+            "lastName" : "Zaitsev",
+            "primaryNumber" : "22",
+            "birthDate" : "1991-10-29",
+            "currentAge" : 28,
+            "birthCity" : "Moscow",
+            "birthCountry" : "RUS",
+            "nationality" : "RUS",
+            "height" : "6' 2\"",
+            "weight" : 188,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "R",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "D",
+              "name" : "Defenseman",
+              "type" : "Defenseman",
+              "abbreviation" : "D"
+            }
+          },
+          "jerseyNumber" : "22",
+          "position" : {
+            "code" : "D",
+            "name" : "Defenseman",
+            "type" : "Defenseman",
+            "abbreviation" : "D"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "23:59",
+              "assists" : 0,
+              "goals" : 0,
+              "shots" : 4,
+              "hits" : 3,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 0,
+              "giveaways" : 1,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : -2,
+              "evenTimeOnIce" : "19:38",
+              "powerPlayTimeOnIce" : "0:01",
+              "shortHandedTimeOnIce" : "4:20"
+            }
+          }
+        },
+        "ID8477015" : {
+          "person" : {
+            "id" : 8477015,
+            "fullName" : "Connor Brown",
+            "link" : "/api/v1/people/8477015",
+            "firstName" : "Connor",
+            "lastName" : "Brown",
+            "primaryNumber" : "28",
+            "birthDate" : "1994-01-14",
+            "currentAge" : 25,
+            "birthCity" : "Toronto",
+            "birthStateProvince" : "ON",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "6' 0\"",
+            "weight" : 186,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "R",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "R",
+              "name" : "Right Wing",
+              "type" : "Forward",
+              "abbreviation" : "RW"
+            }
+          },
+          "jerseyNumber" : "28",
+          "position" : {
+            "code" : "R",
+            "name" : "Right Wing",
+            "type" : "Forward",
+            "abbreviation" : "RW"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "18:05",
+              "assists" : 1,
+              "goals" : 0,
+              "shots" : 0,
+              "hits" : 1,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 2,
+              "faceOffPct" : 50.0,
+              "faceOffWins" : 1,
+              "faceoffTaken" : 2,
+              "takeaways" : 0,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : 1,
+              "evenTimeOnIce" : "12:19",
+              "powerPlayTimeOnIce" : "2:42",
+              "shortHandedTimeOnIce" : "3:04"
+            }
+          }
+        },
+        "ID8478400" : {
+          "person" : {
+            "id" : 8478400,
+            "fullName" : "Colin White",
+            "link" : "/api/v1/people/8478400",
+            "firstName" : "Colin",
+            "lastName" : "White",
+            "primaryNumber" : "36",
+            "birthDate" : "1997-01-30",
+            "currentAge" : 22,
+            "birthCity" : "Boston",
+            "birthStateProvince" : "MA",
+            "birthCountry" : "USA",
+            "nationality" : "USA",
+            "height" : "5' 11\"",
+            "weight" : 191,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "R",
+            "rosterStatus" : "I",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "C",
+              "name" : "Center",
+              "type" : "Forward",
+              "abbreviation" : "C"
+            }
+          },
+          "jerseyNumber" : "36",
+          "position" : {
+            "code" : "C",
+            "name" : "Center",
+            "type" : "Forward",
+            "abbreviation" : "C"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "16:17",
+              "assists" : 1,
+              "goals" : 0,
+              "shots" : 1,
+              "hits" : 0,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 2,
+              "faceOffPct" : 53.33,
+              "faceOffWins" : 8,
+              "faceoffTaken" : 15,
+              "takeaways" : 0,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : 1,
+              "evenTimeOnIce" : "13:43",
+              "powerPlayTimeOnIce" : "2:34",
+              "shortHandedTimeOnIce" : "0:00"
+            }
+          }
+        },
+        "ID8478488" : {
+          "person" : {
+            "id" : 8478488,
+            "fullName" : "Filip Chlapik",
+            "link" : "/api/v1/people/8478488",
+            "firstName" : "Filip",
+            "lastName" : "Chlapik",
+            "primaryNumber" : "78",
+            "birthDate" : "1997-06-03",
+            "currentAge" : 22,
+            "birthCity" : "Prague",
+            "birthCountry" : "CZE",
+            "nationality" : "CZE",
+            "height" : "6' 2\"",
+            "weight" : 194,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : true,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "C",
+              "name" : "Center",
+              "type" : "Forward",
+              "abbreviation" : "C"
+            }
+          },
+          "jerseyNumber" : "78",
+          "position" : {
+            "code" : "C",
+            "name" : "Center",
+            "type" : "Forward",
+            "abbreviation" : "C"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "5:20",
+              "assists" : 1,
+              "goals" : 0,
+              "shots" : 0,
+              "hits" : 2,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 2,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 0,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : 1,
+              "evenTimeOnIce" : "5:20",
+              "powerPlayTimeOnIce" : "0:00",
+              "shortHandedTimeOnIce" : "0:00"
+            }
+          }
+        },
+        "ID8480801" : {
+          "person" : {
+            "id" : 8480801,
+            "fullName" : "Brady Tkachuk",
+            "link" : "/api/v1/people/8480801",
+            "firstName" : "Brady",
+            "lastName" : "Tkachuk",
+            "primaryNumber" : "7",
+            "birthDate" : "1999-09-16",
+            "currentAge" : 20,
+            "birthCity" : "Scottsdale",
+            "birthStateProvince" : "AZ",
+            "birthCountry" : "USA",
+            "nationality" : "USA",
+            "height" : "6' 4\"",
+            "weight" : 212,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "L",
+              "name" : "Left Wing",
+              "type" : "Forward",
+              "abbreviation" : "LW"
+            }
+          },
+          "jerseyNumber" : "7",
+          "position" : {
+            "code" : "L",
+            "name" : "Left Wing",
+            "type" : "Forward",
+            "abbreviation" : "LW"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "17:32",
+              "assists" : 0,
+              "goals" : 1,
+              "shots" : 2,
+              "hits" : 6,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 2,
+              "faceOffPct" : 42.86,
+              "faceOffWins" : 3,
+              "faceoffTaken" : 7,
+              "takeaways" : 0,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : 0,
+              "evenTimeOnIce" : "15:20",
+              "powerPlayTimeOnIce" : "2:12",
+              "shortHandedTimeOnIce" : "0:00"
+            }
+          }
+        },
+        "ID8477149" : {
+          "person" : {
+            "id" : 8477149,
+            "fullName" : "Scott Sabourin",
+            "link" : "/api/v1/people/8477149",
+            "firstName" : "Scott",
+            "lastName" : "Sabourin",
+            "primaryNumber" : "49",
+            "birthDate" : "1992-07-30",
+            "currentAge" : 27,
+            "birthCity" : "Orleans",
+            "birthStateProvince" : "ON",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "6' 3\"",
+            "weight" : 208,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "R",
+            "rosterStatus" : "I",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "R",
+              "name" : "Right Wing",
+              "type" : "Forward",
+              "abbreviation" : "RW"
+            }
+          },
+          "jerseyNumber" : "49",
+          "position" : {
+            "code" : "R",
+            "name" : "Right Wing",
+            "type" : "Forward",
+            "abbreviation" : "RW"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "8:27",
+              "assists" : 0,
+              "goals" : 1,
+              "shots" : 3,
+              "hits" : 4,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 0,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 1,
+              "plusMinus" : 1,
+              "evenTimeOnIce" : "8:27",
+              "powerPlayTimeOnIce" : "0:00",
+              "shortHandedTimeOnIce" : "0:00"
+            }
+          }
+        },
+        "ID8478469" : {
+          "person" : {
+            "id" : 8478469,
+            "fullName" : "Thomas Chabot",
+            "link" : "/api/v1/people/8478469",
+            "firstName" : "Thomas",
+            "lastName" : "Chabot",
+            "primaryNumber" : "72",
+            "birthDate" : "1997-01-30",
+            "currentAge" : 22,
+            "birthCity" : "Sainte-Marie",
+            "birthStateProvince" : "QC",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "6' 2\"",
+            "weight" : 190,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "D",
+              "name" : "Defenseman",
+              "type" : "Defenseman",
+              "abbreviation" : "D"
+            }
+          },
+          "jerseyNumber" : "72",
+          "position" : {
+            "code" : "D",
+            "name" : "Defenseman",
+            "type" : "Defenseman",
+            "abbreviation" : "D"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "24:50",
+              "assists" : 0,
+              "goals" : 0,
+              "shots" : 4,
+              "hits" : 1,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 1,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 2,
+              "plusMinus" : -2,
+              "evenTimeOnIce" : "20:57",
+              "powerPlayTimeOnIce" : "3:43",
+              "shortHandedTimeOnIce" : "0:10"
+            }
+          }
+        },
+        "ID8480208" : {
+          "person" : {
+            "id" : 8480208,
+            "fullName" : "Drake Batherson",
+            "link" : "/api/v1/people/8480208",
+            "firstName" : "Drake",
+            "lastName" : "Batherson",
+            "primaryNumber" : "19",
+            "birthDate" : "1998-04-27",
+            "currentAge" : 21,
+            "birthCity" : "Fort Wayne",
+            "birthStateProvince" : "IN",
+            "birthCountry" : "USA",
+            "nationality" : "USA",
+            "height" : "6' 3\"",
+            "weight" : 206,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : true,
+            "shootsCatches" : "R",
+            "rosterStatus" : "N",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "C",
+              "name" : "Center",
+              "type" : "Forward",
+              "abbreviation" : "C"
+            }
+          },
+          "jerseyNumber" : "19",
+          "position" : {
+            "code" : "C",
+            "name" : "Center",
+            "type" : "Forward",
+            "abbreviation" : "C"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "11:26",
+              "assists" : 0,
+              "goals" : 0,
+              "shots" : 0,
+              "hits" : 0,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffPct" : 100.0,
+              "faceOffWins" : 1,
+              "faceoffTaken" : 1,
+              "takeaways" : 1,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : -4,
+              "evenTimeOnIce" : "11:26",
+              "powerPlayTimeOnIce" : "0:00",
+              "shortHandedTimeOnIce" : "0:00"
+            }
+          }
+        },
+        "ID8474597" : {
+          "person" : {
+            "id" : 8474597,
+            "fullName" : "Cody Goloubef",
+            "link" : "/api/v1/people/8474597",
+            "firstName" : "Cody",
+            "lastName" : "Goloubef",
+            "primaryNumber" : "29",
+            "birthDate" : "1989-11-30",
+            "currentAge" : 29,
+            "birthCity" : "Mississauga",
+            "birthStateProvince" : "ON",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "6' 1\"",
+            "weight" : 190,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "R",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "D",
+              "name" : "Defenseman",
+              "type" : "Defenseman",
+              "abbreviation" : "D"
+            }
+          },
+          "jerseyNumber" : "29",
+          "position" : {
+            "code" : "N/A",
+            "name" : "Unknown",
+            "type" : "Unknown",
+            "abbreviation" : "N/A"
+          },
+          "stats" : { }
+        },
+        "ID8473573" : {
+          "person" : {
+            "id" : 8473573,
+            "fullName" : "Artem Anisimov",
+            "link" : "/api/v1/people/8473573",
+            "firstName" : "Artem",
+            "lastName" : "Anisimov",
+            "primaryNumber" : "51",
+            "birthDate" : "1988-05-24",
+            "currentAge" : 31,
+            "birthCity" : "Yaroslavl",
+            "birthCountry" : "RUS",
+            "nationality" : "RUS",
+            "height" : "6' 4\"",
+            "weight" : 199,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "C",
+              "name" : "Center",
+              "type" : "Forward",
+              "abbreviation" : "C"
+            }
+          },
+          "jerseyNumber" : "51",
+          "position" : {
+            "code" : "C",
+            "name" : "Center",
+            "type" : "Forward",
+            "abbreviation" : "C"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "19:40",
+              "assists" : 0,
+              "goals" : 0,
+              "shots" : 1,
+              "hits" : 0,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffPct" : 60.0,
+              "faceOffWins" : 9,
+              "faceoffTaken" : 15,
+              "takeaways" : 1,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 2,
+              "plusMinus" : -4,
+              "evenTimeOnIce" : "13:06",
+              "powerPlayTimeOnIce" : "3:48",
+              "shortHandedTimeOnIce" : "2:46"
+            }
+          }
+        },
+        "ID8476331" : {
+          "person" : {
+            "id" : 8476331,
+            "fullName" : "Dylan DeMelo",
+            "link" : "/api/v1/people/8476331",
+            "firstName" : "Dylan",
+            "lastName" : "DeMelo",
+            "primaryNumber" : "2",
+            "birthDate" : "1993-05-01",
+            "currentAge" : 26,
+            "birthCity" : "London",
+            "birthStateProvince" : "ON",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "6' 0\"",
+            "weight" : 191,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "R",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "D",
+              "name" : "Defenseman",
+              "type" : "Defenseman",
+              "abbreviation" : "D"
+            }
+          },
+          "jerseyNumber" : "2",
+          "position" : {
+            "code" : "D",
+            "name" : "Defenseman",
+            "type" : "Defenseman",
+            "abbreviation" : "D"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "16:01",
+              "assists" : 0,
+              "goals" : 0,
+              "shots" : 1,
+              "hits" : 5,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 1,
+              "giveaways" : 1,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 3,
+              "plusMinus" : 1,
+              "evenTimeOnIce" : "12:03",
+              "powerPlayTimeOnIce" : "0:08",
+              "shortHandedTimeOnIce" : "3:50"
+            }
+          }
+        },
+        "ID8474571" : {
+          "person" : {
+            "id" : 8474571,
+            "fullName" : "Mikkel Boedker",
+            "link" : "/api/v1/people/8474571",
+            "firstName" : "Mikkel",
+            "lastName" : "Boedker",
+            "primaryNumber" : "89",
+            "birthDate" : "1989-12-16",
+            "currentAge" : 29,
+            "birthCity" : "Brondby",
+            "birthCountry" : "DNK",
+            "nationality" : "DNK",
+            "height" : "5' 11\"",
+            "weight" : 207,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 9,
+              "name" : "Ottawa Senators",
+              "link" : "/api/v1/teams/9"
+            },
+            "primaryPosition" : {
+              "code" : "L",
+              "name" : "Left Wing",
+              "type" : "Forward",
+              "abbreviation" : "LW"
+            }
+          },
+          "jerseyNumber" : "89",
+          "position" : {
+            "code" : "N/A",
+            "name" : "Unknown",
+            "type" : "Unknown",
+            "abbreviation" : "N/A"
+          },
+          "stats" : { }
+        }
+      },
+      "goalies" : [ 8467950 ],
+      "skaters" : [ 8476331, 8480801, 8471676, 8477407, 8480208, 8479458, 8480073, 8477015, 8478400, 8476419, 8477149, 8473573, 8474589, 8476919, 8478469, 8474697, 8478488, 8468493, 8474597, 8474571 ],
+      "onIce" : [ 8471676, 8473573, 8474589, 8476919, 8478469, 8480073 ],
+      "onIcePlus" : [ {
+        "playerId" : 8471676,
+        "shiftDuration" : 42,
+        "stamina" : 66
+      }, {
+        "playerId" : 8473573,
+        "shiftDuration" : 75,
+        "stamina" : 33
+      }, {
+        "playerId" : 8474589,
+        "shiftDuration" : 75,
+        "stamina" : 33
+      }, {
+        "playerId" : 8476919,
+        "shiftDuration" : 75,
+        "stamina" : 33
+      }, {
+        "playerId" : 8478469,
+        "shiftDuration" : 112,
+        "stamina" : 33
+      }, {
+        "playerId" : 8480073,
+        "shiftDuration" : 135,
+        "stamina" : 33
+      } ],
+      "scratches" : [ 8474597, 8474571 ],
+      "penaltyBox" : [ ],
+      "coaches" : [ {
+        "person" : {
+          "fullName" : "D.J. Smith",
+          "link" : "/api/v1/people/null"
+        },
+        "position" : {
+          "code" : "HC",
+          "name" : "Head Coach",
+          "type" : "Head Coach",
+          "abbreviation" : "Head Coach"
+        }
+      } ]
+    },
+    "home" : {
+      "team" : {
+        "id" : 10,
+        "name" : "Toronto Maple Leafs",
+        "link" : "/api/v1/teams/10"
+      },
+      "teamStats" : {
+        "teamSkaterStats" : {
+          "goals" : 5,
+          "pim" : 6,
+          "shots" : 42,
+          "powerPlayPercentage" : "20.0",
+          "powerPlayGoals" : 1.0,
+          "powerPlayOpportunities" : 5.0,
+          "faceOffWinPercentage" : "42.5",
+          "blocked" : 9,
+          "takeaways" : 13,
+          "giveaways" : 12,
+          "hits" : 17
+        }
+      },
+      "players" : {
+        "ID8477939" : {
+          "person" : {
+            "id" : 8477939,
+            "fullName" : "William Nylander",
+            "link" : "/api/v1/people/8477939",
+            "firstName" : "William",
+            "lastName" : "Nylander",
+            "primaryNumber" : "88",
+            "birthDate" : "1996-05-01",
+            "currentAge" : 23,
+            "birthCity" : "Calgary",
+            "birthStateProvince" : "AB",
+            "birthCountry" : "CAN",
+            "nationality" : "SWE",
+            "height" : "6' 0\"",
+            "weight" : 196,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "R",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "C",
+              "name" : "Center",
+              "type" : "Forward",
+              "abbreviation" : "C"
+            }
+          },
+          "jerseyNumber" : "88",
+          "position" : {
+            "code" : "C",
+            "name" : "Center",
+            "type" : "Forward",
+            "abbreviation" : "C"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "17:05",
+              "assists" : 1,
+              "goals" : 0,
+              "shots" : 3,
+              "hits" : 0,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffPct" : 0.0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 4,
+              "takeaways" : 1,
+              "giveaways" : 1,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : 0,
+              "evenTimeOnIce" : "13:24",
+              "powerPlayTimeOnIce" : "3:41",
+              "shortHandedTimeOnIce" : "0:00"
+            }
+          }
+        },
+        "ID8475718" : {
+          "person" : {
+            "id" : 8475718,
+            "fullName" : "Justin Holl",
+            "link" : "/api/v1/people/8475718",
+            "firstName" : "Justin",
+            "lastName" : "Holl",
+            "primaryNumber" : "3",
+            "birthDate" : "1992-01-30",
+            "currentAge" : 27,
+            "birthCity" : "Tonka Bay",
+            "birthStateProvince" : "MN",
+            "birthCountry" : "USA",
+            "nationality" : "USA",
+            "height" : "6' 4\"",
+            "weight" : 210,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "R",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "D",
+              "name" : "Defenseman",
+              "type" : "Defenseman",
+              "abbreviation" : "D"
+            }
+          },
+          "jerseyNumber" : "3",
+          "position" : {
+            "code" : "N/A",
+            "name" : "Unknown",
+            "type" : "Unknown",
+            "abbreviation" : "N/A"
+          },
+          "stats" : { }
+        },
+        "ID8476406" : {
+          "person" : {
+            "id" : 8476406,
+            "fullName" : "Nicholas Shore",
+            "link" : "/api/v1/people/8476406",
+            "firstName" : "Nicholas",
+            "lastName" : "Shore",
+            "primaryNumber" : "26",
+            "birthDate" : "1992-09-26",
+            "currentAge" : 27,
+            "birthCity" : "Denver",
+            "birthStateProvince" : "CO",
+            "birthCountry" : "USA",
+            "nationality" : "USA",
+            "height" : "6' 1\"",
+            "weight" : 198,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "R",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "C",
+              "name" : "Center",
+              "type" : "Forward",
+              "abbreviation" : "C"
+            }
+          },
+          "jerseyNumber" : "26",
+          "position" : {
+            "code" : "C",
+            "name" : "Center",
+            "type" : "Forward",
+            "abbreviation" : "C"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "8:33",
+              "assists" : 0,
+              "goals" : 0,
+              "shots" : 0,
+              "hits" : 0,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffPct" : 50.0,
+              "faceOffWins" : 4,
+              "faceoffTaken" : 8,
+              "takeaways" : 0,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : 0,
+              "evenTimeOnIce" : "7:09",
+              "powerPlayTimeOnIce" : "0:05",
+              "shortHandedTimeOnIce" : "1:19"
+            }
+          }
+        },
+        "ID8476879" : {
+          "person" : {
+            "id" : 8476879,
+            "fullName" : "Cody Ceci",
+            "link" : "/api/v1/people/8476879",
+            "firstName" : "Cody",
+            "lastName" : "Ceci",
+            "primaryNumber" : "83",
+            "birthDate" : "1993-12-21",
+            "currentAge" : 25,
+            "birthCity" : "Ottawa",
+            "birthStateProvince" : "ON",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "6' 2\"",
+            "weight" : 210,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "R",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "D",
+              "name" : "Defenseman",
+              "type" : "Defenseman",
+              "abbreviation" : "D"
+            }
+          },
+          "jerseyNumber" : "83",
+          "position" : {
+            "code" : "D",
+            "name" : "Defenseman",
+            "type" : "Defenseman",
+            "abbreviation" : "D"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "22:01",
+              "assists" : 0,
+              "goals" : 0,
+              "shots" : 1,
+              "hits" : 2,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 1,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 2,
+              "plusMinus" : 0,
+              "evenTimeOnIce" : "18:59",
+              "powerPlayTimeOnIce" : "0:00",
+              "shortHandedTimeOnIce" : "3:02"
+            }
+          }
+        },
+        "ID8475716" : {
+          "person" : {
+            "id" : 8475716,
+            "fullName" : "Martin Marincin",
+            "link" : "/api/v1/people/8475716",
+            "firstName" : "Martin",
+            "lastName" : "Marincin",
+            "primaryNumber" : "52",
+            "birthDate" : "1992-02-18",
+            "currentAge" : 27,
+            "birthCity" : "Kosice",
+            "birthCountry" : "SVK",
+            "nationality" : "SVK",
+            "height" : "6' 5\"",
+            "weight" : 217,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "D",
+              "name" : "Defenseman",
+              "type" : "Defenseman",
+              "abbreviation" : "D"
+            }
+          },
+          "jerseyNumber" : "52",
+          "position" : {
+            "code" : "D",
+            "name" : "Defenseman",
+            "type" : "Defenseman",
+            "abbreviation" : "D"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "13:46",
+              "assists" : 0,
+              "goals" : 0,
+              "shots" : 2,
+              "hits" : 0,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 1,
+              "giveaways" : 1,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 1,
+              "plusMinus" : 0,
+              "evenTimeOnIce" : "10:13",
+              "powerPlayTimeOnIce" : "0:00",
+              "shortHandedTimeOnIce" : "3:33"
+            }
+          }
+        },
+        "ID8476853" : {
+          "person" : {
+            "id" : 8476853,
+            "fullName" : "Morgan Rielly",
+            "link" : "/api/v1/people/8476853",
+            "firstName" : "Morgan",
+            "lastName" : "Rielly",
+            "primaryNumber" : "44",
+            "birthDate" : "1994-03-09",
+            "currentAge" : 25,
+            "birthCity" : "Vancouver",
+            "birthStateProvince" : "BC",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "6' 1\"",
+            "weight" : 219,
+            "active" : true,
+            "alternateCaptain" : true,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "D",
+              "name" : "Defenseman",
+              "type" : "Defenseman",
+              "abbreviation" : "D"
+            }
+          },
+          "jerseyNumber" : "44",
+          "position" : {
+            "code" : "D",
+            "name" : "Defenseman",
+            "type" : "Defenseman",
+            "abbreviation" : "D"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "25:37",
+              "assists" : 1,
+              "goals" : 0,
+              "shots" : 5,
+              "hits" : 0,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 0,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 1,
+              "plusMinus" : 0,
+              "evenTimeOnIce" : "18:00",
+              "powerPlayTimeOnIce" : "4:39",
+              "shortHandedTimeOnIce" : "2:58"
+            }
+          }
+        },
+        "ID8477953" : {
+          "person" : {
+            "id" : 8477953,
+            "fullName" : "Kasperi Kapanen",
+            "link" : "/api/v1/people/8477953",
+            "firstName" : "Kasperi",
+            "lastName" : "Kapanen",
+            "primaryNumber" : "24",
+            "birthDate" : "1996-07-23",
+            "currentAge" : 23,
+            "birthCity" : "Kuopio",
+            "birthCountry" : "FIN",
+            "nationality" : "FIN",
+            "height" : "6' 1\"",
+            "weight" : 194,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "R",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "R",
+              "name" : "Right Wing",
+              "type" : "Forward",
+              "abbreviation" : "RW"
+            }
+          },
+          "jerseyNumber" : "24",
+          "position" : {
+            "code" : "R",
+            "name" : "Right Wing",
+            "type" : "Forward",
+            "abbreviation" : "RW"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "18:02",
+              "assists" : 0,
+              "goals" : 0,
+              "shots" : 1,
+              "hits" : 3,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 1,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : -1,
+              "evenTimeOnIce" : "12:44",
+              "powerPlayTimeOnIce" : "3:41",
+              "shortHandedTimeOnIce" : "1:37"
+            }
+          }
+        },
+        "ID8479318" : {
+          "person" : {
+            "id" : 8479318,
+            "fullName" : "Auston Matthews",
+            "link" : "/api/v1/people/8479318",
+            "firstName" : "Auston",
+            "lastName" : "Matthews",
+            "primaryNumber" : "34",
+            "birthDate" : "1997-09-17",
+            "currentAge" : 22,
+            "birthCity" : "San Ramon",
+            "birthStateProvince" : "CA",
+            "birthCountry" : "USA",
+            "nationality" : "USA",
+            "height" : "6' 3\"",
+            "weight" : 220,
+            "active" : true,
+            "alternateCaptain" : true,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "C",
+              "name" : "Center",
+              "type" : "Forward",
+              "abbreviation" : "C"
+            }
+          },
+          "jerseyNumber" : "34",
+          "position" : {
+            "code" : "C",
+            "name" : "Center",
+            "type" : "Forward",
+            "abbreviation" : "C"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "18:26",
+              "assists" : 0,
+              "goals" : 2,
+              "shots" : 8,
+              "hits" : 0,
+              "powerPlayGoals" : 1,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffPct" : 46.15,
+              "faceOffWins" : 6,
+              "faceoffTaken" : 13,
+              "takeaways" : 3,
+              "giveaways" : 1,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : 0,
+              "evenTimeOnIce" : "14:11",
+              "powerPlayTimeOnIce" : "4:15",
+              "shortHandedTimeOnIce" : "0:00"
+            }
+          }
+        },
+        "ID8478857" : {
+          "person" : {
+            "id" : 8478857,
+            "fullName" : "Dmytro Timashov",
+            "link" : "/api/v1/people/8478857",
+            "firstName" : "Dmytro",
+            "lastName" : "Timashov",
+            "primaryNumber" : "41",
+            "birthDate" : "1996-10-01",
+            "currentAge" : 23,
+            "birthCity" : "Kirovograd",
+            "birthCountry" : "UKR",
+            "nationality" : "UKR",
+            "height" : "5' 10\"",
+            "weight" : 192,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : true,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "L",
+              "name" : "Left Wing",
+              "type" : "Forward",
+              "abbreviation" : "LW"
+            }
+          },
+          "jerseyNumber" : "41",
+          "position" : {
+            "code" : "L",
+            "name" : "Left Wing",
+            "type" : "Forward",
+            "abbreviation" : "LW"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "8:50",
+              "assists" : 1,
+              "goals" : 0,
+              "shots" : 0,
+              "hits" : 4,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 2,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 0,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : 0,
+              "evenTimeOnIce" : "8:10",
+              "powerPlayTimeOnIce" : "0:00",
+              "shortHandedTimeOnIce" : "0:40"
+            }
+          }
+        },
+        "ID8481624" : {
+          "person" : {
+            "id" : 8481624,
+            "fullName" : "Ilya Mikheyev",
+            "link" : "/api/v1/people/8481624",
+            "firstName" : "Ilya",
+            "lastName" : "Mikheyev",
+            "primaryNumber" : "65",
+            "birthDate" : "1994-10-10",
+            "currentAge" : 25,
+            "birthCity" : "Omsk",
+            "birthCountry" : "RUS",
+            "nationality" : "RUS",
+            "height" : "6' 3\"",
+            "weight" : 195,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : true,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "R",
+              "name" : "Right Wing",
+              "type" : "Forward",
+              "abbreviation" : "RW"
+            }
+          },
+          "jerseyNumber" : "65",
+          "position" : {
+            "code" : "R",
+            "name" : "Right Wing",
+            "type" : "Forward",
+            "abbreviation" : "RW"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "15:16",
+              "assists" : 1,
+              "goals" : 1,
+              "shots" : 1,
+              "hits" : 1,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 1,
+              "giveaways" : 2,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 1,
+              "plusMinus" : 2,
+              "evenTimeOnIce" : "12:45",
+              "powerPlayTimeOnIce" : "0:00",
+              "shortHandedTimeOnIce" : "2:31"
+            }
+          }
+        },
+        "ID8475166" : {
+          "person" : {
+            "id" : 8475166,
+            "fullName" : "John Tavares",
+            "link" : "/api/v1/people/8475166",
+            "firstName" : "John",
+            "lastName" : "Tavares",
+            "primaryNumber" : "91",
+            "birthDate" : "1990-09-20",
+            "currentAge" : 29,
+            "birthCity" : "Mississauga",
+            "birthStateProvince" : "ON",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "6' 1\"",
+            "weight" : 215,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : true,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "C",
+              "name" : "Center",
+              "type" : "Forward",
+              "abbreviation" : "C"
+            }
+          },
+          "jerseyNumber" : "91",
+          "position" : {
+            "code" : "C",
+            "name" : "Center",
+            "type" : "Forward",
+            "abbreviation" : "C"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "18:13",
+              "assists" : 1,
+              "goals" : 0,
+              "shots" : 2,
+              "hits" : 0,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 1,
+              "penaltyMinutes" : 0,
+              "faceOffPct" : 56.52,
+              "faceOffWins" : 13,
+              "faceoffTaken" : 23,
+              "takeaways" : 3,
+              "giveaways" : 1,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : 0,
+              "evenTimeOnIce" : "13:49",
+              "powerPlayTimeOnIce" : "4:24",
+              "shortHandedTimeOnIce" : "0:00"
+            }
+          }
+        },
+        "ID8474162" : {
+          "person" : {
+            "id" : 8474162,
+            "fullName" : "Jake Muzzin",
+            "link" : "/api/v1/people/8474162",
+            "firstName" : "Jake",
+            "lastName" : "Muzzin",
+            "primaryNumber" : "8",
+            "birthDate" : "1989-02-21",
+            "currentAge" : 30,
+            "birthCity" : "Woodstock",
+            "birthStateProvince" : "ON",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "6' 3\"",
+            "weight" : 217,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "D",
+              "name" : "Defenseman",
+              "type" : "Defenseman",
+              "abbreviation" : "D"
+            }
+          },
+          "jerseyNumber" : "8",
+          "position" : {
+            "code" : "D",
+            "name" : "Defenseman",
+            "type" : "Defenseman",
+            "abbreviation" : "D"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "22:06",
+              "assists" : 0,
+              "goals" : 0,
+              "shots" : 1,
+              "hits" : 1,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 2,
+              "giveaways" : 1,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 1,
+              "plusMinus" : 0,
+              "evenTimeOnIce" : "19:25",
+              "powerPlayTimeOnIce" : "0:14",
+              "shortHandedTimeOnIce" : "2:27"
+            }
+          }
+        },
+        "ID8477512" : {
+          "person" : {
+            "id" : 8477512,
+            "fullName" : "Frederik Gauthier",
+            "link" : "/api/v1/people/8477512",
+            "firstName" : "Frederik",
+            "lastName" : "Gauthier",
+            "primaryNumber" : "33",
+            "birthDate" : "1995-04-26",
+            "currentAge" : 24,
+            "birthCity" : "Laval",
+            "birthStateProvince" : "QC",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "6' 5\"",
+            "weight" : 239,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "C",
+              "name" : "Center",
+              "type" : "Forward",
+              "abbreviation" : "C"
+            }
+          },
+          "jerseyNumber" : "33",
+          "position" : {
+            "code" : "C",
+            "name" : "Center",
+            "type" : "Forward",
+            "abbreviation" : "C"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "9:29",
+              "assists" : 0,
+              "goals" : 1,
+              "shots" : 1,
+              "hits" : 0,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffPct" : 37.5,
+              "faceOffWins" : 3,
+              "faceoffTaken" : 8,
+              "takeaways" : 0,
+              "giveaways" : 1,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 1,
+              "plusMinus" : 0,
+              "evenTimeOnIce" : "7:47",
+              "powerPlayTimeOnIce" : "0:00",
+              "shortHandedTimeOnIce" : "1:42"
+            }
+          }
+        },
+        "ID8475883" : {
+          "person" : {
+            "id" : 8475883,
+            "fullName" : "Frederik Andersen",
+            "link" : "/api/v1/people/8475883",
+            "firstName" : "Frederik",
+            "lastName" : "Andersen",
+            "primaryNumber" : "31",
+            "birthDate" : "1989-10-02",
+            "currentAge" : 30,
+            "birthCity" : "Herning",
+            "birthCountry" : "DNK",
+            "nationality" : "DNK",
+            "height" : "6' 4\"",
+            "weight" : 238,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "G",
+              "name" : "Goalie",
+              "type" : "Goalie",
+              "abbreviation" : "G"
+            }
+          },
+          "jerseyNumber" : "31",
+          "position" : {
+            "code" : "G",
+            "name" : "Goalie",
+            "type" : "Goalie",
+            "abbreviation" : "G"
+          },
+          "stats" : {
+            "goalieStats" : {
+              "timeOnIce" : "59:51",
+              "assists" : 0,
+              "goals" : 0,
+              "pim" : 0,
+              "shots" : 26,
+              "saves" : 23,
+              "powerPlaySaves" : 0,
+              "shortHandedSaves" : 2,
+              "evenSaves" : 21,
+              "shortHandedShotsAgainst" : 2,
+              "evenShotsAgainst" : 24,
+              "powerPlayShotsAgainst" : 0,
+              "decision" : "W",
+              "savePercentage" : 88.46153846153845,
+              "shortHandedSavePercentage" : 100.0,
+              "evenStrengthSavePercentage" : 87.5
+            }
+          }
+        },
+        "ID8477341" : {
+          "person" : {
+            "id" : 8477341,
+            "fullName" : "Andreas Johnsson",
+            "link" : "/api/v1/people/8477341",
+            "firstName" : "Andreas",
+            "lastName" : "Johnsson",
+            "primaryNumber" : "18",
+            "birthDate" : "1994-11-21",
+            "currentAge" : 24,
+            "birthCity" : "Gävle",
+            "birthCountry" : "SWE",
+            "nationality" : "SWE",
+            "height" : "5' 10\"",
+            "weight" : 194,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "L",
+              "name" : "Left Wing",
+              "type" : "Forward",
+              "abbreviation" : "LW"
+            }
+          },
+          "jerseyNumber" : "18",
+          "position" : {
+            "code" : "L",
+            "name" : "Left Wing",
+            "type" : "Forward",
+            "abbreviation" : "LW"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "17:22",
+              "assists" : 0,
+              "goals" : 0,
+              "shots" : 3,
+              "hits" : 1,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 0,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 1,
+              "plusMinus" : 0,
+              "evenTimeOnIce" : "13:07",
+              "powerPlayTimeOnIce" : "4:15",
+              "shortHandedTimeOnIce" : "0:00"
+            }
+          }
+        },
+        "ID8477021" : {
+          "person" : {
+            "id" : 8477021,
+            "fullName" : "Alexander Kerfoot",
+            "link" : "/api/v1/people/8477021",
+            "firstName" : "Alexander",
+            "lastName" : "Kerfoot",
+            "primaryNumber" : "15",
+            "birthDate" : "1994-08-11",
+            "currentAge" : 25,
+            "birthCity" : "Vancouver",
+            "birthStateProvince" : "BC",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "5' 10\"",
+            "weight" : 185,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "C",
+              "name" : "Center",
+              "type" : "Forward",
+              "abbreviation" : "C"
+            }
+          },
+          "jerseyNumber" : "15",
+          "position" : {
+            "code" : "C",
+            "name" : "Center",
+            "type" : "Forward",
+            "abbreviation" : "C"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "14:58",
+              "assists" : 0,
+              "goals" : 0,
+              "shots" : 0,
+              "hits" : 2,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 2,
+              "faceOffPct" : 28.57,
+              "faceOffWins" : 4,
+              "faceoffTaken" : 14,
+              "takeaways" : 0,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : 1,
+              "evenTimeOnIce" : "11:03",
+              "powerPlayTimeOnIce" : "3:55",
+              "shortHandedTimeOnIce" : "0:00"
+            }
+          }
+        },
+        "ID8479675" : {
+          "person" : {
+            "id" : 8479675,
+            "fullName" : "Trevor Moore",
+            "link" : "/api/v1/people/8479675",
+            "firstName" : "Trevor",
+            "lastName" : "Moore",
+            "primaryNumber" : "42",
+            "birthDate" : "1995-03-31",
+            "currentAge" : 24,
+            "birthCity" : "Thousand Oaks",
+            "birthStateProvince" : "CA",
+            "birthCountry" : "USA",
+            "nationality" : "USA",
+            "height" : "5' 10\"",
+            "weight" : 185,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : true,
+            "shootsCatches" : "L",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "C",
+              "name" : "Center",
+              "type" : "Forward",
+              "abbreviation" : "C"
+            }
+          },
+          "jerseyNumber" : "42",
+          "position" : {
+            "code" : "C",
+            "name" : "Center",
+            "type" : "Forward",
+            "abbreviation" : "C"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "16:22",
+              "assists" : 0,
+              "goals" : 1,
+              "shots" : 3,
+              "hits" : 3,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffPct" : 33.33,
+              "faceOffWins" : 1,
+              "faceoffTaken" : 3,
+              "takeaways" : 0,
+              "giveaways" : 1,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 1,
+              "plusMinus" : 2,
+              "evenTimeOnIce" : "10:43",
+              "powerPlayTimeOnIce" : "3:41",
+              "shortHandedTimeOnIce" : "1:58"
+            }
+          }
+        },
+        "ID8475197" : {
+          "person" : {
+            "id" : 8475197,
+            "fullName" : "Tyson Barrie",
+            "link" : "/api/v1/people/8475197",
+            "firstName" : "Tyson",
+            "lastName" : "Barrie",
+            "primaryNumber" : "94",
+            "birthDate" : "1991-07-26",
+            "currentAge" : 28,
+            "birthCity" : "Victoria",
+            "birthStateProvince" : "BC",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "5' 11\"",
+            "weight" : 197,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "R",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "D",
+              "name" : "Defenseman",
+              "type" : "Defenseman",
+              "abbreviation" : "D"
+            }
+          },
+          "jerseyNumber" : "94",
+          "position" : {
+            "code" : "D",
+            "name" : "Defenseman",
+            "type" : "Defenseman",
+            "abbreviation" : "D"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "19:32",
+              "assists" : 2,
+              "goals" : 0,
+              "shots" : 6,
+              "hits" : 0,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 2,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 0,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : 1,
+              "evenTimeOnIce" : "16:01",
+              "powerPlayTimeOnIce" : "3:31",
+              "shortHandedTimeOnIce" : "0:00"
+            }
+          }
+        },
+        "ID8480043" : {
+          "person" : {
+            "id" : 8480043,
+            "fullName" : "Timothy Liljegren",
+            "link" : "/api/v1/people/8480043",
+            "firstName" : "Timothy",
+            "lastName" : "Liljegren",
+            "primaryNumber" : "37",
+            "birthDate" : "1999-04-30",
+            "currentAge" : 20,
+            "birthCity" : "Kristianstad",
+            "birthCountry" : "SWE",
+            "nationality" : "SWE",
+            "height" : "6' 0\"",
+            "weight" : 198,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : true,
+            "shootsCatches" : "R",
+            "rosterStatus" : "N",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "D",
+              "name" : "Defenseman",
+              "type" : "Defenseman",
+              "abbreviation" : "D"
+            }
+          },
+          "jerseyNumber" : "37",
+          "position" : {
+            "code" : "N/A",
+            "name" : "Unknown",
+            "type" : "Unknown",
+            "abbreviation" : "N/A"
+          },
+          "stats" : { }
+        },
+        "ID8478483" : {
+          "person" : {
+            "id" : 8478483,
+            "fullName" : "Mitchell Marner",
+            "link" : "/api/v1/people/8478483",
+            "firstName" : "Mitchell",
+            "lastName" : "Marner",
+            "primaryNumber" : "16",
+            "birthDate" : "1997-05-05",
+            "currentAge" : 22,
+            "birthCity" : "Markham",
+            "birthStateProvince" : "ON",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "6' 0\"",
+            "weight" : 175,
+            "active" : true,
+            "alternateCaptain" : true,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "R",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "C",
+              "name" : "Center",
+              "type" : "Forward",
+              "abbreviation" : "C"
+            }
+          },
+          "jerseyNumber" : "16",
+          "position" : {
+            "code" : "C",
+            "name" : "Center",
+            "type" : "Forward",
+            "abbreviation" : "C"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "19:33",
+              "assists" : 1,
+              "goals" : 0,
+              "shots" : 3,
+              "hits" : 0,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 1,
+              "penaltyMinutes" : 0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 0,
+              "giveaways" : 1,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : -1,
+              "evenTimeOnIce" : "12:51",
+              "powerPlayTimeOnIce" : "4:29",
+              "shortHandedTimeOnIce" : "2:13"
+            }
+          }
+        },
+        "ID8469455" : {
+          "person" : {
+            "id" : 8469455,
+            "fullName" : "Jason Spezza",
+            "link" : "/api/v1/people/8469455",
+            "firstName" : "Jason",
+            "lastName" : "Spezza",
+            "primaryNumber" : "19",
+            "birthDate" : "1983-06-13",
+            "currentAge" : 36,
+            "birthCity" : "Toronto",
+            "birthStateProvince" : "ON",
+            "birthCountry" : "CAN",
+            "nationality" : "CAN",
+            "height" : "6' 3\"",
+            "weight" : 216,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : false,
+            "shootsCatches" : "R",
+            "rosterStatus" : "Y",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "C",
+              "name" : "Center",
+              "type" : "Forward",
+              "abbreviation" : "C"
+            }
+          },
+          "jerseyNumber" : "19",
+          "position" : {
+            "code" : "N/A",
+            "name" : "Unknown",
+            "type" : "Unknown",
+            "abbreviation" : "N/A"
+          },
+          "stats" : { }
+        },
+        "ID8480873" : {
+          "person" : {
+            "id" : 8480873,
+            "fullName" : "Rasmus Sandin",
+            "link" : "/api/v1/people/8480873",
+            "firstName" : "Rasmus",
+            "lastName" : "Sandin",
+            "primaryNumber" : "38",
+            "birthDate" : "2000-03-07",
+            "currentAge" : 19,
+            "birthCity" : "Uppsala",
+            "birthCountry" : "SWE",
+            "nationality" : "SWE",
+            "height" : "5' 11\"",
+            "weight" : 183,
+            "active" : true,
+            "alternateCaptain" : false,
+            "captain" : false,
+            "rookie" : true,
+            "shootsCatches" : "L",
+            "rosterStatus" : "N",
+            "currentTeam" : {
+              "id" : 10,
+              "name" : "Toronto Maple Leafs",
+              "link" : "/api/v1/teams/10"
+            },
+            "primaryPosition" : {
+              "code" : "D",
+              "name" : "Defenseman",
+              "type" : "Defenseman",
+              "abbreviation" : "D"
+            }
+          },
+          "jerseyNumber" : "38",
+          "position" : {
+            "code" : "D",
+            "name" : "Defenseman",
+            "type" : "Defenseman",
+            "abbreviation" : "D"
+          },
+          "stats" : {
+            "skaterStats" : {
+              "timeOnIce" : "8:58",
+              "assists" : 1,
+              "goals" : 0,
+              "shots" : 2,
+              "hits" : 0,
+              "powerPlayGoals" : 0,
+              "powerPlayAssists" : 0,
+              "penaltyMinutes" : 0,
+              "faceOffWins" : 0,
+              "faceoffTaken" : 0,
+              "takeaways" : 0,
+              "giveaways" : 0,
+              "shortHandedGoals" : 0,
+              "shortHandedAssists" : 0,
+              "blocked" : 0,
+              "plusMinus" : 1,
+              "evenTimeOnIce" : "8:58",
+              "powerPlayTimeOnIce" : "0:00",
+              "shortHandedTimeOnIce" : "0:00"
+            }
+          }
+        }
+      },
+      "goalies" : [ 8475883 ],
+      "skaters" : [ 8474162, 8477021, 8478483, 8477341, 8477953, 8476406, 8477512, 8479318, 8480873, 8478857, 8479675, 8476853, 8475716, 8481624, 8476879, 8477939, 8475166, 8475197, 8475718, 8469455, 8480043 ],
+      "onIce" : [ 8474162, 8475716, 8475883, 8477341, 8479318, 8481624 ],
+      "onIcePlus" : [ {
+        "playerId" : 8474162,
+        "shiftDuration" : 5,
+        "stamina" : 100
+      }, {
+        "playerId" : 8475716,
+        "shiftDuration" : 5,
+        "stamina" : 100
+      }, {
+        "playerId" : 8475883,
+        "shiftDuration" : 478,
+        "stamina" : 33
+      }, {
+        "playerId" : 8477341,
+        "shiftDuration" : 66,
+        "stamina" : 33
+      }, {
+        "playerId" : 8479318,
+        "shiftDuration" : 75,
+        "stamina" : 33
+      }, {
+        "playerId" : 8481624,
+        "shiftDuration" : 75,
+        "stamina" : 33
+      } ],
+      "scratches" : [ 8475718, 8469455, 8480043 ],
+      "penaltyBox" : [ ],
+      "coaches" : [ {
+        "person" : {
+          "fullName" : "Mike Babcock",
+          "link" : "/api/v1/people/null"
+        },
+        "position" : {
+          "code" : "HC",
+          "name" : "Head Coach",
+          "type" : "Head Coach",
+          "abbreviation" : "Head Coach"
+        }
+      } ]
+    }
+  },
+  "officials" : [ {
+    "official" : {
+      "id" : 2506,
+      "fullName" : "Kyle Rehman",
+      "link" : "/api/v1/people/2506"
+    },
+    "officialType" : "Referee"
+  }, {
+    "official" : {
+      "id" : 2303,
+      "fullName" : "Kevin Pollock",
+      "link" : "/api/v1/people/2303"
+    },
+    "officialType" : "Referee"
+  }, {
+    "official" : {
+      "id" : 2298,
+      "fullName" : "Brad Kovachik",
+      "link" : "/api/v1/people/2298"
+    },
+    "officialType" : "Linesman"
+  }, {
+    "official" : {
+      "id" : 6990,
+      "fullName" : "Ryan Daisy",
+      "link" : "/api/v1/people/6990"
+    },
+    "officialType" : "Linesman"
+  } ]
+}

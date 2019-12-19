@@ -1,0 +1,10 @@
+pandas
+nhl_scraper
+selenium
+beautifulsoup4
+lxml
+#yahoo_fantasy_api
+yahoo_oauth
+unidecode
+progressbar
+npyscreen
