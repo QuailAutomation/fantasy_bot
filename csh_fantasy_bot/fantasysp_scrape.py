@@ -27,7 +27,7 @@ class ProjectionScraper:
     def scrape(self):
         driver = webdriver.Chrome()
         driver.maximize_window()
-        positions_to_scrape = ['C','LW','RW','D']
+        positions_to_scrape = ['C','LW','RW','D','G']
         file_names = []
         url = "https://www.fantasysp.com/projections/hockey/weekly/{}"
         try:
@@ -51,10 +51,16 @@ class ProjectionScraper:
 
 class Parser:
 
-    def __init__(self):
+    def __init__(self, positions=None):
         # which positions to scrape from fantasysp
-        self.positions = ['C','LW','RW','D']
-        headings = ["Name", "Tm", "Pos", "G", "A", "SOG", "+/-", "HIT", "PIM", "FOW", "GAMES"]
+        if positions is not None:
+            self.positions = positions
+        else:
+            self.positions = ['C','LW','RW','D','G']
+
+        goalie_headings = ["GAA", "WIN%","SHO%"]
+        player_headings = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW"]
+        headings = ["Name", "Tm", "Pos", "GAMES"]
         df = pd.DataFrame(data=[], columns=headings)
         index_offset = 0
         for position in self.positions:
@@ -79,17 +85,27 @@ class Parser:
                         if not c.isdigit():
                             break
                     num_games = int(games_base[:i])
-                    goals = float(row.find("td", {"class": "proj-g"}).text.strip()) / num_games
-                    assists = float(row.find("td", {"class": "proj-ast"}).text.strip()) / num_games
-                    shots = float(row.find("td", {"class": "proj-sog"}).text.strip()) / num_games
-                    plus_minus = float(row.find("td", {"class": "proj-plusminus"}).text.strip()) / num_games
-                    hit = float(row.find("td", {"class": "proj-hit"}).text.strip()) / num_games
-                    pim = float(row.find("td", {"class": "proj-pim"}).text.strip()) / num_games
-                    fow = float(row.find("td", {"class": "proj-fow"}).text.strip()) / num_games
+                    if position != 'G':
+                        goals = float(row.find("td", {"class": "proj-g"}).text.strip()) / num_games
+                        assists = float(row.find("td", {"class": "proj-ast"}).text.strip()) / num_games
+                        shots = float(row.find("td", {"class": "proj-sog"}).text.strip()) / num_games
+                        plus_minus = float(row.find("td", {"class": "proj-plusminus"}).text.strip()) / num_games
+                        hit = float(row.find("td", {"class": "proj-hit"}).text.strip()) / num_games
+                        pim = float(row.find("td", {"class": "proj-pim"}).text.strip()) / num_games
+                        fow = float(row.find("td", {"class": "proj-fow"}).text.strip()) / num_games
 
-                    df = df.append(pd.DataFrame(
-                        data=[[name, tm, pos, goals, assists, shots, plus_minus, hit, pim, fow, num_games]],
-                        columns=headings, index=[i + index_offset]))
+                        df = df.append(pd.DataFrame(
+                            data=[[name, tm, pos, num_games, goals, assists, shots, plus_minus, hit, pim, fow]],
+                            columns=headings + player_headings, index=[i + index_offset]))
+                    else:
+                        # goalie
+                        gaa = float(row.find("td", {"class": "proj-gaa"}).text.strip())
+                        win_per_game = float(row.find("td", {"class": "proj-wins"}).text.strip()) / num_games
+                        so_per_game = float(row.find("td", {"class": "proj-so"}).text.strip()) / num_games
+                        pass
+                        df = df.append(pd.DataFrame(
+                            data=[[name, tm, pos, num_games, gaa, win_per_game, so_per_game]],
+                            columns= headings + goalie_headings, index=[i + index_offset]))
                 stats = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW"]
                 # compute per game stats
                 # for stat in stats:
@@ -141,9 +157,8 @@ class Parser:
 
 
 
-        stats = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW"]
         df = pd.merge(my_roster, self.ppool[["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW",'name']], on='name', how='left')
-
+        df.rename(columns={'FOW': 'FW'}, inplace=True)
         try:
             df.rename(columns={'team_id_x': 'team_id'}, inplace=True)
         except KeyError:
@@ -192,13 +207,13 @@ class Parser:
             for stat in stats_to_track:
                 if player_w_stats['GP'] > 0:
                     #  hack for now because yahoo returns FW but rest of code uses FOW
-                    if stat != 'FOW':
-                        # a_player[stat] = player_w_stats[stat] / player_w_stats['GP']
-                        players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[
-                                                                                                       stat] / \
-                                                                                                   player_w_stats['GP']
-                    else:
-                        players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[
+                    # if stat != 'FOW':
+                    #     # a_player[stat] = player_w_stats[stat] / player_w_stats['GP']
+                    #     players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[
+                    #                                                                                    stat] / \
+                    #                                                                                player_w_stats['GP']
+                    # else:
+                    players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[
                                                                                                        'FW'] / \
                                                                                                    player_w_stats['GP']
         return players

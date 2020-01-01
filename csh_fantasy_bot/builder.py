@@ -189,7 +189,7 @@ class Scorer:
         :rtype: Series
         """
         temp_stat_cols = ['GA', 'SV']
-        stat_cols = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW"]# + temp_stat_cols
+        stat_cols = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FW"]# + temp_stat_cols
         res = dict.fromkeys(stat_cols, 0)
         for single_date in week:
             todays_games = self.nhl_scraper.games_count(single_date, single_date)

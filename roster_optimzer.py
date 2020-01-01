@@ -53,7 +53,7 @@ nhl_teams.set_index("id")
 #    nhl_teams[week] = nhl_teams['id'].map(nhl_scraper.games_count(week_date_range[0]+ timedelta(days=i * 7),
 #                                                                  week_date_range[1]+ timedelta(days=i * 7)))
 #print(nhl_teams.head(5))
-stats = ["G","A","SOG","+/-","HIT","PIM","FOW"]
+stats = ["G","A","SOG","+/-","HIT","PIM","FW"]
 
 
 def prediction_loader():
@@ -121,10 +121,10 @@ opp_df = fantasysp_p.predict(opp_team)
 
 #TODO could incorporate this into roster builder
 #league_roster_makeup = league.positions()
-opponent_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(opponent_team.roster(), opp_df, week)
+opponent_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(league,opponent_team, opp_df, week)
 projected_opponent_score = opponent_scorer.score()
 
-my_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(my_team.roster(), fantasy_projections, week)
+my_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(league, my_team, fantasy_projections, week)
 projected_my_score = my_scorer.score()
 
 def comp(x):
@@ -134,13 +134,13 @@ def comp(x):
 
 def print_scoring_header():
     print("{:20}   {:5}   {:5}   {:5}   {:5}   {:5}   {:5}   {:5}".
-          format("       ",'G', 'A','+/-', 'PIM', 'SOG', 'FOW', 'Hit'))
+          format("       ",'G', 'A','+/-', 'PIM', 'SOG', 'FW', 'Hit'))
 
 def print_scoring_results(scoring, title):
     print("{:20}   {:.1f}   {:.1f}    {:.1f}     {:.1f}     {:.1f}   {:.1f}   {:.1f}".
           format(title,
                  scoring['G'], scoring['A'],
-                 scoring['+/-'], scoring['PIM'], scoring['SOG'], scoring['FOW'], scoring['HIT']))
+                 scoring['+/-'], scoring['PIM'], scoring['SOG'], scoring['FW'], scoring['HIT']))
 
 results = projected_my_score.sum() - projected_opponent_score.sum()
 final_line = results.apply( comp )

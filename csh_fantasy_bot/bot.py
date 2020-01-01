@@ -33,6 +33,11 @@ class ScoreComparer:
         self.week = week
         self.opp_sum = None
         self.stdev_cap = 3
+        self.stat_cats = []
+        #TODO this needs to handle goalies when ready
+        for stat in lg.stat_categories():
+            if stat['position_type'] == 'P':
+                self.stat_cats.append(stat['display_name'])
         self.stdevs = self._compute_agg(lg_lineups, 'std')
 
 
@@ -57,19 +62,20 @@ class ScoreComparer:
         stddev_score = 0
         for (c_myname, c_myval), (c_opname, c_opval) in \
                 zip(score_sum.items(), self.opp_sum.items()):
-            assert(c_myname == c_opname)
-            c_stdev = self.stdevs[c_myname].iloc(0)[0]
-            v = (c_myval - c_opval) / c_stdev
-            # Cap the value at a multiple of the standard deviation.  We do
-            # this because we don't want to favour lineups that simply own
-            # a category.  A few standard deviation is enough to provide a
-            # cushion.  It also allows you to punt a caategory, if you don't
-            # do well in a category, and you are going to lose, the down side
-            # is capped.
-            v = min(v, self.stdev_cap * c_stdev)
-            if not self.scorer.is_highest_better(c_myname):
-                v = v * -1
-            stddev_score += v
+            assert(c_myname == c_opname, "c_myname ({}) did not match c_opname({})".format(c_myname,c_opname))
+            if c_myname in self.stat_cats:
+                c_stdev = self.stdevs[c_myname].iloc(0)[0]
+                v = (c_myval - c_opval) / c_stdev
+                # Cap the value at a multiple of the standard deviation.  We do
+                # this because we don't want to favour lineups that simply own
+                # a category.  A few standard deviation is enough to provide a
+                # cushion.  It also allows you to punt a caategory, if you don't
+                # do well in a category, and you are going to lose, the down side
+                # is capped.
+                v = min(v, self.stdev_cap * c_stdev)
+                if not self.scorer.is_highest_better(c_myname):
+                    v = v * -1
+                stddev_score += v
         return stddev_score
 
     def print_stdev(self):
@@ -286,19 +292,19 @@ class ManagerBot:
         ids_no_stats = list(
             players.query('G != G & position_type == "P" & status != "IR"').player_id.values)
         the_stats = self.lg.player_stats(ids_no_stats, 'season')
-        stats_to_track = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW"]
+        stats_to_track = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FW"]
         for player_w_stats in the_stats:
             # a_player = players[players.player_id == player_w_stats['player_id']]
             for stat in stats_to_track:
                 if player_w_stats['GP'] > 0:
                     #  hack for now because yahoo returns FW but rest of code uses FOW
-                    if stat != 'FOW':
-                        # a_player[stat] = player_w_stats[stat] / player_w_stats['GP']
-                        players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[
-                                                                                                       stat] / \
-                                                                                                   player_w_stats['GP']
-                    else:
-                        players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[
+                    # if stat != 'FOW':
+                    #     # a_player[stat] = player_w_stats[stat] / player_w_stats['GP']
+                    #     players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[
+                    #                                                                                    stat] / \
+                    #                                                                                player_w_stats['GP']
+                    # else:
+                    players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[
                                                                                                        'FW'] / \
                                                                                                    player_w_stats['GP']
         return players
@@ -339,17 +345,17 @@ class ManagerBot:
             # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
             ids_no_stats = list(players.query('on_my_team == 1 & G != G & position_type == "P" & status != "IR"').player_id.values)
             the_stats = self.lg.player_stats(ids_no_stats,'season')
-            stats_to_track = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW"]
+            stats_to_track = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FW"]
             for player_w_stats in the_stats:
                 # a_player = players[players.player_id == player_w_stats['player_id']]
                 for stat in stats_to_track:
                     if player_w_stats['GP'] > 0:
                         #  hack for now because yahoo returns FW but rest of code uses FOW
-                        if stat != 'FOW':
-                            # a_player[stat] = player_w_stats[stat] / player_w_stats['GP']
-                            players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[stat] / player_w_stats['GP']
-                        else:
-                            players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats['FW'] / player_w_stats['GP']
+                        # if stat != 'FOW':
+                        #     # a_player[stat] = player_w_stats[stat] / player_w_stats['GP']
+                        #     players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[stat] / player_w_stats['GP']
+                        # else:
+                        players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats['FW'] / player_w_stats['GP']
             self.ppool = players
 
     def fetch_waivers(self):
@@ -423,7 +429,7 @@ class ManagerBot:
         # opp_df = self.pred_bldr.predict(pd.DataFrame(opp_roster))
 
         print(opp_roster.head(20))
-        my_scorer: BestRankedPlayerScorer = BestRankedPlayerScorer(pd.DataFrame(self.lg.to_team(opp_team_key).roster()), opp_roster,
+        my_scorer: BestRankedPlayerScorer = BestRankedPlayerScorer(self.lg, self.lg.to_team(opp_team_key), opp_roster,
                                                                     self.week)
         #opp_sum = self.scorer.summarize(opp_df, week)
         opp_sum = my_scorer.score().sum()
@@ -567,7 +573,7 @@ class ManagerBot:
             except IndexError as e :
                 print(e)
         print("Projected scores for original: ")
-        my_score :BestRankedPlayerScorer = BestRankedPlayerScorer(pd.DataFrame(self.team_full_roster), self.ppool, self.week)
+        my_score :BestRankedPlayerScorer = BestRankedPlayerScorer(self.lg,self.tm, self.ppool, self.week)
 
         my_scores = my_score.score().sum()
         my_improved_scores = my_score.score(roster_changes).sum()
@@ -685,9 +691,9 @@ class ManagerBot:
         edit_wk = self.league_week
         print("Picking opponent for week: {}".format(edit_wk))
         (wk_start, wk_end) = self.lg.week_date_range(edit_wk)
-        edit_date = self.lg.edit_date()
-        if edit_date > wk_end:
-            edit_wk += 1
+        # edit_date = self.lg.edit_date()
+        # if edit_date > wk_end:
+        #     edit_wk += 1
 
         try:
             opp_team_key = self.tm.matchup(edit_wk)

@@ -4,6 +4,7 @@ selenium
 beautifulsoup4
 lxml
 #yahoo_fantasy_api
+git+git://github.com/QuailAutomation/yahoo_fantasy_api@master
 yahoo_oauth
 unidecode
 progressbar

@@ -36,16 +36,40 @@ tm_cache = utils.TeamCache(league.team_key())
 lg_cache = utils.LeagueCache()
 
 current_week = league.current_week()
-start_week,end_week = league.week_date_range(11)
+start_week,end_week = league.week_date_range(12)
 week = pd.date_range(start_week, end_week)
 
+opponent_team = league.to_team(my_team.matchup(current_week))
 
-
+scoreboard = league.scoreboard()
+standings = league.standings()
 # nhl_scraper = Scraper()
 # nhl_teams = nhl_scraper.teams()
 # nhl_teams.set_index("id")
+matchups = league.matchups()
 
-stats = ["G","A","SOG","+/-","HIT","PIM","FOW"]
+
+def get_roster_adds(raw_matchups ,team_id):
+    def retrieve_attribute_from_team_info(team_info, attribute):
+        for attr in team_info:
+            if attribute in attr:
+                return attr[attribute]
+
+    num_matchups = raw_matchups['fantasy_content']['league'][1]['scoreboard']['0']['matchups']['count']
+    for matchup_index in range(0,num_matchups):
+        matchup = raw_matchups['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup_index)]
+        for i in range(0,2):
+            try:
+                if int(retrieve_attribute_from_team_info(matchup['matchup']['0']['teams'][str(i)]['team'][0],'team_id')) == team_id:
+                    return int(retrieve_attribute_from_team_info(matchup['matchup']['0']['teams'][str(i)]['team'][0],'roster_adds')['value'])
+            except TypeError as e:
+                pass
+    raise LookupError("team id not found: {}".format(team_id))
+
+
+roster_add_list = [get_roster_adds(matchups, id) for id in range(1,9)]
+
+stats = ["G","A","SOG","+/-","HIT","PIM","FW"]
 
 def prediction_loader():
     return fantasysp_scrape.Parser()
@@ -62,21 +86,23 @@ def loader():
 
 # expiry = datetime.timedelta(minutes=360)
 free_agents = lg_cache.load_free_agents(None, loader)
+my_roster =  my_team.roster(day=start_week)
+opponent_roster = opponent_team.roster(day=start_week)
+fantasy_projections = fantasysp_p.predict(pd.DataFrame(free_agents + my_roster + opponent_roster))
 
-fantasy_projections = fantasysp_p.predict(pd.DataFrame(free_agents + my_team.roster()))
-
-my_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(pd.DataFrame(my_team.roster()), fantasy_projections, week)
+my_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(league, my_team, fantasy_projections, week)
+opp_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(league, opponent_team, fantasy_projections, week)
 
 roster_changes = []
-roster_changes.append(roster_change_optimizer.RosterChange(5462,6402, np.datetime64('2019-12-19')))
-roster_changes.append(roster_change_optimizer.RosterChange(3788,6571, np.datetime64('2019-12-22')))
+#roster_changes.append(roster_change_optimizer.RosterChange(7518,6739, np.datetime64('2019-12-30')))
+# roster_changes.append(roster_change_optimizer.RosterChange(3788,6571, np.datetime64('2019-12-22')))
 # roster_changes.append(roster_change_optimizer.RosterChange(3357,1700, np.datetime64('2019-12-13')))
 # roster_changes.append(roster_change_optimizer.RosterChange(5697,5626, np.datetime64('2019-12-11')))
 roster_change_set = roster_change_optimizer.RosterChangeSet(roster_changes)
 
-projected_my_score = my_scorer.score()
-# projected_my_score = my_scorer.score(roster_change_set)
-
+# projected_my_score = my_scorer.score()
+projected_my_score = my_scorer.score(roster_change_set)
+opponent_score = opp_scorer.score()
 
 def comp(x):
     if x == 0:
@@ -85,13 +111,13 @@ def comp(x):
 
 def print_scoring_header():
     print("{:20}   {:5}   {:5}   {:5}   {:5}   {:5}   {:5}   {:5}".
-          format("       ",'G', 'A','+/-', 'PIM', 'SOG', 'FOW', 'Hit'))
+          format("       ",'G', 'A','+/-', 'PIM', 'SOG', 'FW', 'Hit'))
 
 def print_scoring_results(scoring, title):
     print("{:20}   {:.1f}   {:.1f}    {:.1f}     {:.1f}     {:.1f}   {:.1f}   {:.1f}".
           format(title,
                  scoring['G'], scoring['A'],
-                 scoring['+/-'], scoring['PIM'], scoring['SOG'], scoring['FOW'], scoring['HIT']))
+                 scoring['+/-'], scoring['PIM'], scoring['SOG'], scoring['FW'], scoring['HIT']))
 
 
 detail = True
@@ -102,4 +128,6 @@ else:
     print_scoring_header()
 
 print_scoring_results(projected_my_score.sum(),'My Team')
+print_scoring_results(opponent_score.sum(),'Opponent Team')
+print_scoring_results(projected_my_score.sum().subtract(opponent_score.sum()),"Diff")
 
