@@ -12,3 +12,4 @@ COPY csh_fantasy_bot /app/csh_fantasy_bot
 COPY run_ga.py /app
 WORKDIR /app
 #CMD ["gunicorn", "-w 4", "main:app"]
+CMD ["python","run_ga.py"]
