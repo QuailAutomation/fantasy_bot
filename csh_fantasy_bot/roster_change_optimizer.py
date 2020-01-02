@@ -23,7 +23,7 @@ def optimize_with_genetic_algorithm(score_comparer, roster_bldr,
     """
     algo = GeneticAlgorithm(score_comparer, roster_bldr, avail_plyrs,
                             locked_plyrs)
-    generations = 4000
+    generations = 1000
     return algo.run(generations)
 
 
@@ -220,7 +220,7 @@ class GeneticAlgorithm:
         assert (False, 'Did not find roster changes for team')
 
     def _init_population(self):
-        max_lineups = 5000
+        max_lineups = 10000
         self.population = []
         self.last_mutated_roster_change = None
         selector = self._gen_player_selector(gen_type='pct_own')
