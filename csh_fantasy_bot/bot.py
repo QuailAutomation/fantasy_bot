@@ -343,7 +343,7 @@ class ManagerBot:
             players = self.pred_bldr.predict(my_roster)
             #start_week,end_week = self.lg.week_date_range(self.lg.current_week())
             # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
-            ids_no_stats = list(players.query('on_my_team == 1 & G != G & position_type == "P" & status != "IR"').player_id.values)
+            ids_no_stats = list(players.query('on_my_team == 1 & G != G & position_type == "P" & status != "IR" & status != "O"').player_id.values)
             the_stats = self.lg.player_stats(ids_no_stats,'season')
             stats_to_track = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FW"]
             for player_w_stats in the_stats:
@@ -379,7 +379,7 @@ class ManagerBot:
                 format(len(fa)))
             return fa
 
-        expiry = datetime.timedelta(minutes= 360)
+        expiry = datetime.timedelta(minutes= 60)
         return self.lg_cache.load_free_agents(expiry, loader)
 
     def fetch_league_lineups(self):
