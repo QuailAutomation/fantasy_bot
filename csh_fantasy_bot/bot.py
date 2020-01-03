@@ -325,9 +325,10 @@ class ManagerBot:
         if self.ppool is None:
             current_lineup = self.fetch_cur_lineup()
             plyr_pool = self.fetch_free_agents() + current_lineup + self.fetch_waivers()
-            rcont = roster.Container(None, None)
-            rcont.add_players(plyr_pool)
-            my_roster = pd.DataFrame(rcont.get_roster())
+            # rcont = roster.Container(None, None)
+            # rcont.add_players(plyr_pool)
+            my_roster = pd.DataFrame(plyr_pool)
+            my_roster = my_roster[my_roster.status != 'O']
             self._fix_yahoo_team_abbr(my_roster)
             self.nhl_scraper = Scraper()
 
@@ -341,9 +342,10 @@ class ManagerBot:
             self.nhl_players = self.nhl_scraper.players()
 
             players = self.pred_bldr.predict(my_roster)
+
             #start_week,end_week = self.lg.week_date_range(self.lg.current_week())
             # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
-            ids_no_stats = list(players.query('on_my_team == 1 & G != G & position_type == "P" & status != "IR" & status != "O"').player_id.values)
+            ids_no_stats = list(players.query('on_my_team == 1 & G != G & position_type == "P" & status != "IR" ').player_id.values)
             the_stats = self.lg.player_stats(ids_no_stats,'season')
             stats_to_track = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FW"]
             for player_w_stats in the_stats:
