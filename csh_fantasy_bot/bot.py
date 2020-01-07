@@ -357,7 +357,7 @@ class ManagerBot:
                         #     # a_player[stat] = player_w_stats[stat] / player_w_stats['GP']
                         #     players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[stat] / player_w_stats['GP']
                         # else:
-                        players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats['FW'] / player_w_stats['GP']
+                        players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[stat] / player_w_stats['GP']
             self.ppool = players
 
     def fetch_waivers(self):

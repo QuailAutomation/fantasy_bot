@@ -1,5 +1,6 @@
 pandas
-nhl_scraper
+#nhl_scraper
+git+git://github.com/QuailAutomation/nhl_scraper@master
 selenium
 beautifulsoup4
 lxml

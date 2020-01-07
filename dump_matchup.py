@@ -35,14 +35,24 @@ my_team: Team= league.to_team(league.team_key())
 tm_cache = utils.TeamCache(league.team_key())
 lg_cache = utils.LeagueCache()
 
-current_week = league.current_week()
-start_week,end_week = league.week_date_range(12)
+current_week = 14
+start_week,end_week = league.week_date_range(current_week)
 week = pd.date_range(start_week, end_week)
+opponent_id = my_team.matchup(current_week)
+opponent_team = league.to_team(opponent_id)
 
-opponent_team = league.to_team(my_team.matchup(current_week))
 
-scoreboard = league.scoreboard()
-standings = league.standings()
+def _get_team_name(lg, team_key):
+    for team in lg.teams():
+        if team['team_key'] == team_key:
+            return team['name']
+    raise LookupError("Could not find team for team key: {}".format(
+        team_key))
+
+print("Opponent: {}".format(_get_team_name(league,opponent_id)))
+
+# scoreboard = league.scoreboard()
+# standings = league.standings()
 # nhl_scraper = Scraper()
 # nhl_teams = nhl_scraper.teams()
 # nhl_teams.set_index("id")
@@ -67,7 +77,7 @@ def get_roster_adds(raw_matchups ,team_id):
     raise LookupError("team id not found: {}".format(team_id))
 
 
-roster_add_list = [get_roster_adds(matchups, id) for id in range(1,9)]
+# roster_add_list = [get_roster_adds(matchups, id) for id in range(1,9)]
 
 stats = ["G","A","SOG","+/-","HIT","PIM","FW"]
 
@@ -75,17 +85,15 @@ def prediction_loader():
     return fantasysp_scrape.Parser()
 
 expiry = datetime.timedelta(minutes=6 * 24 * 60)
-fantasysp_p = tm_cache.load_prediction_builder(expiry, None)
-positions = ['C','LW','RW','D']
+fantasysp_p = tm_cache.load_prediction_builder(None, prediction_loader)
 
 
 def loader():
     fa = league.free_agents(None)
     return fa
 
-
-# expiry = datetime.timedelta(minutes=360)
-free_agents = lg_cache.load_free_agents(None, loader)
+expiry = datetime.timedelta(minutes=6 * 60)
+free_agents = lg_cache.load_free_agents(expiry, loader)
 my_roster =  my_team.roster(day=start_week)
 opponent_roster = opponent_team.roster(day=start_week)
 fantasy_projections = fantasysp_p.predict(pd.DataFrame(free_agents + my_roster + opponent_roster))
@@ -94,9 +102,9 @@ my_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(league, my_team, fanta
 opp_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(league, opponent_team, fantasy_projections, week)
 
 roster_changes = []
-#roster_changes.append(roster_change_optimizer.RosterChange(7518,6739, np.datetime64('2019-12-30')))
-# roster_changes.append(roster_change_optimizer.RosterChange(3788,6571, np.datetime64('2019-12-22')))
-# roster_changes.append(roster_change_optimizer.RosterChange(3357,1700, np.datetime64('2019-12-13')))
+#roster_changes.append(roster_change_optimizer.RosterChange(3982,6390, np.datetime64('2020-01-10')))
+#roster_changes.append(roster_change_optimizer.RosterChange(4693,4969, np.datetime64('2020-01-12')))
+#roster_changes.append(roster_change_optimizer.RosterChange(6750,5346, np.datetime64('2020-01-10')))
 # roster_changes.append(roster_change_optimizer.RosterChange(5697,5626, np.datetime64('2019-12-11')))
 roster_change_set = roster_change_optimizer.RosterChangeSet(roster_changes)
 
@@ -109,9 +117,11 @@ def comp(x):
         return 0
     return 1 if x > 0 else -1
 
+
 def print_scoring_header():
     print("{:20}   {:5}   {:5}   {:5}   {:5}   {:5}   {:5}   {:5}".
           format("       ",'G', 'A','+/-', 'PIM', 'SOG', 'FW', 'Hit'))
+
 
 def print_scoring_results(scoring, title):
     print("{:20}   {:.1f}   {:.1f}    {:.1f}     {:.1f}     {:.1f}   {:.1f}   {:.1f}".

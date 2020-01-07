@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import logging
 from nhl_scraper.nhl import Scraper
+from nhl_scraper.rotowire import Scraper as RWScraper
 from yahoo_fantasy_api import League, Team
 
 player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
@@ -71,28 +72,29 @@ class BestRankedPlayerScorer:
         self.date_range = date_range
         self.roster_builder = Roster()
         self.cached_actual_results = {}
-
-        pass
+        self.starting_goalies_df = RWScraper().starting_goalies()
 
     def score(self, roster_change_set=None, results_printer=None):
         roster_df = self.team_roster
         today = datetime.date.today()
         try:
             roster_with_projections = self.player_projections[self.player_projections['name'].isin(roster_df['name'])]
+            roster_with_projections.set_index('name', inplace=True)
+            roster_with_projections.sort_index(inplace=True)
         except TypeError as e:
             print(e)
         roster_with_projections['GamesInLineup'] = int(0)
         projected_week_results = None
         for single_date in self.date_range:
             # self.logger.debug("Date: %s", single_date)
-            #TODO should store change sets in dict based on day, should be faster for lookup
+            # TODO should store change sets in dict based on day, should be faster for lookup
             if roster_change_set is not None:
                 for roster_change in roster_change_set:
                     if roster_change.change_date == single_date:
                         roster_with_projections = roster_with_projections.append(
                             self.player_projections[self.player_projections.player_id == roster_change.player_in])
                         roster_with_projections.loc[
-                        roster_with_projections['player_id'].isin([roster_change.player_in]), 'GamesInLineup'] = 0
+                            roster_with_projections['player_id'].isin([roster_change.player_in]), 'GamesInLineup'] = 0
                         roster_with_projections = roster_with_projections[
                             roster_with_projections.player_id != roster_change.player_out]
 
@@ -108,7 +110,7 @@ class BestRankedPlayerScorer:
                     lineup = opp_daily_roster.query('selected_position != "BN" & selected_position != "G"')
                     stats = self.league.player_stats(lineup.player_id.tolist(), "date", date=single_date)
                     daily_stats = pd.DataFrame(stats)
-                    #TODO would be ideal to drop non stat tracked stats, though must keep player id, team, etc
+                    # TODO would be ideal to drop non stat tracked stats, though must keep player id, team, etc
                     # maybe this should be done over in compare, only compare stats we care about in league
                     # daily_stats.drop(columns=['GP','PTS','PPG','PPA','PPP','GWG','GP'], inplace=True)
                     # daily_stats.rename(columns={'FW': 'FOW'}, inplace=True)
@@ -119,29 +121,46 @@ class BestRankedPlayerScorer:
                 todays_projections = roster_with_projections.copy()
                 # compute expected output for all players on roster, maximize score
                 if single_date.strftime("%Y-%m-%d") not in BestRankedPlayerScorer.nhl_schedule:
-                    BestRankedPlayerScorer.nhl_schedule[single_date.strftime("%Y-%m-%d")] = self.nhl_scraper.games_count(
+                    BestRankedPlayerScorer.nhl_schedule[
+                        single_date.strftime("%Y-%m-%d")] = self.nhl_scraper.games_count(
                         single_date, single_date)
 
                 todays_projections["GAMEPLAYED"] = todays_projections["team_id"].map(
                     BestRankedPlayerScorer.nhl_schedule[single_date.strftime("%Y-%m-%d")])
                 todays_projections = todays_projections[todays_projections.GAMEPLAYED == 1]
-                # "G", "A", "PLUSMINUS", "PIM", "SOG", "FOW", "HIT"]
+                # goalies are trickier.  let's check rotowire to see if they are expected to play
+                try:
+                    todays_goalies = self.starting_goalies_df[self.starting_goalies_df['date'] == single_date]
+                    todays_projections = todays_projections.merge(todays_goalies[['starting_status']], left_index=True,
+                                                                  right_on='goalie_name',
+                                                                  how='left')
+                    todays_projections = todays_projections[(todays_projections['position_type'] != 'G') | (
+                            (todays_projections['starting_status'] == 'Confirmed') | (
+                            todays_projections['starting_status'] == 'Expected'))]
+                    todays_projections.rename(columns = {'goalie_name':'name'}, inplace = True)
+                    todays_projections.reset_index(drop=True, inplace=True)
+                    # todays_projections.set_index('player_id',inplace=True)
+                except KeyError:
+                    pass
                 try:
                     todays_projections[
-                        'fpts'] = todays_projections.G * stats_weights[0] + todays_projections.A * stats_weights[1]+ todays_projections['+/-'] * stats_weights[2]+ todays_projections.PIM * stats_weights[3]+ todays_projections.SOG * stats_weights[4]+ todays_projections.FW * stats_weights[5]+ todays_projections.HIT * stats_weights[6]
+                        'fpts'] = todays_projections.G * stats_weights[0] + todays_projections.A * stats_weights[1] + \
+                                  todays_projections['+/-'] * stats_weights[2] + todays_projections.PIM * stats_weights[
+                                      3] + todays_projections.SOG * stats_weights[4] + todays_projections.FW * \
+                                  stats_weights[5] + todays_projections.HIT * stats_weights[6]
                 except AttributeError as e:
                     print(e)
                 todays_projections = todays_projections.sort_values(by=['fpts'], ascending=False)
-                # self.logger.debug("Daily roster:\n %s", todays_projections.head(20))
+                self.logger.debug("Daily roster:\n %s", todays_projections.head(20))
 
                 roster_results, the_roster = self.roster_builder.daily_results(todays_projections)
-
 
                 for pos in the_roster.values():
                     for player in pos['players']:
                         roster_player_id_list.append(player['player_id'])
 
-            roster_with_projections.loc[roster_with_projections['player_id'].isin(roster_player_id_list), 'GamesInLineup'] += 1
+            roster_with_projections.loc[
+                roster_with_projections['player_id'].isin(roster_player_id_list), 'GamesInLineup'] += 1
 
             # self.logger.debug("roster:\n %s", roster_with_projections.head(20))
             if projected_week_results is None:
@@ -166,13 +185,15 @@ class Roster:
         self.roster = {'C': {'num': 2, 'players': []},
                        'LW': {'num': 2, 'players': []},
                        'RW': {'num': 2, 'players': []},
-                       'D': {'num': 4, 'players': []}}
+                       'D': {'num': 4, 'players': []},
+                       'G': {'num': 2, 'players': []}}
 
     def _clear_roster(self):
         self.roster = {'C': {'num': 2, 'players': []},
                        'LW': {'num': 2, 'players': []},
                        'RW': {'num': 2, 'players': []},
-                       'D': {'num': 4, 'players': []}}
+                       'D': {'num': 4, 'players': []},
+                       'G': {'num': 2, 'players': []}}
 
     # using roster makeup, maximize points
     def _add(self, position, player):

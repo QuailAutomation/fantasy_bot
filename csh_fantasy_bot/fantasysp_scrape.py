@@ -4,6 +4,7 @@ import time
 import pandas as pd
 from nhl_scraper.nhl import Scraper
 
+
 #url = 'https://www.fantasysp.com/projections/hockey/daily/'
 
 #!/usr/bin/python
@@ -58,6 +59,8 @@ class Parser:
         else:
             self.positions = ['C','LW','RW','D','G']
 
+
+
         goalie_headings = ["GAA", "WIN%","SHO%"]
         player_headings = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW"]
         headings = ["Name", "Tm", "Pos", "GAMES"]
@@ -99,10 +102,12 @@ class Parser:
                             columns=headings + player_headings, index=[i + index_offset]))
                     else:
                         # goalie
+                        # goalie_starting_status = 'Confirmed'
+                        # if starting_goalies_df is not None:
+                        #     goalie_starting_status = starting_goalies_df.query('goalie_name == {}'.format(name))
                         gaa = float(row.find("td", {"class": "proj-gaa"}).text.strip())
                         win_per_game = float(row.find("td", {"class": "proj-wins"}).text.strip()) / num_games
                         so_per_game = float(row.find("td", {"class": "proj-so"}).text.strip()) / num_games
-                        pass
                         df = df.append(pd.DataFrame(
                             data=[[name, tm, pos, num_games, gaa, win_per_game, so_per_game]],
                             columns= headings + goalie_headings, index=[i + index_offset]))
@@ -142,11 +147,12 @@ class Parser:
         # positions and Yahoo! player ID from the input player pool.
         # my_roster = pd.DataFrame(roster_cont.get_roster())
         # df = my_roster.merge(self.ppool, left_on='name',right_on='name', how="left")
+        self.nhl_scraper = Scraper()
 
         if 'team_id' not in my_roster.columns:
             # we must map in teams
             self._fix_yahoo_team_abbr(my_roster)
-            self.nhl_scraper = Scraper()
+
 
             nhl_teams = self.nhl_scraper.teams()
             nhl_teams.set_index("id")
@@ -154,8 +160,6 @@ class Parser:
 
             my_roster = my_roster.merge(nhl_teams, left_on='editorial_team_abbr', right_on='abbrev')
             my_roster.rename(columns={'id': 'team_id'}, inplace=True)
-
-
 
         df = pd.merge(my_roster, self.ppool[["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW",'name']], on='name', how='left')
         df.rename(columns={'FOW': 'FW'}, inplace=True)
@@ -226,16 +230,8 @@ def init_prediction_builder(lg, cfg):
 def scrape_and_parse(pick_goalies, csv_file_name):
     sc = ProjectionScraper()
     sc.scrape()
-    #file_names = sc.scrape(pick_goalies, 3 if pick_goalies else 5)
-    file_names= ['fantasysp_weekly.html']
-    df = None
-    for fn in file_names:
-        p = Parser(fn)
-        if df is None:
-            df = p.parse(0)
-        else:
-            df = df.append(p.parse(len(df.index)))
-#    df.to_csv(csv_file_name)
+    # p = Parser()
+    # df = p.parse(0)
 
 
 if __name__ == "__main__":
