@@ -305,7 +305,7 @@ class ManagerBot:
                     #                                                                                player_w_stats['GP']
                     # else:
                     players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[
-                                                                                                       'FW'] / \
+                                                                                                       stat] / \
                                                                                                    player_w_stats['GP']
         return players
 
