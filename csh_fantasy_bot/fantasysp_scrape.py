@@ -20,7 +20,7 @@ from bs4 import BeautifulSoup
 import time
 import pandas as pd
 
-html_file_location = "./cache/"
+html_file_location = ".cache/"
 
 
 class ProjectionScraper:
