@@ -69,7 +69,7 @@ class Parser:
         index_offset = 0
         for position in self.positions:
             print("Processing: {}".format(position))
-            file_name = "{}fantasysp_weekly-{}.html".format(html_file_location, self.position)
+            file_name = "{}fantasysp_weekly-{}.html".format(html_file_location, position)
 
             with open(file_name, "rb") as f:
                 soup = BeautifulSoup(f, "lxml")
