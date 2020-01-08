@@ -547,7 +547,7 @@ class ManagerBot:
         optimizer_func = self._get_lineup_optimizer_function()
 
         locked_plyrs = []
-        thres = 90
+        thres = 95
         for plyr in self.lineup +self.bench + self.injury_reserve:
             if plyr['percent_owned'] >= thres or plyr['status'] == 'IR':
                 locked_plyrs.append(plyr)
