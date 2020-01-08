@@ -20,6 +20,8 @@ from bs4 import BeautifulSoup
 import time
 import pandas as pd
 
+html_file_location = "./cache/"
+
 
 class ProjectionScraper:
     def __init__(self):
@@ -38,12 +40,11 @@ class ProjectionScraper:
                 driver.get(url.format(position_scraped))
 
                 time.sleep(5)
-                fn = "fantasysp_weekly-{}.html"
-                with open(fn.format(position_scraped), "w") as f:
+                fn = "{}fantasysp_weekly-{}.html"
+                with open(fn.format(html_file_location, position_scraped), "w") as f:
                     soup = BeautifulSoup(driver.page_source, "lxml")
                     f.write(soup.prettify())
                     file_names.append(fn.format(position_scraped))
-
         finally:
             driver.close()
 
@@ -68,7 +69,7 @@ class Parser:
         index_offset = 0
         for position in self.positions:
             print("Processing: {}".format(position))
-            file_name = "fantasysp_weekly-{}.html".format(position)
+            file_name = "{}fantasysp_weekly-{}.html".format(html_file_location, self.position)
 
             with open(file_name, "rb") as f:
                 soup = BeautifulSoup(f, "lxml")

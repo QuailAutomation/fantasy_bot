@@ -112,9 +112,10 @@ class BestRankedPlayerScorer:
                     daily_stats = pd.DataFrame(stats)
                     # TODO would be ideal to drop non stat tracked stats, though must keep player id, team, etc
                     # maybe this should be done over in compare, only compare stats we care about in league
-                    # daily_stats.drop(columns=['GP','PTS','PPG','PPA','PPP','GWG','GP'], inplace=True)
+                    daily_stats.drop(columns=['GP','PTS','PPG','PPA','PPP','GWG','GP','position_type','name'], inplace=True)
+                    daily_stats.replace('-', np.nan,inplace=True)
                     # daily_stats.rename(columns={'FW': 'FOW'}, inplace=True)
-                    self.cached_actual_results[single_date] = daily_stats[daily_stats.GP != '-']
+                    self.cached_actual_results[single_date] = daily_stats[~daily_stats.G.isnull()]
                 roster_results = self.cached_actual_results[single_date]
                 roster_player_id_list = self.cached_actual_results[single_date].player_id.tolist()
             else:

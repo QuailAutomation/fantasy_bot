@@ -9,6 +9,7 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 COPY csh_fantasy_bot /app/csh_fantasy_bot
+COPY oauth2.json /app
 COPY run_ga.py /app
 WORKDIR /app
 #CMD ["gunicorn", "-w 4", "main:app"]

@@ -102,9 +102,9 @@ my_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(league, my_team, fanta
 opp_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(league, opponent_team, fantasy_projections, week)
 
 roster_changes = []
-#roster_changes.append(roster_change_optimizer.RosterChange(3982,6390, np.datetime64('2020-01-10')))
-#roster_changes.append(roster_change_optimizer.RosterChange(4693,4969, np.datetime64('2020-01-12')))
-#roster_changes.append(roster_change_optimizer.RosterChange(6750,5346, np.datetime64('2020-01-10')))
+roster_changes.append(roster_change_optimizer.RosterChange(4693,6386, np.datetime64('2020-01-09')))
+roster_changes.append(roster_change_optimizer.RosterChange(6750,6448, np.datetime64('2020-01-12')))
+roster_changes.append(roster_change_optimizer.RosterChange(3982,5573, np.datetime64('2020-01-09')))
 # roster_changes.append(roster_change_optimizer.RosterChange(5697,5626, np.datetime64('2019-12-11')))
 roster_change_set = roster_change_optimizer.RosterChangeSet(roster_changes)
 
