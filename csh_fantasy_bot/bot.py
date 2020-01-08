@@ -338,12 +338,8 @@ class ManagerBot:
 
             my_roster = my_roster.merge(nhl_teams, left_on='editorial_team_abbr', right_on='abbrev')
             my_roster.rename(columns={'id': 'team_id'}, inplace=True)
-            # self.ppool.rename(columns={'Name': 'name'}, inplace=True)
             self.nhl_players = self.nhl_scraper.players()
-
             players = self.pred_bldr.predict(my_roster)
-
-            #start_week,end_week = self.lg.week_date_range(self.lg.current_week())
             # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
             ids_no_stats = list(players.query('on_my_team == 1 & G != G & position_type == "P" & status != "IR" ').player_id.values)
             the_stats = self.lg.player_stats(ids_no_stats,'season')
@@ -352,11 +348,6 @@ class ManagerBot:
                 # a_player = players[players.player_id == player_w_stats['player_id']]
                 for stat in stats_to_track:
                     if player_w_stats['GP'] > 0:
-                        #  hack for now because yahoo returns FW but rest of code uses FOW
-                        # if stat != 'FOW':
-                        #     # a_player[stat] = player_w_stats[stat] / player_w_stats['GP']
-                        #     players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[stat] / player_w_stats['GP']
-                        # else:
                         players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[stat] / player_w_stats['GP']
             self.ppool = players
 

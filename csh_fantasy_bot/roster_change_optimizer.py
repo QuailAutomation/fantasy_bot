@@ -220,7 +220,7 @@ class GeneticAlgorithm:
         assert (False, 'Did not find roster changes for team')
 
     def _init_population(self):
-        max_lineups = 5000
+        max_lineups = 1000
         self.population = []
         self.last_mutated_roster_change = None
         selector = self._gen_player_selector(gen_type='pct_own')

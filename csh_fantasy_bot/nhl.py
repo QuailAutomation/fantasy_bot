@@ -7,7 +7,7 @@ from nhl_scraper.rotowire import Scraper as RWScraper
 from yahoo_fantasy_api import League, Team
 
 player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
-stats_weights = [2, 1.75, .5, .5, .5, .2, .5]
+stats_weights = [2, 1.75, .5, .5, .5, .3, .5]
 roster_makeup = "C,C,LW,LW,RW,RW,D,D,D,D".split(",")
 
 
@@ -73,14 +73,18 @@ class BestRankedPlayerScorer:
         self.roster_builder = Roster()
         self.cached_actual_results = {}
         self.starting_goalies_df = RWScraper().starting_goalies()
+        self.excel_writer = None
+
+    def register_excel_writer(self,writer):
+        self.excel_writer = writer
 
     def score(self, roster_change_set=None, results_printer=None):
         roster_df = self.team_roster
         today = datetime.date.today()
         try:
             roster_with_projections = self.player_projections[self.player_projections['name'].isin(roster_df['name'])]
-            roster_with_projections.set_index('name', inplace=True)
-            roster_with_projections.sort_index(inplace=True)
+            # roster_with_projections.set_index('name', inplace=True)
+            # roster_with_projections.sort_index(inplace=True)
         except TypeError as e:
             print(e)
         roster_with_projections['GamesInLineup'] = int(0)
@@ -130,20 +134,21 @@ class BestRankedPlayerScorer:
                     BestRankedPlayerScorer.nhl_schedule[single_date.strftime("%Y-%m-%d")])
                 todays_projections = todays_projections[todays_projections.GAMEPLAYED == 1]
                 # goalies are trickier.  let's check rotowire to see if they are expected to play
+                # try:
+                #     todays_goalies = self.starting_goalies_df[self.starting_goalies_df['date'] == single_date]
+                #     todays_projections = todays_projections.merge(todays_goalies[['starting_status']], left_index=True,
+                #                                                   right_on='name',
+                #                                                   how='left')
+                #     todays_projections = todays_projections[(todays_projections['position_type'] != 'G') | (
+                #             (todays_projections['starting_status'] == 'Confirmed') | (
+                #             todays_projections['starting_status'] == 'Expected'))]
+                #     # todays_projections.rename(columns = {'goalie_name':'name'}, inplace = True)
+                #     todays_projections.reset_index(drop=True, inplace=True)
+                # except KeyError:
+                #     pass
                 try:
-                    todays_goalies = self.starting_goalies_df[self.starting_goalies_df['date'] == single_date]
-                    todays_projections = todays_projections.merge(todays_goalies[['starting_status']], left_index=True,
-                                                                  right_on='goalie_name',
-                                                                  how='left')
-                    todays_projections = todays_projections[(todays_projections['position_type'] != 'G') | (
-                            (todays_projections['starting_status'] == 'Confirmed') | (
-                            todays_projections['starting_status'] == 'Expected'))]
-                    todays_projections.rename(columns = {'goalie_name':'name'}, inplace = True)
-                    todays_projections.reset_index(drop=True, inplace=True)
-                    # todays_projections.set_index('player_id',inplace=True)
-                except KeyError:
-                    pass
-                try:
+                    # let's check to see if G is nan, if so, load season stats for those players from yahoo
+                    # for a backup projection
                     todays_projections[
                         'fpts'] = todays_projections.G * stats_weights[0] + todays_projections.A * stats_weights[1] + \
                                   todays_projections['+/-'] * stats_weights[2] + todays_projections.PIM * stats_weights[
@@ -156,18 +161,17 @@ class BestRankedPlayerScorer:
 
                 roster_results, the_roster = self.roster_builder.daily_results(todays_projections)
 
-                for pos in the_roster.values():
-                    for player in pos['players']:
-                        roster_player_id_list.append(player['player_id'])
+            if len(roster_results) > 0:
+                # if self.excel_writer is not None:
+                #     roster_results.to_excel(self.excel_writer, single_date.strftime("%Y-%m-%d"))
+                roster_with_projections.loc[
+                    roster_with_projections['player_id'].isin(roster_results['player_id'].tolist()), 'GamesInLineup'] += 1
 
-            roster_with_projections.loc[
-                roster_with_projections['player_id'].isin(roster_player_id_list), 'GamesInLineup'] += 1
-
-            # self.logger.debug("roster:\n %s", roster_with_projections.head(20))
-            if projected_week_results is None:
-                projected_week_results = roster_results
-            else:
-                projected_week_results = projected_week_results.append(roster_results, ignore_index=True)
+                # self.logger.debug("roster:\n %s", roster_with_projections.head(20))
+                if projected_week_results is None:
+                    projected_week_results = roster_results
+                else:
+                    projected_week_results = projected_week_results.append(roster_results, ignore_index=True)
 
         return projected_week_results
 
@@ -261,13 +265,24 @@ class Roster:
             except ValueError as e:
                 print(e)
         results = dict.fromkeys(player_stats, 0)
-        for key in self.roster:
-            # print("Position: {}".format(key))
-            for player in self.roster[key]['players']:
-                for idx, stat_code in enumerate(player_stats):
-                    results[stat_code] += player[player_stats[idx]]
+        roster = self.roster
+        day_roster  = []
+        for key in roster.keys():
+            for player in roster[key]['players']:
+                player['position'] = key
+                day_roster.append(player)
 
-        return pd.DataFrame([results], columns=player_stats), self.roster
+        day_df = pd.DataFrame(day_roster)
+        # day_df.reset_index()
+        # for key in self.roster:
+        #     # print("Position: {}".format(key))
+        #     for player in self.roster[key]['players']:
+        #         for idx, stat_code in enumerate(player_stats):
+        #             results[stat_code] += player[player_stats[idx]]
+        if len(day_df) > 0:
+            return day_df[player_stats + ['name','player_id','position']], self.roster
+        else:
+            return pd.DataFrame(), self.roster
 
     def _print_roster(self):
         pass

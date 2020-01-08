@@ -10,3 +10,4 @@ yahoo_oauth
 unidecode
 progressbar
 npyscreen
+openpyxl

@@ -1,14 +1,5 @@
-from selenium import webdriver
-from bs4 import BeautifulSoup
-import time
-import pandas as pd
-from nhl_scraper.nhl import Scraper
-
-
-#url = 'https://www.fantasysp.com/projections/hockey/daily/'
-
 #!/usr/bin/python
-
+#url = 'https://www.fantasysp.com/projections/hockey/daily/'
 """
 A script that scrapes projections from ESPNs and outputs them to csv format.
 It produces two files:
@@ -19,7 +10,7 @@ from selenium import webdriver
 from bs4 import BeautifulSoup
 import time
 import pandas as pd
-
+from nhl_scraper.nhl import Scraper
 html_file_location = ".cache/"
 
 
@@ -44,15 +35,15 @@ class ProjectionScraper:
                 with open(fn.format(html_file_location, position_scraped), "w") as f:
                     soup = BeautifulSoup(driver.page_source, "lxml")
                     f.write(soup.prettify())
-                    file_names.append(fn.format(position_scraped))
+                    # file_names.append(fn.format(position_scraped))
         finally:
             driver.close()
 
-        return file_names
+        return None
 
 
 class Parser:
-
+    goalie_headings = ["GAA", "WIN%", "SHO%"]
     def __init__(self, positions=None):
         # which positions to scrape from fantasysp
         if positions is not None:
@@ -62,7 +53,7 @@ class Parser:
 
 
 
-        goalie_headings = ["GAA", "WIN%","SHO%"]
+
         player_headings = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW"]
         headings = ["Name", "Tm", "Pos", "GAMES"]
         df = pd.DataFrame(data=[], columns=headings)
@@ -111,7 +102,7 @@ class Parser:
                         so_per_game = float(row.find("td", {"class": "proj-so"}).text.strip()) / num_games
                         df = df.append(pd.DataFrame(
                             data=[[name, tm, pos, num_games, gaa, win_per_game, so_per_game]],
-                            columns= headings + goalie_headings, index=[i + index_offset]))
+                            columns= headings + Parser.goalie_headings, index=[i + index_offset]))
                 stats = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW"]
                 # compute per game stats
                 # for stat in stats:
@@ -146,15 +137,11 @@ class Parser:
         # all of the players not in roster_cont by doing a join of the two
         # data frames.  This also has the affect of attaching eligible
         # positions and Yahoo! player ID from the input player pool.
-        # my_roster = pd.DataFrame(roster_cont.get_roster())
-        # df = my_roster.merge(self.ppool, left_on='name',right_on='name', how="left")
         self.nhl_scraper = Scraper()
 
         if 'team_id' not in my_roster.columns:
             # we must map in teams
             self._fix_yahoo_team_abbr(my_roster)
-
-
             nhl_teams = self.nhl_scraper.teams()
             nhl_teams.set_index("id")
             nhl_teams.rename(columns={'name': 'team_name'}, inplace=True)
@@ -162,26 +149,12 @@ class Parser:
             my_roster = my_roster.merge(nhl_teams, left_on='editorial_team_abbr', right_on='abbrev')
             my_roster.rename(columns={'id': 'team_id'}, inplace=True)
 
-        df = pd.merge(my_roster, self.ppool[["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW",'name']], on='name', how='left')
+        df = pd.merge(my_roster, self.ppool[["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW",'name'] + Parser.goalie_headings], on='name', how='left')
         df.rename(columns={'FOW': 'FW'}, inplace=True)
         try:
             df.rename(columns={'team_id_x': 'team_id'}, inplace=True)
         except KeyError:
             pass
-
-        # Then we'll figure out the number of games each player is playing
-        # this week.  To do this, we'll verify the team each player players
-        # for then using the game count added as a column.
-        # team_ids = []
-        # wk_g = []
-        # for plyr_series in df.iterrows():
-        #     plyr = plyr_series[1]
-        #     (team_id, g) = self._find_players_schedule(plyr['name'])
-        #     team_ids.append(team_id)
-        #     wk_g.append(g)
-        # df['team_id'] = team_ids
-        # df['WK_G'] = wk_g
-
         return df
 
     def parse(self):
@@ -197,32 +170,6 @@ class Parser:
                              'Was': 'WSH', 'Cls': 'CBJ', 'Col': 'COL', 'Car': 'CAR', 'Buf': 'BUF', 'Cgy': 'CGY',
                              'Phi': 'PHI'}
         df["editorial_team_abbr"].replace(nhl_team_mappings, inplace=True)
-
-    def _get_yahoo_predicted_stats(self, players):
-        # if there are stats missing, let's load player stats from yahoo
-
-
-        # let's double check for players on roster who don't have current projections.  We will create our own by using this season's stats
-        ids_no_stats = list(
-            players.query('G != G & position_type == "P" & status != "IR"').player_id.values)
-        the_stats = self.lg.player_stats(ids_no_stats, 'season')
-        stats_to_track = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW"]
-        for player_w_stats in the_stats:
-            # a_player = players[players.player_id == player_w_stats['player_id']]
-            for stat in stats_to_track:
-                if player_w_stats['GP'] > 0:
-                    #  hack for now because yahoo returns FW but rest of code uses FOW
-                    # if stat != 'FOW':
-                    #     # a_player[stat] = player_w_stats[stat] / player_w_stats['GP']
-                    #     players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[
-                    #                                                                                    stat] / \
-                    #                                                                                player_w_stats['GP']
-                    # else:
-                    players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[
-                                                                                                       'FW'] / \
-                                                                                                   player_w_stats['GP']
-        return players
-
 
 
 def init_prediction_builder(lg, cfg):
