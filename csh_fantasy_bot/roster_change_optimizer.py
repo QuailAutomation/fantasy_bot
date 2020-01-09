@@ -163,7 +163,7 @@ class GeneticAlgorithm:
 
             except IndexError as e:
                 print(e)
-                print("Id out out player was: ".format(change.player_out))
+                print("Id out out player was: {}".format(change.player_out))
 
     def _generate_droppable_players(self):
         waivers_ids = [e["player_id"] for e in self.waivers] + self.locked_ids

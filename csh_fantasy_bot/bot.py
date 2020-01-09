@@ -390,7 +390,7 @@ class ManagerBot:
             self.logger.info("All lineups fetched.")
             return lineups
 
-        return self.lg_cache.load_league_lineup(datetime.timedelta(days=5),
+        return self.lg_cache.load_league_lineup(datetime.timedelta(hours=1),
                                                 loader)
 
     def invalidate_free_agents(self, plyrs):
