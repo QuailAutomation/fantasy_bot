@@ -22,7 +22,7 @@ def do_cprofile(func):
 
 
 
-@do_cprofile
+#@do_cprofile
 def do_run():
     driver = automation.Driver()
     driver.run()
