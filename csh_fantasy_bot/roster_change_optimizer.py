@@ -169,7 +169,7 @@ class GeneticAlgorithm:
         waivers_ids = [e["player_id"] for e in self.waivers] + self.locked_ids
         droppable_players = []
         for plyer in self.my_team.roster():
-            if plyer['player_id'] not in waivers_ids and plyer['status' != 'O']:
+            if plyer['player_id'] not in waivers_ids:
                 droppable_players.append(plyer['player_id'])
         return droppable_players
 
