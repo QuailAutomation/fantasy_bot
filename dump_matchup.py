@@ -98,23 +98,24 @@ free_agents = lg_cache.load_free_agents(expiry, loader)
 my_roster =  my_team.roster(day=start_week)
 opponent_roster = opponent_team.roster(day=start_week)
 fantasy_projections = fantasysp_p.predict(pd.DataFrame(free_agents + my_roster + opponent_roster))
-excel_writer = ExcelWriter("scores.xlsx")
+# excel_writer = ExcelWriter("scores.xlsx")
 my_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(league, my_team, fantasy_projections, week)
-my_scorer.register_excel_writer(excel_writer)
+# my_scorer.register_excel_writer(excel_writer)
 opp_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(league, opponent_team, fantasy_projections, week)
 
 roster_changes = []
-roster_changes.append(roster_change_optimizer.RosterChange(3652,5573, np.datetime64('2020-01-12')))
-roster_changes.append(roster_change_optimizer.RosterChange(6750,6448, np.datetime64('2020-01-12')))
+#roster_changes.append(roster_change_optimizer.RosterChange(3652,5573, np.datetime64('2020-01-12')))
+#roster_changes.append(roster_change_optimizer.RosterChange(6750,6448, np.datetime64('2020-01-12')))
 # roster_changes.append(roster_change_optimizer.RosterChange(3982,5573, np.datetime64('2020-01-09')))
 # roster_changes.append(roster_change_optimizer.RosterChange(5697,5626, np.datetime64('2019-12-11')))
 roster_change_set = roster_change_optimizer.RosterChangeSet(roster_changes)
 
 # projected_my_score = my_scorer.score()
 projected_my_score = my_scorer.score(roster_change_set)
+projected_my_score.to_csv("myscore.csv")
 opponent_score = opp_scorer.score()
-
-excel_writer.save()
+opponent_score.to_csv("opponent.csv")
+# excel_writer.save()
 
 def comp(x):
     if x == 0:
@@ -143,7 +144,7 @@ else:
 
 print_scoring_results(projected_my_score.sum(),'My Team')
 print_scoring_results(opponent_score.sum(),'Opponent Team')
-print_scoring_results(projected_my_score.sum().subtract(opponent_score.sum()),"Diff")
+print_scoring_results(projected_my_score[stats].sum().subtract(opponent_score[stats].sum()),"Diff")
 
 
 def save_xls(list_dfs, xls_path):

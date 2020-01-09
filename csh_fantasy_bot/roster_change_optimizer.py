@@ -14,6 +14,22 @@ from yahoo_fantasy_api import Team
 from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 
 
+import cProfile, pstats, io
+
+
+def profile(fnc):
+    """A decorator that uses cProfile to profile a function"""
+
+    def inner(*args, **kwargs):
+        pr = cProfile.Profile()
+        pr.enable()
+        retval = fnc(*args, **kwargs)
+        pr.disable()
+        s = io.StringIO()
+        sortby = 'cumulative'
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+
 def optimize_with_genetic_algorithm(score_comparer, roster_bldr,
                                     avail_plyrs, locked_plyrs):
     """
@@ -23,7 +39,7 @@ def optimize_with_genetic_algorithm(score_comparer, roster_bldr,
     """
     algo = GeneticAlgorithm(score_comparer, roster_bldr, avail_plyrs,
                             locked_plyrs)
-    generations = 1000
+    generations = 100
     return algo.run(generations)
 
 
@@ -119,7 +135,14 @@ class GeneticAlgorithm:
                 print("Summary:\n{}".format(best.scoring_summary.head(20)))
             self._update_progress(generation)
             self._mate()
+            # pr = cProfile.Profile()
+            # pr.enable()
             self._mutate()
+            # pr.disable()
+            # s = io.StringIO()
+            # sortby = 'cumulative'
+            # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+            # ps.print_stats()
             # should sort population
             self.population = sorted(self.population, key=lambda e: e.score, reverse=True)
         self.logger.info(
@@ -220,7 +243,7 @@ class GeneticAlgorithm:
         assert (False, 'Did not find roster changes for team')
 
     def _init_population(self):
-        max_lineups = 1000
+        max_lineups = 430
         self.population = []
         self.last_mutated_roster_change = None
         selector = self._gen_player_selector(gen_type='pct_own')
@@ -666,6 +689,7 @@ class GeneticAlgorithm:
             # print("Implement adding new roster change to set: {}, index: {}".format(random_number, index) )
             pass
         self._set_scores([lineup])
+
 
     def _mutate(self):
         """

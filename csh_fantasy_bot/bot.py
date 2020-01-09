@@ -40,7 +40,6 @@ class ScoreComparer:
                 self.stat_cats.append(stat['display_name'])
         self.stdevs = self._compute_agg(lg_lineups, 'std')
 
-
     def set_opponent(self, opp_sum):
         """
         Set the stat category totals for the opponent
@@ -349,7 +348,8 @@ class ManagerBot:
                 for stat in stats_to_track:
                     if player_w_stats['GP'] > 0:
                         players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[stat] / player_w_stats['GP']
-            self.ppool = players
+
+            self.ppool = players.query('~(G != G & position_type == "P" )')
 
     def fetch_waivers(self):
         def loader():
