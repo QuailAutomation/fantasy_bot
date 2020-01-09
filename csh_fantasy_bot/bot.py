@@ -543,7 +543,6 @@ class ManagerBot:
         for plyr in self.lineup +self.bench + self.injury_reserve:
             if plyr['percent_owned'] >= thres or plyr['status'] == 'IR':
                 locked_plyrs.append(plyr)
-        locked_plyrs.append(5753)
         # self._print_roster_change_set([])
 
         best_lineup = optimizer_func(self.score_comparer,

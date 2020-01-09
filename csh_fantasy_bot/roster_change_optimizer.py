@@ -367,7 +367,8 @@ class GeneticAlgorithm:
                 # let's pick someone to remove
                 while True:
                     player_to_remove = random.choice(self.droppable_players)
-                    if 'G' not in self.ppool[self.ppool.player_id == player_to_remove].position_type.values:
+                    valid_positions = self.ppool[self.ppool.player_id == player_to_remove].position_type.values
+                    if valid_positions is not None and 'G' not in valid_positions:
                         break
                 if last_roster_change_set.can_drop_player(player_to_remove):
                     # create a roster change
