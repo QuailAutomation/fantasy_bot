@@ -149,12 +149,9 @@ class Parser:
             my_roster = my_roster.merge(nhl_teams, left_on='editorial_team_abbr', right_on='abbrev')
             my_roster.rename(columns={'id': 'team_id'}, inplace=True)
 
-        df = pd.merge(my_roster, self.ppool[["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW",'name'] + Parser.goalie_headings], on='name', how='left')
+        df = pd.merge(my_roster, self.ppool[["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW",'name', 'Tm'] + Parser.goalie_headings], left_on=['name','abbrev'], right_on=['name', 'Tm'], how='left')
         df.rename(columns={'FOW': 'FW'}, inplace=True)
-        try:
-            df.rename(columns={'team_id_x': 'team_id'}, inplace=True)
-        except KeyError:
-            pass
+        df.set_index('player_id',inplace=True)
         return df
 
     def parse(self):

@@ -154,8 +154,8 @@ class GeneticAlgorithm:
         print("Score: {}".format(roster_changes.score))
         for change in roster_changes:
             try:
-                player_out_name = self.ppool[self.ppool.player_id == change.player_out].name.values[0]
-                player_in_name = self.ppool[self.ppool.player_id == change.player_in].name.values[0]
+                player_out_name = self.ppool.loc[change.player_out,'name']
+                player_in_name = self.ppool.loc[change.player_in,'name']
                 roster_move_date = change.change_date
                 print("Date: {} - Drop: {} ({})- Add: {} ({})".format(roster_move_date, player_out_name,
                                                                       change.player_out, player_in_name,
@@ -169,7 +169,7 @@ class GeneticAlgorithm:
         waivers_ids = [e["player_id"] for e in self.waivers] + self.locked_ids
         droppable_players = []
         for plyer in self.my_team.roster():
-            if plyer['player_id'] not in waivers_ids:
+            if plyer['player_id'] not in waivers_ids and plyer['position_type'] != 'G':
                 droppable_players.append(plyer['player_id'])
         return droppable_players
 
@@ -243,7 +243,7 @@ class GeneticAlgorithm:
         assert (False, 'Did not find roster changes for team')
 
     def _init_population(self):
-        max_lineups = 64
+        max_lineups = 2000
         self.population = []
         self.last_mutated_roster_change = None
         selector = self._gen_player_selector(gen_type='pct_own')
@@ -286,7 +286,7 @@ class GeneticAlgorithm:
             'random' will generate totally random lineups.
         :return: built PlayerSelector
         """
-        selector = roster.PlayerSelector(self.ppool)
+        selector = roster.PlayerSelector(self.ppool.copy().reset_index())
         if gen_type == 'pct_own':
             selector.set_descending_categories([])
             selector.rank(['percent_owned'])
@@ -367,7 +367,7 @@ class GeneticAlgorithm:
                 # let's pick someone to remove
                 while True:
                     player_to_remove = random.choice(self.droppable_players)
-                    valid_positions = self.ppool[self.ppool.player_id == player_to_remove].position_type.values
+                    valid_positions = self.ppool.at[player_to_remove,'position_type']
                     if valid_positions is not None and 'G' not in valid_positions:
                         break
                 if last_roster_change_set.can_drop_player(player_to_remove):

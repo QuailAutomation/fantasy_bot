@@ -47,7 +47,7 @@ def lookup_player(player_name):
 
 
 def lookup_player_id(player_id):
-    return "craig: {}".format(fantasy_projections[fantasy_projections.player_id == player_id])
+    return "craig: {}".format(fantasy_projections.loc[player_id])
 
 
 print ("This utility can look up free agents or members of my team by string(name contains) or id")

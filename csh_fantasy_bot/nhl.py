@@ -67,6 +67,7 @@ class BestRankedPlayerScorer:
         self.league = league
         self.team = team
         self.team_roster = pd.DataFrame(self.team.roster())
+        self.team_roster.set_index('player_id',inplace=True)
         self.player_projections = player_projections
         self.nhl_scraper: Scraper = Scraper()
         self.date_range = date_range
@@ -82,7 +83,7 @@ class BestRankedPlayerScorer:
         roster_df = self.team_roster
         today = datetime.date.today()
         try:
-            roster_with_projections = self.player_projections[self.player_projections['name'].isin(roster_df['name'])]
+            roster_with_projections = self.player_projections.loc[roster_df.index,:]
         except TypeError as e:
             print(e)
         roster_with_projections['GamesInLineup'] = int(0)
@@ -94,11 +95,10 @@ class BestRankedPlayerScorer:
                 for roster_change in roster_change_set:
                     if roster_change.change_date == single_date:
                         roster_with_projections = roster_with_projections.append(
-                            self.player_projections[self.player_projections.player_id == roster_change.player_in])
-                        roster_with_projections.loc[
-                            roster_with_projections['player_id'].isin([roster_change.player_in]), 'GamesInLineup'] = 0
-                        roster_with_projections = roster_with_projections[
-                            roster_with_projections.player_id != roster_change.player_out]
+                            self.player_projections.loc[roster_change.player_in, :])
+                        roster_with_projections.loc[roster_change.player_in]['GamesInLineup'] = 0
+
+                        roster_with_projections.drop(roster_change.player_out,inplace=True)
 
             roster_results = None
             the_roster = None
@@ -111,19 +111,22 @@ class BestRankedPlayerScorer:
                     opp_daily_roster = pd.DataFrame(the_roster)
                     lineup = opp_daily_roster.query('selected_position != "BN" & selected_position != "G"')
                     stats = self.league.player_stats(lineup.player_id.tolist(), "date", date=single_date)
-                    daily_stats = pd.DataFrame(stats)
+                    daily_stats = pd.DataFrame(stats).loc[:,['player_id'] + player_stats]
+                    daily_stats.replace('-', np.nan, inplace=True)
+                    daily_stats.set_index('player_id',inplace=True)
                     # TODO would be ideal to drop non stat tracked stats, though must keep player id, team, etc
                     # maybe this should be done over in compare, only compare stats we care about in league
-                    daily_stats.drop(columns=['GP','PTS','PPG','PPA','PPP','GWG','GP','position_type'], inplace=True)
-                    daily_stats.replace('-', np.nan,inplace=True)
+
+                    # daily_stats.drop(columns=['GP','PTS','PPG','PPA','PPP','GWG','GP','position_type'], inplace=True)
+
                     # daily_stats.rename(columns={'FW': 'FOW'}, inplace=True)
-                    self.cached_actual_results[single_date] = daily_stats[~daily_stats.G.isnull()]
+                    self.cached_actual_results[single_date] = daily_stats.loc[~daily_stats.G.isnull(),:]
                 roster_results = self.cached_actual_results[single_date]
-                roster_player_id_list = self.cached_actual_results[single_date].player_id.tolist()
+                roster_player_id_list = self.cached_actual_results[single_date].index.tolist()
             else:
                 # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
                 ids_no_stats = list(
-                    roster_with_projections.query('G != G & position_type == "P" & status != "IR" ').player_id.values)
+                    roster_with_projections.query('G != G & position_type == "P" & status != "IR" ').index.values)
                 if len(ids_no_stats) > 0:
                     print("loading {} player's info because projections missing({})".format(len(ids_no_stats),ids_no_stats))
                     the_stats = self.league.player_stats(ids_no_stats, 'season')
@@ -132,16 +135,16 @@ class BestRankedPlayerScorer:
                         # a_player = players[players.player_id == player_w_stats['player_id']]
                         for stat in stats_to_track:
                             if player_w_stats['GP'] > 0:
-                                self.player_projections.loc[self.player_projections['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[
+                                self.player_projections.loc[player_w_stats['player_id'], stat] = player_w_stats[
                                                                                                                stat] / \
                                                                                                            player_w_stats[
                                                                                                                'GP']
-                                roster_with_projections.loc[roster_with_projections['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[
+                                roster_with_projections.loc[player_w_stats['player_id'], stat] = player_w_stats[
                                                                                                                stat] / \
                                                                                                            player_w_stats[
                                                                                                                'GP']
 
-                todays_projections = roster_with_projections.copy()
+                todays_projections = roster_with_projections.loc[:,['team_id','eligible_positions'] + player_stats].copy()
                 # compute expected output for all players on roster, maximize score
                 if single_date.strftime("%Y-%m-%d") not in BestRankedPlayerScorer.nhl_schedule:
                     BestRankedPlayerScorer.nhl_schedule[
@@ -182,14 +185,12 @@ class BestRankedPlayerScorer:
             if len(roster_results) > 0:
                 # if self.excel_writer is not None:
                 #     roster_results.to_excel(self.excel_writer, single_date.strftime("%Y-%m-%d"))
-                roster_with_projections.loc[
-                    roster_with_projections['player_id'].isin(roster_results['player_id'].tolist()), 'GamesInLineup'] += 1
                 roster_results['play_date'] = single_date
                 # self.logger.debug("roster:\n %s", roster_with_projections.head(20))
                 if projected_week_results is None:
                     projected_week_results = roster_results
                 else:
-                    projected_week_results = projected_week_results.append(roster_results, ignore_index=True)
+                    projected_week_results = projected_week_results.append(roster_results)
         return projected_week_results
 
     def _score_day(self, day):
@@ -297,7 +298,7 @@ class Roster:
         #         for idx, stat_code in enumerate(player_stats):
         #             results[stat_code] += player[player_stats[idx]]
         if len(day_df) > 0:
-            return day_df[player_stats + ['name','player_id','position']], self.roster
+            return day_df.loc[:,player_stats], self.roster
         else:
             return pd.DataFrame(), self.roster
 

@@ -316,6 +316,8 @@ class PlayerSelector:
         for stat in stat_categories:
             self.ppool['rank'] += self.ppool[stat].rank(
                     ascending=self._is_stat_ascending(stat))
+        self.ppool.sort_values(by=['rank'], ascending=False,inplace=True)
+        pass
 
     def shuffle(self):
         """
@@ -329,8 +331,8 @@ class PlayerSelector:
         This is to be called after rank().  It will return the players starting
         with the top ranked player.
         """
-        df = self.ppool.sort_values(by=['rank'], ascending=False)
-        for plyr_tuple in df.iterrows():
+
+        for plyr_tuple in self.ppool.iterrows():
             yield plyr_tuple[1]
 
     def _is_stat_ascending(self, stat):

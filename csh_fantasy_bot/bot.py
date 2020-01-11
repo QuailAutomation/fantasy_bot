@@ -143,7 +143,7 @@ class ManagerBot:
         self.logger.debug("Loading Lineups")
         self.load_lineup()
      #   self.load_bench()
-        self.pick_injury_reserve()
+     #    self.pick_injury_reserve()
         self.logger.debug("auto pick opponent")
         self.auto_pick_opponent()
 
@@ -289,7 +289,7 @@ class ManagerBot:
         # start_week,end_week = self.lg.week_date_range(self.lg.current_week())
         # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
         ids_no_stats = list(
-            players.query('G != G & position_type == "P" & status != "IR"').player_id.values)
+            players.query('G != G & position_type == "P" & status != "IR"').index.values)
         the_stats = self.lg.player_stats(ids_no_stats, 'season')
         stats_to_track = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FW"]
         for player_w_stats in the_stats:
@@ -303,7 +303,7 @@ class ManagerBot:
                     #                                                                                    stat] / \
                     #                                                                                player_w_stats['GP']
                     # else:
-                    players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[
+                    players.loc[player_w_stats['player_id'], [stat]] = player_w_stats[
                                                                                                        stat] / \
                                                                                                    player_w_stats['GP']
         return players
@@ -340,14 +340,14 @@ class ManagerBot:
             self.nhl_players = self.nhl_scraper.players()
             players = self.pred_bldr.predict(my_roster)
             # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
-            ids_no_stats = list(players.query('on_my_team == 1 & G != G & position_type == "P" & status != "IR" ').player_id.values)
+            ids_no_stats = list(players.query('on_my_team == 1 & G != G & position_type == "P" & status != "IR" ').index.values)
             the_stats = self.lg.player_stats(ids_no_stats,'season')
             stats_to_track = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FW"]
             for player_w_stats in the_stats:
                 # a_player = players[players.player_id == player_w_stats['player_id']]
                 for stat in stats_to_track:
                     if player_w_stats['GP'] > 0:
-                        players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[stat] / player_w_stats['GP']
+                        players.loc[player_w_stats['player_id'], [stat]] = player_w_stats[stat] / player_w_stats['GP']
 
             self.ppool = players.query('~(G != G & position_type == "P" )')
             pass
@@ -506,14 +506,14 @@ class ManagerBot:
         ir_ids = [e['player_id'] for e in yahoo_roster
                   if (e['selected_position'] == 'DL' or
                       e['selected_position'] == 'IR')]
-        sel_plyrs = self.ppool[self.ppool['player_id'].isin(roster_ids)]
+        sel_plyrs = self.ppool.loc[roster_ids,:]
         lineup = []
         bench = []
         ir = []
         for plyr in sel_plyrs.iterrows():
-            if plyr[1]['player_id'] in bench_ids:
+            if plyr[0] in bench_ids:
                 bench.append(plyr[1])
-            elif plyr[1]['player_id'] in ir_ids:
+            elif plyr[0] in ir_ids:
                 ir.append(plyr[1])
             else:
                 lineup.append(plyr[1])
@@ -540,7 +540,7 @@ class ManagerBot:
 
         locked_plyrs = []
         thres = 95
-        for plyr in self.lineup +self.bench + self.injury_reserve:
+        for plyr in self.fetch_cur_lineup():
             if plyr['percent_owned'] >= thres or plyr['status'] == 'IR':
                 locked_plyrs.append(plyr)
         # self._print_roster_change_set([])
@@ -558,12 +558,12 @@ class ManagerBot:
         print("Suggestions for roster changes")
         for change in roster_changes:
             try:
-                player_out_name = self.ppool[self.ppool.player_id == change.player_out].name.values[0]
-                player_in_name = self.ppool[self.ppool.player_id == change.player_in].name.values[0]
+                player_out_name = self.ppool.loc[change.player_out,'name']
+                player_in_name = self.ppool.loc[change.player_in,'name']
                 roster_move_date = change.change_date
                 print ("Date: {} - Drop: {} - Add: {}".format(roster_move_date,player_out_name,player_in_name))
                 print ("Score: {}",roster_changes.score)
-            except IndexError as e :
+            except KeyError as e :
                 print(e)
         print("Projected scores for original: ")
         my_score :BestRankedPlayerScorer = BestRankedPlayerScorer(self.lg,self.tm, self.ppool, self.week)
