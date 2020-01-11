@@ -641,7 +641,7 @@ class GeneticAlgorithm:
         roster_change_to_mutate = lineup[roster_change_to_mutate_index]
         # lets mutate this change set
         random_number = random.randint(1, 100)
-        if random_number < 30:
+        if random_number < 30 and self.date_range_for_changes > 1:
             # lets mutate date
             while True:
                 drop_date = pd.np.random.choice(self.date_range_for_changes)
