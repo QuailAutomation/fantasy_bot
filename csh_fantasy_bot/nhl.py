@@ -86,7 +86,7 @@ class BestRankedPlayerScorer:
             roster_with_projections = self.player_projections.loc[roster_df.index,:]
         except TypeError as e:
             print(e)
-        roster_with_projections['GamesInLineup'] = int(0)
+        roster_with_projections.loc[:,'GamesInLineup'] = int(0)
         projected_week_results = None
         for single_date in self.date_range:
             # self.logger.debug("Date: %s", single_date)
@@ -96,7 +96,7 @@ class BestRankedPlayerScorer:
                     if roster_change.change_date == single_date:
                         roster_with_projections = roster_with_projections.append(
                             self.player_projections.loc[roster_change.player_in, :])
-                        roster_with_projections.loc[roster_change.player_in]['GamesInLineup'] = 0
+                        roster_with_projections.loc[roster_change.player_in,'GamesInLineup'] = 0
 
                         roster_with_projections.drop(roster_change.player_out,inplace=True)
 
@@ -185,7 +185,7 @@ class BestRankedPlayerScorer:
             if len(roster_results) > 0:
                 # if self.excel_writer is not None:
                 #     roster_results.to_excel(self.excel_writer, single_date.strftime("%Y-%m-%d"))
-                roster_results['play_date'] = single_date
+                roster_results.loc[:,'play_date'] = single_date
                 # self.logger.debug("roster:\n %s", roster_with_projections.head(20))
                 if projected_week_results is None:
                     projected_week_results = roster_results
