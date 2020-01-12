@@ -1,7 +1,7 @@
 import logging
 import pandas as pd
 from csh_fantasy_bot import automation
-import cProfile
+import cProfile, pstats, io
 
 logging.basicConfig(level=logging.INFO)
 pd.set_option('display.max_columns', 500)
@@ -17,12 +17,15 @@ def do_cprofile(func):
             profile.disable()
             return result
         finally:
-            profile.print_stats()
+            s = io.StringIO()
+            sortby = 'cumulative'
+            ps = pstats.Stats(profile, stream=s).sort_stats(sortby)
+            ps.print_stats()
     return profiled_func
 
 
 
-#@do_cprofile
+@do_cprofile
 def do_run():
     driver = automation.Driver()
     driver.run()

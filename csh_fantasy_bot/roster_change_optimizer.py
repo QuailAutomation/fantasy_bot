@@ -39,7 +39,7 @@ def optimize_with_genetic_algorithm(score_comparer, roster_bldr,
     """
     algo = GeneticAlgorithm(score_comparer, roster_bldr, avail_plyrs,
                             locked_plyrs)
-    generations = 1000
+    generations = 100
     return algo.run(generations)
 
 
@@ -107,7 +107,7 @@ class GeneticAlgorithm:
 
         self.my_scorer: BestRankedPlayerScorer = BestRankedPlayerScorer(self.league, self.my_team,
                                                                         self.ppool, self.date_range)
-        self.roster_changes_allowed = 4 - self._get_roster_adds_allowed()
+        self.roster_changes_allowed = 4 - self._get_num_roster_changes_made()
 
     def run(self, generations):
         """
@@ -221,7 +221,11 @@ class GeneticAlgorithm:
         for i, lineup in enumerate(self.population):
             self._log_lineup("Initial Population " + str(i), lineup)
 
-    def _get_roster_adds_allowed(self):
+    def _get_num_roster_changes_made(self):
+        # if the game week is in the future then we couldn't have already made changes
+        if datetime.date.today() < self.date_range[0]:
+            return 0
+
         def retrieve_attribute_from_team_info(team_info, attribute):
             for attr in team_info:
                 if attribute in attr:
@@ -240,10 +244,10 @@ class GeneticAlgorithm:
                                                               'roster_adds')['value'])
                 except TypeError as e:
                     pass
-        assert (False, 'Did not find roster changes for team')
+        assert False, 'Did not find roster changes for team'
 
     def _init_population(self):
-        max_lineups = 6000
+        max_lineups = 100
         self.population = []
         self.last_mutated_roster_change = None
         selector = self._gen_player_selector(gen_type='pct_own')
