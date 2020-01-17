@@ -16,8 +16,8 @@ from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 
 import cProfile, pstats, io
 
-max_lineups = 600
-generations = 100
+max_lineups = 6000
+generations = 1000
 
 def profile(fnc):
     """A decorator that uses cProfile to profile a function"""
