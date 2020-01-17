@@ -5,11 +5,14 @@ import logging
 from nhl_scraper.nhl import Scraper
 from nhl_scraper.rotowire import Scraper as RWScraper
 from yahoo_fantasy_api import League, Team
+from csh_fantasy_bot import roster
 
+import cProfile
 player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
 stats_weights = [2, 1.75, .5, .5, .5, .3, .5]
 roster_makeup = "C,C,LW,LW,RW,RW,D,D,D,D".split(",")
 
+roster_makeup_series = pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(",")).value_counts()
 
 class Scorer:
     """Class that scores rosters that it is given"""
@@ -78,6 +81,10 @@ class BestRankedPlayerScorer:
 
     def register_excel_writer(self,writer):
         self.excel_writer = writer
+
+    # def score(self, roster_change_set=None, results_printer=None):
+    #     cProfile.runctx('val = self._score()', globals(), locals(),sort='cumulative')
+    #     return locals()['val']
 
     def score(self, roster_change_set=None, results_printer=None):
         roster_df = self.team_roster
@@ -167,20 +174,23 @@ class BestRankedPlayerScorer:
                 #     todays_projections.reset_index(drop=True, inplace=True)
                 # except KeyError:
                 #     pass
-                try:
-                    # let's check to see if G is nan, if so, load season stats for those players from yahoo
-                    # for a backup projection
-                    todays_projections[
-                        'fpts'] = todays_projections.G * stats_weights[0] + todays_projections.A * stats_weights[1] + \
-                                  todays_projections['+/-'] * stats_weights[2] + todays_projections.PIM * stats_weights[
-                                      3] + todays_projections.SOG * stats_weights[4] + todays_projections.FW * \
-                                  stats_weights[5] + todays_projections.HIT * stats_weights[6]
-                except AttributeError as e:
-                    print(e)
-                todays_projections = todays_projections.sort_values(by=['fpts'], ascending=False)
-                self.logger.debug("Daily roster:\n %s", todays_projections.head(20))
-
-                roster_results, the_roster = self.roster_builder.daily_results(todays_projections)
+                # try:
+                #     # let's check to see if G is nan, if so, load season stats for those players from yahoo
+                #     # for a backup projection
+                #     todays_projections[
+                #         'fpts'] = todays_projections.G * stats_weights[0] + todays_projections.A * stats_weights[1] + \
+                #                   todays_projections['+/-'] * stats_weights[2] + todays_projections.PIM * stats_weights[
+                #                       3] + todays_projections.SOG * stats_weights[4] + todays_projections.FW * \
+                #                   stats_weights[5] + todays_projections.HIT * stats_weights[6]
+                # except AttributeError as e:
+                #     print(e)
+                # todays_projections = todays_projections.sort_values(by=['fpts'], ascending=False)
+                # self.logger.debug("Daily roster:\n %s", todays_projections.head(20))
+                builder = roster.DailyRosterBuilder()
+                best_roster = builder.find_best(todays_projections)
+                roster_results = todays_projections.loc[best_roster.values.astype(int).tolist(), player_stats]
+                pass
+                # roster_results = self.roster_builder.daily_results(todays_projections)
 
             if len(roster_results) > 0:
                 # if self.excel_writer is not None:
@@ -210,6 +220,7 @@ class Roster:
                        'RW': {'num': 2, 'players': []},
                        'D': {'num': 4, 'players': []},
                        'G': {'num': 2, 'players': []}}
+        self.full_positions = list()
 
     def _clear_roster(self):
         self.roster = {'C': {'num': 2, 'players': []},
@@ -217,6 +228,7 @@ class Roster:
                        'RW': {'num': 2, 'players': []},
                        'D': {'num': 4, 'players': []},
                        'G': {'num': 2, 'players': []}}
+        self.full_positions = list()
 
     # using roster makeup, maximize points
     def _add(self, position, player):
@@ -231,6 +243,8 @@ class Roster:
                         return position
                 except TypeError:
                     pass
+        # can we make room in any of the eligble positions
+
         return False
 
     def _place(self, row):
@@ -282,25 +296,21 @@ class Roster:
                         pass
             except ValueError as e:
                 print(e)
-        results = dict.fromkeys(player_stats, 0)
-        roster = self.roster
-        day_roster  = []
-        for key in roster.keys():
-            for player in roster[key]['players']:
-                player['position'] = key
-                day_roster.append(player)
-
-        day_df = pd.DataFrame(day_roster)
-        # day_df.reset_index()
-        # for key in self.roster:
-        #     # print("Position: {}".format(key))
-        #     for player in self.roster[key]['players']:
-        #         for idx, stat_code in enumerate(player_stats):
-        #             results[stat_code] += player[player_stats[idx]]
-        if len(day_df) > 0:
-            return day_df.loc[:,player_stats], self.roster
-        else:
-            return pd.DataFrame(), self.roster
+        # results = dict.fromkeys(player_stats, 0)
+        # roster = self.roster
+        # day_roster  = []
+        # for key in roster.keys():
+        #     for player in roster[key]['players']:
+        #         player['position'] = key
+        #         day_roster.append(player)
+        #
+        # day_df = pd.DataFrame(day_roster)
+        #
+        # if len(day_df) > 0:
+        #     return day_df.loc[:,player_stats], self.roster
+        # else:
+        #     return pd.DataFrame(), self.roster
+        return self.roster
 
     def _print_roster(self):
         pass

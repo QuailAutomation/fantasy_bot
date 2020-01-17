@@ -36,7 +36,7 @@ my_team: Team= league.to_team(league.team_key())
 tm_cache = utils.TeamCache(league.team_key())
 lg_cache = utils.LeagueCache()
 
-current_week = 14
+current_week = 15
 start_week,end_week = league.week_date_range(current_week)
 week = pd.date_range(start_week, end_week)
 opponent_id = my_team.matchup(current_week)
@@ -96,8 +96,10 @@ def loader():
 expiry = datetime.timedelta(minutes=6 * 60)
 free_agents = lg_cache.load_free_agents(expiry, loader)
 my_roster =  my_team.roster(day=start_week)
+
 opponent_roster = opponent_team.roster(day=start_week)
 fantasy_projections = fantasysp_p.predict(pd.DataFrame(free_agents + my_roster + opponent_roster))
+fantasy_projections.loc[[p['player_id'] for p in my_roster],:].to_csv('my-team-dump-latest.csv')
 # excel_writer = ExcelWriter("scores.xlsx")
 my_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(league, my_team, fantasy_projections, week)
 # my_scorer.register_excel_writer(excel_writer)

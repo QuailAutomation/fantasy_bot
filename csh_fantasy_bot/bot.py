@@ -61,7 +61,7 @@ class ScoreComparer:
         stddev_score = 0
         for (c_myname, c_myval), (c_opname, c_opval) in \
                 zip(score_sum.items(), self.opp_sum.items()):
-            assert(c_myname == c_opname, "c_myname ({}) did not match c_opname({})".format(c_myname,c_opname))
+            assert c_myname == c_opname, "c_myname ({}) did not match c_opname({})".format(c_myname,c_opname)
             if c_myname in self.stat_cats:
                 c_stdev = self.stdevs[c_myname].iloc(0)[0]
                 v = (c_myval - c_opval) / c_stdev

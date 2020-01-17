@@ -19,13 +19,13 @@ def do_cprofile(func):
         finally:
             s = io.StringIO()
             sortby = 'cumulative'
-            ps = pstats.Stats(profile, stream=s).sort_stats(sortby)
+            ps = pstats.Stats(profile).sort_stats(sortby)
             ps.print_stats()
     return profiled_func
 
 
 
-@do_cprofile
+#@do_cprofile
 def do_run():
     driver = automation.Driver()
     driver.run()

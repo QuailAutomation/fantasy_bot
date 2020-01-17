@@ -16,6 +16,8 @@ from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 
 import cProfile, pstats, io
 
+max_lineups = 600
+generations = 100
 
 def profile(fnc):
     """A decorator that uses cProfile to profile a function"""
@@ -39,7 +41,6 @@ def optimize_with_genetic_algorithm(score_comparer, roster_bldr,
     """
     algo = GeneticAlgorithm(score_comparer, roster_bldr, avail_plyrs,
                             locked_plyrs)
-    generations = 1000
     return algo.run(generations)
 
 
@@ -247,7 +248,6 @@ class GeneticAlgorithm:
         assert False, 'Did not find roster changes for team'
 
     def _init_population(self):
-        max_lineups = 6000
         self.population = []
         self.last_mutated_roster_change = None
         selector = self._gen_player_selector(gen_type='pct_own')
