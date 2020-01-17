@@ -16,7 +16,7 @@ from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 
 import cProfile, pstats, io
 
-max_lineups = 6000
+max_lineups = 3000
 generations = 1000
 
 def profile(fnc):
@@ -702,7 +702,7 @@ class GeneticAlgorithm:
         Mutation simply means swapping out the player with a random player.
         """
 
-        mutate_pct = 2
+        mutate_pct = 5
         add_lineups = []
         rem_lineups = []
         selector = self._gen_player_selector(gen_type='random')
