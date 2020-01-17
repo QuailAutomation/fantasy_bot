@@ -161,38 +161,38 @@ class BestRankedPlayerScorer:
                 todays_projections["GAMEPLAYED"] = todays_projections["team_id"].map(
                     BestRankedPlayerScorer.nhl_schedule[single_date.strftime("%Y-%m-%d")])
                 todays_projections = todays_projections[todays_projections.GAMEPLAYED == 1]
-                # goalies are trickier.  let's check rotowire to see if they are expected to play
-                # try:
-                #     todays_goalies = self.starting_goalies_df[self.starting_goalies_df['date'] == single_date]
-                #     todays_projections = todays_projections.merge(todays_goalies[['starting_status']], left_index=True,
-                #                                                   right_on='name',
-                #                                                   how='left')
-                #     todays_projections = todays_projections[(todays_projections['position_type'] != 'G') | (
-                #             (todays_projections['starting_status'] == 'Confirmed') | (
-                #             todays_projections['starting_status'] == 'Expected'))]
-                #     # todays_projections.rename(columns = {'goalie_name':'name'}, inplace = True)
-                #     todays_projections.reset_index(drop=True, inplace=True)
-                # except KeyError:
-                #     pass
-                # try:
-                #     # let's check to see if G is nan, if so, load season stats for those players from yahoo
-                #     # for a backup projection
-                #     todays_projections[
-                #         'fpts'] = todays_projections.G * stats_weights[0] + todays_projections.A * stats_weights[1] + \
-                #                   todays_projections['+/-'] * stats_weights[2] + todays_projections.PIM * stats_weights[
-                #                       3] + todays_projections.SOG * stats_weights[4] + todays_projections.FW * \
-                #                   stats_weights[5] + todays_projections.HIT * stats_weights[6]
-                # except AttributeError as e:
-                #     print(e)
-                # todays_projections = todays_projections.sort_values(by=['fpts'], ascending=False)
-                # self.logger.debug("Daily roster:\n %s", todays_projections.head(20))
-                builder = roster.DailyRosterBuilder()
-                best_roster = builder.find_best(todays_projections)
-                roster_results = todays_projections.loc[best_roster.values.astype(int).tolist(), player_stats]
-                pass
-                # roster_results = self.roster_builder.daily_results(todays_projections)
+                if len(todays_projections) > 0:
+                    # goalies are trickier.  let's check rotowire to see if they are expected to play
+                    # try:
+                    #     todays_goalies = self.starting_goalies_df[self.starting_goalies_df['date'] == single_date]
+                    #     todays_projections = todays_projections.merge(todays_goalies[['starting_status']], left_index=True,
+                    #                                                   right_on='name',
+                    #                                                   how='left')
+                    #     todays_projections = todays_projections[(todays_projections['position_type'] != 'G') | (
+                    #             (todays_projections['starting_status'] == 'Confirmed') | (
+                    #             todays_projections['starting_status'] == 'Expected'))]
+                    #     # todays_projections.rename(columns = {'goalie_name':'name'}, inplace = True)
+                    #     todays_projections.reset_index(drop=True, inplace=True)
+                    # except KeyError:
+                    #     pass
+                    # try:
+                    #     # let's check to see if G is nan, if so, load season stats for those players from yahoo
+                    #     # for a backup projection
+                    #     todays_projections[
+                    #         'fpts'] = todays_projections.G * stats_weights[0] + todays_projections.A * stats_weights[1] + \
+                    #                   todays_projections['+/-'] * stats_weights[2] + todays_projections.PIM * stats_weights[
+                    #                       3] + todays_projections.SOG * stats_weights[4] + todays_projections.FW * \
+                    #                   stats_weights[5] + todays_projections.HIT * stats_weights[6]
+                    # except AttributeError as e:
+                    #     print(e)
+                    # todays_projections = todays_projections.sort_values(by=['fpts'], ascending=False)
+                    # self.logger.debug("Daily roster:\n %s", todays_projections.head(20))
+                    builder = roster.DailyRosterBuilder()
+                    best_roster = builder.find_best(todays_projections)
+                    roster_results = todays_projections.loc[best_roster.values.astype(int).tolist(), player_stats]
+                    pass
 
-            if len(roster_results) > 0:
+            if roster_results is not None and len(roster_results) > 0:
                 # if self.excel_writer is not None:
                 #     roster_results.to_excel(self.excel_writer, single_date.strftime("%Y-%m-%d"))
                 roster_results.loc[:,'play_date'] = single_date

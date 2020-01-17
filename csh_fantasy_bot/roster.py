@@ -399,7 +399,7 @@ class DailyRosterBuilder:
         # TODO add back D
         dmen_df = generate_combinations_for_position('D', player_pool)
         if dmen_df is not None:
-            valid_d = dmen_df[dmen_df.apply(lambda x: not any(x.duplicated()), axis=1)]
+            valid_d = dmen_df[dmen_df.apply(lambda x: not any(x.dropna().duplicated()), axis=1)]
             valid_d['pts'] = valid_d[[s for s in valid_d.columns if 'fpts' in s]].sum(axis=1)
             valid_d.sort_values(by=['pts'], ascending=False, inplace=True)
             valid_d.reset_index(inplace=True, drop=True)

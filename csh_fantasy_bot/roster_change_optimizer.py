@@ -97,8 +97,8 @@ class GeneticAlgorithm:
         first_change_date = self.league.edit_date()
         if self.date_range[0] > first_change_date:
             first_change_date = self.date_range[0]
-        self.date_range_for_changes = pd.date_range(first_change_date, self.date_range[-1])
         self.my_team: Team = self.league.to_team(self.league.team_key())
+        self.date_range_for_changes = pd.date_range(first_change_date, self.date_range[-1])
         self.waivers = self.league.waivers()
         self.droppable_players = self._generate_droppable_players()
         #  self.seed_lineup = self._generate_seed_lineup(locked_plyrs)
