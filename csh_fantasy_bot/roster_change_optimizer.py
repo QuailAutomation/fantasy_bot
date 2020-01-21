@@ -16,8 +16,8 @@ from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 
 import cProfile, pstats, io
 
-max_lineups = 3000
-generations = 1000
+max_lineups = 400
+generations = 2000
 
 def profile(fnc):
     """A decorator that uses cProfile to profile a function"""
@@ -820,10 +820,6 @@ class RosterChangeSet(Sequence):
             if change.player_out == drop_player:
                 return False
         return True
-
-    # def add_and_update_max(self,roster_change):
-    #     self.number_roster_changes += 1
-    #     self.add(roster_change)
 
     def can_add(self, roster_change):
         return ~any(rc.player_out == roster_change.player_out or rc.player_in == roster_change.player_in for rc in

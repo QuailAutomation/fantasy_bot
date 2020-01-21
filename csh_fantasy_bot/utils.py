@@ -105,14 +105,19 @@ class TeamCache(CacheBase):
 
 class LeagueCache(CacheBase):
     def __init__(self):
-        super(LeagueCache, self).__init__(".cache/")
+        super(LeagueCache, self).__init__(".cache")
 
     def free_agents_cache_file(self):
         return "{}/free_agents.pkl".format(self.cache_dir)
 
+    def all_players_cache_file(self):
+        return "{}/all_players.pkl".format(self.cache_dir)
+
     def waivers_cache_file(self):
         return "{}/waivers.pkl".format(self.cache_dir)
 
+    def load_all_players(self, expiry, loader):
+        return self.run_loader(self.all_players_cache_file(), expiry, loader)
 
     def load_free_agents(self, expiry, loader):
         return self.run_loader(self.free_agents_cache_file(), expiry, loader)

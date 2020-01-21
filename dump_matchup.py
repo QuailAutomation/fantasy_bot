@@ -30,13 +30,13 @@ if not os.path.exists('oauth2.json'):
 
 oauth = OAuth2(None, None, from_file='oauth2.json')
 
-league = League(oauth,'396.l.53432')
+league: League = League(oauth,'396.l.53432')
 my_team: Team= league.to_team(league.team_key())
 
 tm_cache = utils.TeamCache(league.team_key())
 lg_cache = utils.LeagueCache()
 
-current_week = 15
+current_week = 16
 start_week,end_week = league.week_date_range(current_week)
 week = pd.date_range(start_week, end_week)
 opponent_id = my_team.matchup(current_week)
@@ -89,6 +89,14 @@ expiry = datetime.timedelta(minutes=6 * 24 * 60)
 fantasysp_p = tm_cache.load_prediction_builder(None, prediction_loader)
 
 
+def all_loader():
+    all = pd.DataFrame(league.all_players())
+    return all
+
+#expiry = datetime.timedelta(minutes=6 * 60)
+all_players = lg_cache.load_all_players(None, all_loader)
+
+
 def loader():
     fa = league.free_agents(None)
     return fa
@@ -98,7 +106,8 @@ free_agents = lg_cache.load_free_agents(expiry, loader)
 my_roster =  my_team.roster(day=start_week)
 
 opponent_roster = opponent_team.roster(day=start_week)
-fantasy_projections = fantasysp_p.predict(pd.DataFrame(free_agents + my_roster + opponent_roster))
+
+fantasy_projections = fantasysp_p.predict(all_players)
 fantasy_projections.loc[[p['player_id'] for p in my_roster],:].to_csv('my-team-dump-latest.csv')
 # excel_writer = ExcelWriter("scores.xlsx")
 my_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(league, my_team, fantasy_projections, week)
@@ -106,10 +115,10 @@ my_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(league, my_team, fanta
 opp_scorer:BestRankedPlayerScorer = BestRankedPlayerScorer(league, opponent_team, fantasy_projections, week)
 
 roster_changes = []
-#roster_changes.append(roster_change_optimizer.RosterChange(3652,5573, np.datetime64('2020-01-12')))
-#roster_changes.append(roster_change_optimizer.RosterChange(6750,6448, np.datetime64('2020-01-12')))
-# roster_changes.append(roster_change_optimizer.RosterChange(3982,5573, np.datetime64('2020-01-09')))
-# roster_changes.append(roster_change_optimizer.RosterChange(5697,5626, np.datetime64('2019-12-11')))
+roster_changes.append(roster_change_optimizer.RosterChange(7111,5254, np.datetime64('2020-01-25')))
+roster_changes.append(roster_change_optimizer.RosterChange(6390,5387, np.datetime64('2020-01-26')))
+roster_changes.append(roster_change_optimizer.RosterChange(5698,4693, np.datetime64('2020-01-25')))
+roster_changes.append(roster_change_optimizer.RosterChange(5573,5946, np.datetime64('2020-01-30')))
 roster_change_set = roster_change_optimizer.RosterChangeSet(roster_changes)
 
 # projected_my_score = my_scorer.score()

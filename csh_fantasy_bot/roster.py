@@ -411,18 +411,19 @@ class DailyRosterBuilder:
                                                 on='key').drop('key', axis=1)
 
         # score and resort
-        pts_columns = [s for s in possible_rosters.columns if 'fpts' in s]
-        possible_rosters['pts'] = possible_rosters[pts_columns].sum(axis=1)
-        possible_rosters.sort_values(by=['pts'], ascending=False, inplace=True)
-        possible_rosters.reset_index(inplace=True, drop=True)
+        if possible_rosters is not None:
+            pts_columns = [s for s in possible_rosters.columns if 'fpts' in s]
+            possible_rosters['pts'] = possible_rosters[pts_columns].sum(axis=1)
+            possible_rosters.sort_values(by=['pts'], ascending=False, inplace=True)
+            possible_rosters.reset_index(inplace=True, drop=True)
 
-        roster_columns = [s for s in possible_rosters.columns if 'fpts' not in s]
-        row: pd.Series
-        for index, row in possible_rosters.iterrows():
-            cleaned_row = row.drop(pts_columns + ['pts']).dropna()
-            if not any(cleaned_row.duplicated()):
-                return cleaned_row.dropna()
-        #valid_rosters = possible_rosters[possible_rosters.apply(lambda x: not any(x.dropna().duplicated()), axis=1)]
+            roster_columns = [s for s in possible_rosters.columns if 'fpts' not in s]
+            row: pd.Series
+            for index, row in possible_rosters.iterrows():
+                cleaned_row = row.drop(pts_columns + ['pts']).dropna()
+                if not any(cleaned_row.duplicated()):
+                    return cleaned_row.dropna()
+            #valid_rosters = possible_rosters[possible_rosters.apply(lambda x: not any(x.dropna().duplicated()), axis=1)]
 
 
-        return 0
+        return None

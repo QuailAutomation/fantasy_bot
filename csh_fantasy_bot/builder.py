@@ -5,7 +5,7 @@ import numpy as np
 from nhl_scraper import nhl
 import logging
 import datetime
-
+from csh_fantasy_bot import roster
 
 logger = logging.getLogger()
 

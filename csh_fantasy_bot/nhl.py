@@ -65,16 +65,16 @@ class Scorer:
 class BestRankedPlayerScorer:
     nhl_schedule = {}
 
-    def __init__(self, league, team, player_projections, date_range, access_fa=False):
+    def __init__(self, league, team, player_projections, date_range):
         self.logger = logging.getLogger()
         self.league = league
         self.team = team
-        self.team_roster = pd.DataFrame(self.team.roster())
-        self.team_roster.set_index('player_id',inplace=True)
+        self.team_roster = pd.DataFrame(self.team.roster(day=date_range.date[0]))
+        self.team_roster.set_index('player_id', inplace=True)
+
         self.player_projections = player_projections
         self.nhl_scraper: Scraper = Scraper()
         self.date_range = date_range
-        self.roster_builder = Roster()
         self.cached_actual_results = {}
         self.starting_goalies_df = RWScraper().starting_goalies()
         self.excel_writer = None
@@ -93,7 +93,7 @@ class BestRankedPlayerScorer:
             roster_with_projections = self.player_projections.loc[roster_df.index,:]
         except TypeError as e:
             print(e)
-        roster_with_projections.loc[:,'GamesInLineup'] = int(0)
+        # roster_with_projections.loc[:,'GamesInLineup'] = int(0)
         projected_week_results = None
         for single_date in self.date_range:
             # self.logger.debug("Date: %s", single_date)
@@ -189,7 +189,8 @@ class BestRankedPlayerScorer:
                     # self.logger.debug("Daily roster:\n %s", todays_projections.head(20))
                     builder = roster.DailyRosterBuilder()
                     best_roster = builder.find_best(todays_projections)
-                    roster_results = todays_projections.loc[best_roster.values.astype(int).tolist(), player_stats]
+                    if best_roster is not None:
+                        roster_results = todays_projections.loc[best_roster.values.astype(int).tolist(), player_stats]
                     pass
 
             if roster_results is not None and len(roster_results) > 0:

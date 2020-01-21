@@ -27,13 +27,14 @@ class ScoreComparer:
     :param lg_lineups: All of the lineups in the league.  This is used to
         compute a standard deviation of all of the stat categories.
     """
-    def __init__(self,  scorer, lg_lineups, lg, week):
+    def __init__(self,  scorer, lg_lineups, lg, week, player_projections):
         self.league = lg
         self.scorer = scorer
         self.week = week
         self.opp_sum = None
         self.stdev_cap = 3
         self.stat_cats = []
+        self.player_projections = player_projections
         #TODO this needs to handle goalies when ready
         for stat in lg.stat_categories():
             if stat['position_type'] == 'P':
@@ -91,6 +92,8 @@ class ScoreComparer:
         :return: Aggregation compuation for each category
         :rtype: DataFrame
         """
+        start_week, end_week = self.league.week_date_range(self.week)
+        week = pd.date_range(start_week, end_week)
         scores = pd.DataFrame()
         for lineup in lineups:
             if type(lineup) is pd.DataFrame:
@@ -98,10 +101,8 @@ class ScoreComparer:
             else:
                 df = pd.DataFrame(data=lineup, columns=lineup[0].index)
 
-            start_week, end_week = self.league.week_date_range(self.week)
-            week = pd.date_range(start_week, end_week)
-            score_sum = self.scorer.summarize(df,week)
-            scores = scores.append(score_sum, ignore_index=True)
+            # score_sum = self.scorer.summarize(df,week)
+            scores = scores.append(df, ignore_index=True)
         # print(scores.head())
         return scores.agg([agg])
 
@@ -137,7 +138,8 @@ class ManagerBot:
         self.opp_team_name = None
         self.init_prediction_builder()
         self.fetch_player_pool()
-        self.score_comparer: ScoreComparer = ScoreComparer(self.scorer, self.fetch_league_lineups(),self.lg, self.league_week)
+        self.all_players = self.fetch_all_players()
+        self.score_comparer: ScoreComparer = ScoreComparer(self.scorer, self.fetch_league_lineups(),self.lg, self.league_week,self.pred_bldr.predict(self.all_players))
         self.logger.debug("Reading Free Agents")
         # self.fetch_player_pool()
         self.logger.debug("Loading Lineups")
@@ -319,6 +321,25 @@ class ManagerBot:
                              'Phi': 'PHI'}
         df["editorial_team_abbr"].replace(nhl_team_mappings, inplace=True)
 
+    def fetch_all_players(self):
+
+        def all_loader():
+            all = pd.DataFrame(self.lg.all_players())
+            self._fix_yahoo_team_abbr(all)
+            self.nhl_scraper = Scraper()
+
+            nhl_teams = self.nhl_scraper.teams()
+            nhl_teams.set_index("id")
+            nhl_teams.rename(columns={'name': 'team_name'}, inplace=True)
+
+            all = all.merge(nhl_teams, left_on='editorial_team_abbr', right_on='abbrev')
+            all.rename(columns={'id': 'team_id'}, inplace=True)
+            return all
+
+        expiry = datetime.timedelta(minutes=6 * 60)
+        return self.lg_cache.load_all_players(expiry,all_loader)
+
+
     def fetch_player_pool(self):
         """Build the roster pool of players"""
         if self.ppool is None:
@@ -382,12 +403,12 @@ class ManagerBot:
             lineups = []
             for tm in self.lg.teams():
                 tm = self.lg.to_team(tm['team_key'])
-                tm_roster = tm.roster(self.league_week)
+                # tm_roster = tm.roster(self.league_week)
 
-                lineup_predictions = self._get_predicted_stats(pd.DataFrame(tm_roster))
-                # rcont = roster.Container(self.lg, tm)
-                # team_roster = self.ppool[self.ppool]
-                lineups.append(lineup_predictions)
+                # lineup_predictions = self._get_predicted_stats(pd.DataFrame(tm_roster))
+
+                team_scores = BestRankedPlayerScorer(self.lg, tm, self.pred_bldr.predict(self.all_players), self.week).score()
+                lineups.append(team_scores)
             self.logger.info("All lineups fetched.")
             return lineups
 
@@ -417,13 +438,13 @@ class ManagerBot:
             print("Not a valid team: {}:".format(opp_team_key))
             return(None, None)
 
-        opp_team = roster.Container(self.lg, self.lg.to_team(opp_team_key))
-        opp_roster = pd.DataFrame(self.lg.to_team(opp_team_key).roster())
-        opp_roster = self._get_predicted_stats(opp_roster)
-        # opp_df = self.pred_bldr.predict(pd.DataFrame(opp_roster))
+        # opp_team = roster.Container(self.lg, self.lg.to_team(opp_team_key))
+        # opp_roster = pd.DataFrame(self.lg.to_team(opp_team_key).roster())
+        # opp_roster = self._get_predicted_stats(opp_roster)
+        # # opp_df = self.pred_bldr.predict(pd.DataFrame(opp_roster))
 
-        print(opp_roster.head(20))
-        my_scorer: BestRankedPlayerScorer = BestRankedPlayerScorer(self.lg, self.lg.to_team(opp_team_key), opp_roster,
+        # print(opp_roster.head(20))
+        my_scorer: BestRankedPlayerScorer = BestRankedPlayerScorer(self.lg, self.lg.to_team(opp_team_key),self.pred_bldr.predict(self.all_players),
                                                                     self.week)
         #opp_sum = self.scorer.summarize(opp_df, week)
         opp_sum = my_scorer.score().sum()

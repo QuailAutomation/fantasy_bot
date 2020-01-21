@@ -32,14 +32,14 @@ fantasysp_p = tm_cache.load_prediction_builder(None, None)
 
 
 def loader():
-    fa = league.free_agents(None)
+    fa = league.all_players()
     return fa
 
 
 lg_cache = utils.LeagueCache()
 # expiry = datetime.timedelta(minutes=360)
-free_agents = lg_cache.load_free_agents(None, None)
-fantasy_projections = fantasysp_p.predict(pd.DataFrame(free_agents + my_team.roster()))
+all_players = lg_cache.load_all_players(None, None)
+fantasy_projections = fantasysp_p.predict(pd.DataFrame(all_players))
 
 
 def lookup_player(player_name):
@@ -50,7 +50,7 @@ def lookup_player_id(player_id):
     return "craig: {}".format(fantasy_projections.loc[player_id])
 
 
-print ("This utility can look up free agents or members of my team by string(name contains) or id")
+print ("This utility can look up league players by string(name contains) or id")
 while True:
     # self._print_main_menu()
     print("Player name or id (int) to search for:")
