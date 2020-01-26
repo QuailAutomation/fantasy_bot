@@ -47,7 +47,7 @@ class ScoreComparer:
 
         :param opp_sum: Sum of all of the categories of your opponent
         """
-        self.opp_sum = opp_sum
+        self.opp_sum = pd.Series(opp_sum)
 
     def compute_score(self, score_sum):
         """
@@ -59,24 +59,9 @@ class ScoreComparer:
         assert(self.opp_sum is not None), "Must call set_opponent() first"
         assert(self.stdevs is not None)
 
-        stddev_score = 0
-        for (c_myname, c_myval), (c_opname, c_opval) in \
-                zip(score_sum.items(), self.opp_sum.items()):
-            assert c_myname == c_opname, "c_myname ({}) did not match c_opname({})".format(c_myname,c_opname)
-            if c_myname in self.stat_cats:
-                c_stdev = self.stdevs[c_myname].iloc(0)[0]
-                v = (c_myval - c_opval) / c_stdev
-                # Cap the value at a multiple of the standard deviation.  We do
-                # this because we don't want to favour lineups that simply own
-                # a category.  A few standard deviation is enough to provide a
-                # cushion.  It also allows you to punt a caategory, if you don't
-                # do well in a category, and you are going to lose, the down side
-                # is capped.
-                v = min(v, self.stdev_cap * c_stdev)
-                if not self.scorer.is_highest_better(c_myname):
-                    v = v * -1
-                stddev_score += v
-        return stddev_score
+        diff = (score_sum - self.opp_sum)/self.stdevs
+        return diff.clip(lower=-3, upper=3).sum()
+
 
     def print_stdev(self):
         print("Standard deviations for each category:")
@@ -104,7 +89,7 @@ class ScoreComparer:
             # score_sum = self.scorer.summarize(df,week)
             scores = scores.append(df, ignore_index=True)
         # print(scores.head())
-        return scores.agg([agg])
+        return scores.agg([agg]).loc['std',:]
 
 
 class ManagerBot:
