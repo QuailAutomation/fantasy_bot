@@ -142,7 +142,7 @@ class BestRankedPlayerScorer:
                         # a_player = players[players.player_id == player_w_stats['player_id']]
                         for stat in stats_to_track:
                             try:
-                                if player_w_stats['GP'] > 0:
+                                if player_w_stats['GP']  != '-' and player_w_stats['GP'] > 0:
                                     self.player_projections.loc[player_w_stats['player_id'], stat] = player_w_stats[
                                                                                                                    stat] / \
                                                                                                                player_w_stats[
@@ -152,7 +152,8 @@ class BestRankedPlayerScorer:
                                                                                                            player_w_stats[
                                                                                                                'GP']
                             except TypeError as e:
-                                print(player_w_stats)
+                                print("No actual stats available for: {}".format(player_w_stats))
+                                break
 
                 todays_projections = roster_with_projections.loc[:,['team_id','eligible_positions'] + player_stats].copy()
                 # compute expected output for all players on roster, maximize score
