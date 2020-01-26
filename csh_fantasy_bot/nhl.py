@@ -141,15 +141,18 @@ class BestRankedPlayerScorer:
                     for player_w_stats in the_stats:
                         # a_player = players[players.player_id == player_w_stats['player_id']]
                         for stat in stats_to_track:
-                            if player_w_stats['GP'] > 0:
-                                self.player_projections.loc[player_w_stats['player_id'], stat] = player_w_stats[
+                            try:
+                                if player_w_stats['GP'] > 0:
+                                    self.player_projections.loc[player_w_stats['player_id'], stat] = player_w_stats[
+                                                                                                                   stat] / \
+                                                                                                               player_w_stats[
+                                                                                                                   'GP']
+                                    roster_with_projections.loc[player_w_stats['player_id'], stat] = player_w_stats[
                                                                                                                stat] / \
                                                                                                            player_w_stats[
                                                                                                                'GP']
-                                roster_with_projections.loc[player_w_stats['player_id'], stat] = player_w_stats[
-                                                                                                               stat] / \
-                                                                                                           player_w_stats[
-                                                                                                               'GP']
+                            except TypeError as e:
+                                print(player_w_stats)
 
                 todays_projections = roster_with_projections.loc[:,['team_id','eligible_positions'] + player_stats].copy()
                 # compute expected output for all players on roster, maximize score
