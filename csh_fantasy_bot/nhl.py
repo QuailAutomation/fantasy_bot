@@ -69,7 +69,8 @@ class BestRankedPlayerScorer:
         self.logger = logging.getLogger()
         self.league = league
         self.team = team
-        self.team_roster = pd.DataFrame(self.team.roster(day=date_range.date[0]))
+        #self.team_roster = pd.DataFrame(self.team.roster(day=date_range.date[0]))
+        self.team_roster = pd.DataFrame(self.team.roster())
         self.team_roster.set_index('player_id', inplace=True)
 
         self.player_projections = player_projections
@@ -97,16 +98,6 @@ class BestRankedPlayerScorer:
         projected_week_results = None
         for single_date in self.date_range:
             # self.logger.debug("Date: %s", single_date)
-            # TODO should store change sets in dict based on day, should be faster for lookup
-            if roster_change_set is not None:
-                for roster_change in roster_change_set:
-                    if roster_change.change_date == single_date:
-                        roster_with_projections = roster_with_projections.append(
-                            self.player_projections.loc[roster_change.player_in, :])
-                        roster_with_projections.loc[roster_change.player_in,'GamesInLineup'] = 0
-
-                        roster_with_projections.drop(roster_change.player_out,inplace=True)
-
             roster_results = None
             the_roster = None
             roster_player_id_list = []
@@ -131,6 +122,15 @@ class BestRankedPlayerScorer:
                 roster_results = self.cached_actual_results[single_date]
                 roster_player_id_list = self.cached_actual_results[single_date].index.tolist()
             else:
+                # TODO should store change sets in dict based on day, should be faster for lookup
+                if roster_change_set is not None:
+                    for roster_change in roster_change_set:
+                        if roster_change.change_date == single_date:
+                            roster_with_projections = roster_with_projections.append(
+                                self.player_projections.loc[roster_change.player_in, :])
+                            roster_with_projections.loc[roster_change.player_in, 'GamesInLineup'] = 0
+
+                            roster_with_projections.drop(roster_change.player_out, inplace=True)
                 # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
                 ids_no_stats = list(
                     roster_with_projections.query('G != G & position_type == "P" & status != "IR" ').index.values)
