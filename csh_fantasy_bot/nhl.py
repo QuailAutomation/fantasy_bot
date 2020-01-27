@@ -9,7 +9,7 @@ from csh_fantasy_bot import roster
 
 import cProfile
 player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
-stats_weights = [2, 1.75, .5, .5, .5, .3, .5]
+stats_weights = [2, 1.75, .5, .5, .5, .1, .5]
 roster_makeup = "C,C,LW,LW,RW,RW,D,D,D,D".split(",")
 
 roster_makeup_series = pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(",")).value_counts()

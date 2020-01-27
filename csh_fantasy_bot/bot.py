@@ -66,7 +66,7 @@ class ScoreComparer:
     def print_stdev(self):
         print("Standard deviations for each category:")
         for cat, val in self.stdevs.iteritems():
-            print("{} - {:.3f}".format(cat, val.iloc(0)[0]))
+            print("{} - {:.3f}".format(cat, val))
         print("")
 
     def _compute_agg(self, lineups, agg):
