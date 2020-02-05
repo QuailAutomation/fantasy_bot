@@ -15,7 +15,7 @@ from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 
 import cProfile, pstats, io
 
-max_lineups = 3000
+max_lineups = 300
 generations = 300
 
 
@@ -359,7 +359,7 @@ class GeneticAlgorithm:
             if plyr['player_id'] in team_roster.player_id.values or plyr['position_type'] == 'G':
                 continue
 
-            drop_date = pd.np.random.choice(self.date_range_for_changes)
+            drop_date = random.choice(self.date_range_for_changes)
 
             if last_roster_change_set.is_full():
                 if last_roster_change_set not in self.population:
@@ -649,7 +649,7 @@ class GeneticAlgorithm:
         if len(self.date_range_for_changes) > 1 and random_number < 30:
             # lets mutate date
             while True:
-                drop_date = pd.np.random.choice(self.date_range_for_changes)
+                drop_date = random.choice(self.date_range_for_changes)
                 if drop_date != roster_change_to_mutate.change_date:
                     mutated_roster_change = [roster_change_to_mutate.player_out,
                                              roster_change_to_mutate.player_in,
@@ -797,9 +797,6 @@ class RosterChangeSet(Sequence):
     def __len__(self):
         return len(self.roster_changes)
 
-    # def __iter__(self):
-    #     return iter(self.roster_changes)
-
     def _compute_equality_score(self):
         self.equality_value = "RC" + self.roster_changes.loc[:, 'equality_score'].str.cat()
 
@@ -810,23 +807,12 @@ class RosterChangeSet(Sequence):
         return self.equality_value == other.equality_value
 
     def __delitem__(self, key):
-        # del self.roster_changes[key]
-        try:
-            self.roster_changes.drop(self.roster_changes.index[key],inplace=True)
-            self._compute_equality_score()
-        except KeyError as k:
-            pass
+        self.roster_changes.drop(self.roster_changes.index[key],inplace=True)
+        self._compute_equality_score()
 
     def can_drop_player(self, drop_player):
         return len(self.roster_changes) < self.number_roster_changes and drop_player not in self.roster_changes.loc[:,
                                                                                             'player_out'].values
-
-    def can_add(self, roster_change):
-        return ~any(rc.player_out == roster_change.player_out or rc.player_in == roster_change.player_in for rc in
-                    self.roster_changes)
-
-    def is_valid(self):
-        return any(self.roster_changes.duplicated(['player_in'])) or any(self.roster_changes.duplicated(['player_out']))
 
     def add(self, player_out, player_in, change_date):
         if len(self.roster_changes.index) < self.number_roster_changes:
@@ -847,11 +833,6 @@ class RosterChangeSet(Sequence):
             raise Exception("Roster change set already full")
 
     def replace(self, old_roster_change, new_roster_change):
-        # self.roster_changes.loc[:, 'player_out'].values
-        # for change in self.roster_changes:
-        #     if change is not old_roster_change:
-        #         if new_roster_change.player_out == change.player_out or new_roster_change.player_in == change.player_in:
-        #             print("invalid change set")
         self.roster_changes.drop(
             self.roster_changes[self.roster_changes.player_out == old_roster_change['player_out']].index, inplace=True)
         self.add(*new_roster_change)
