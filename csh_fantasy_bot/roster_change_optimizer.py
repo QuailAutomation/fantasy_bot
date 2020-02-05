@@ -15,7 +15,7 @@ from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 
 import cProfile, pstats, io
 
-max_lineups = 1000
+max_lineups = 3000
 generations = 300
 
 
