@@ -11,18 +11,35 @@ pd.set_option('display.width', 1000)
 player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
 # weight importance of the player stats
 weights_series = pd.Series([2, 1.75, .5, .5, .5, .3, .5], index=player_stats)
-roster_makeup = pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(",")).value_counts()
 
+roster_makeup = pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(","))
+roster_position_counts = roster_makeup.value_counts()
 
-my_team = pd.read_csv('my-team.csv', converters = {"eligible_positions": lambda x: x.strip("[]").replace("'", "").split(", ")})
+my_team = pd.read_csv('my-team.csv',
+                      converters={"eligible_positions": lambda x: x.strip("[]").replace("'", "").split(", ")})
 my_team.set_index('player_id', inplace=True)
+
 # fpts is a weighted score assigned to each player which reflects their overall skill
 # for fantasy, and is used to choose players relative to others
 
 def find_dups_ignore_nan(x):
     print(x.dropna())
 
+
 class TestRoster(TestCase):
+
+    def test_another(self):
+        player_ids = [4471, 7498, 5698]
+        day1_roster = my_team.loc[player_ids, :]
+
+        # builder = roster.DailyRosterBuilder()
+        best_roster = roster.RecursiveRosterBuilder().find_best(day1_roster)
+        assert player_ids in best_roster.values
+        # assert 7498 in best_roster.values
+        # assert best_roster['C1'] == 5462
+
+        # best_roster = builder.find_best(day1_roster)
+        # day_results = my_team.loc[best_roster.drop('pts').values.astype(int).tolist(), player_stats]
 
     # def test_handle_nan_in_rosters(self):
     #     df = pd.read_csv('find-nans.csv')
@@ -35,7 +52,7 @@ class TestRoster(TestCase):
     def test_daily_results1(self):
         # this test will work on a subset of 3 players
         day1 = [5462, 5984, 3982]
-        day1_roster = my_team.loc[day1,:]
+        day1_roster = my_team.loc[day1, :]
         # day1_roster['today_roster_position'] = np.nan
         # need to fill up roster with highest rate(fpts) players
         # create a new column (today_roster_position) that holds what spot player has been assigned
@@ -45,20 +62,30 @@ class TestRoster(TestCase):
         builder = roster.DailyRosterBuilder()
         best_roster = builder.find_best(day1_roster)
 
+        # assert best_roster['RW1'] == 5984
+        # assert best_roster['C1'] == 5462
+        # assert best_roster['C2'] == 5984
+        best_roster = roster.RecursiveRosterBuilder().find_best(day1_roster)
+
         assert best_roster['RW1'] == 5984
         assert best_roster['C1'] == 5462
         assert best_roster['C2'] == 3982
 
     def test_daily_results2(self):
         # this test has 5 dmen, which is more than allowed by roster
-        player_ids = [5462, 5984, 3982,4683,4471,5363,5698,4351,4491,4472,8614,6614,7498]
-        day1_roster = my_team.loc[player_ids,:]
+        player_ids = [5462, 5984, 3982, 4683, 4471, 5363, 5698, 4351, 4491, 4472, 8614, 6614, 7498]
+        day1_roster = my_team.loc[player_ids, :]
 
         builder = roster.DailyRosterBuilder()
         best_roster = builder.find_best(day1_roster)
-        best_roster_player_id_index = pd.Index(best_roster.drop('pts').values.astype(int))
-        day_results = my_team.loc[best_roster.drop('pts').values.astype(int).tolist(),player_stats]
+        # best_roster_player_id_index = pd.Index(best_roster.drop('pts').values.astype(int))
+        # day_results = my_team.loc[best_roster.drop('pts').values.astype(int).tolist(), player_stats]
 
+        assert best_roster['RW1'] == 5984
+        assert best_roster['C1'] == 5462
+        assert best_roster['C2'] == 3982
+
+        best_roster = roster.RecursiveRosterBuilder().find_best(day1_roster)
         assert best_roster['RW1'] == 5984
         assert best_roster['C1'] == 5462
         assert best_roster['C2'] == 3982
@@ -70,14 +97,9 @@ class TestRoster(TestCase):
         builder = roster.DailyRosterBuilder()
         best_roster = builder.find_best(day1_roster)
 
-        best_roster_player_id_index = pd.Index(best_roster.drop('pts').values.astype(int))
-        day_results = my_team.loc[best_roster.drop('pts').values.astype(int).tolist(), player_stats]
-        assert best_roster['RW1'] == 5984
+        # best_roster_player_id_index = pd.Index(best_roster.drop('pts').values.astype(int))
+        # day_results = my_team.loc[best_roster.drop('pts').values.astype(int).tolist(), player_stats]
+        assert best_roster['RW1'] == 5698
 
-    def test_another(self):
-        player_ids = [4471, 6448, 7498, 5573, 5698]
-        day1_roster = my_team.loc[player_ids, :]
-
-        builder = roster.DailyRosterBuilder()
-        best_roster = builder.find_best(day1_roster)
-        day_results = my_team.loc[best_roster.drop('pts').values.astype(int).tolist(), player_stats]
+        best_roster = roster.RecursiveRosterBuilder().find_best(day1_roster)
+        assert best_roster['LW1'] == 5698

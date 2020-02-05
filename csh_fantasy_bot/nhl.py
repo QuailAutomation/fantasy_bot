@@ -70,7 +70,7 @@ class BestRankedPlayerScorer:
         self.league = league
         self.team = team
         #self.team_roster = pd.DataFrame(self.team.roster(day=date_range.date[0]))
-        self.team_roster = pd.DataFrame(self.team.roster())
+        self.team_roster = pd.DataFrame(self.team.roster(day=date_range[0]))
         self.team_roster.set_index('player_id', inplace=True)
 
         self.player_projections = player_projections
@@ -79,6 +79,10 @@ class BestRankedPlayerScorer:
         self.cached_actual_results = {}
         self.starting_goalies_df = RWScraper().starting_goalies()
         self.excel_writer = None
+        # if there are no projections available, we will load from yahoo, and cache here
+        self.cached_player_stats = {}
+        # self.roster_builder = roster.DailyRosterBuilder()
+        self.roster_builder =roster.RecursiveRosterBuilder()
 
     def register_excel_writer(self,writer):
         self.excel_writer = writer
@@ -122,23 +126,37 @@ class BestRankedPlayerScorer:
                 roster_results = self.cached_actual_results[single_date]
                 roster_player_id_list = self.cached_actual_results[single_date].index.tolist()
             else:
-                # TODO should store change sets in dict based on day, should be faster for lookup
                 if roster_change_set is not None:
-                    for roster_change in roster_change_set:
-                        if roster_change.change_date == single_date:
+                    roster_changes = roster_change_set.get(single_date)
+                    if len(roster_changes) > 0:
+                        for _,row in roster_changes.iterrows():
                             roster_with_projections = roster_with_projections.append(
-                                self.player_projections.loc[roster_change.player_in, :])
-                            roster_with_projections.loc[roster_change.player_in, 'GamesInLineup'] = 0
+                                self.player_projections.loc[row['player_in'], :])
+                            roster_with_projections.loc[row['player_in'], 'GamesInLineup'] = 0
+                            roster_with_projections.drop(row['player_out'], inplace=True)
 
-                            roster_with_projections.drop(roster_change.player_out, inplace=True)
+
+                        # if roster_change.change_date == single_date:
+                        #     roster_with_projections = roster_with_projections.append(
+                        #         self.player_projections.loc[roster_change.player_in, :])
+                        #     roster_with_projections.loc[roster_change.player_in, 'GamesInLineup'] = 0
+                        #
+                        #     roster_with_projections.drop(roster_change.player_out, inplace=True)
                 # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
                 ids_no_stats = list(
                     roster_with_projections.query('G != G & position_type == "P" & status != "IR" ').index.values)
                 if len(ids_no_stats) > 0:
-                    print("loading {} player's info because projections missing({})".format(len(ids_no_stats),ids_no_stats))
-                    the_stats = self.league.player_stats(ids_no_stats, 'season')
+                    not_cached = [i for i in ids_no_stats if i not in self.cached_player_stats]
+                    print("loading {} player's info because projections missing({})".format(len(not_cached),not_cached))
+                    the_stats = self.league.player_stats(not_cached, 'season')
                     stats_to_track = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FW"]
                     for player_w_stats in the_stats:
+                        loaded_player_stats = dict((k, player_w_stats[k]) for k in stats_to_track)
+                        if player_w_stats['player_id'] not in self.cached_player_stats:
+                            self.cached_player_stats[ player_w_stats['player_id']] = player_w_stats
+
+                    for player_id in ids_no_stats:
+                        player_w_stats = self.cached_player_stats[ player_w_stats['player_id']]
                         # a_player = players[players.player_id == player_w_stats['player_id']]
                         for stat in stats_to_track:
                             try:
@@ -191,8 +209,7 @@ class BestRankedPlayerScorer:
                     #     print(e)
                     # todays_projections = todays_projections.sort_values(by=['fpts'], ascending=False)
                     # self.logger.debug("Daily roster:\n %s", todays_projections.head(20))
-                    builder = roster.DailyRosterBuilder()
-                    best_roster = builder.find_best(todays_projections)
+                    best_roster = self.roster_builder.find_best(todays_projections)
                     if best_roster is not None:
                         roster_results = todays_projections.loc[best_roster.values.astype(int).tolist(), player_stats]
                     pass

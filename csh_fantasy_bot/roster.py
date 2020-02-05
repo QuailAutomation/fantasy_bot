@@ -354,7 +354,8 @@ class DailyRosterBuilder:
         self.player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
         # weight importance of the player stats
         self.weights_series = pd.Series([2, 1.75, .5, .5, .5, .3, .5], index=self.player_stats)
-        self.roster_makeup = pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(",")).value_counts()
+        self.roster_positions = pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(","))
+        self.roster_makeup = self.roster_positions.value_counts()
         self.pts_cols = []
         for pos in self.roster_makeup.index.unique():
             for index in range(self.roster_makeup[pos]):
@@ -385,6 +386,10 @@ class DailyRosterBuilder:
             else:
                 return None
 
+        def do_merge(possible, position_df):
+            return pd.merge(possible_rosters.assign(key=0), position_df.assign(key=0),
+                                                on='key').drop('key', axis=1)
+
         possible_rosters = None
         for position in self.roster_makeup.index.drop('D').unique():
             position_df = generate_combinations_for_position(position, player_pool)
@@ -392,8 +397,7 @@ class DailyRosterBuilder:
                 if possible_rosters is None:
                     possible_rosters = position_df
                 else:
-                    possible_rosters = pd.merge(possible_rosters.assign(key=0), position_df.assign(key=0),
-                                                on='key').drop('key', axis=1)
+                    possible_rosters = do_merge(possible_rosters, position_df)
 
         # now we do left join with best D.  Saves cartesian and don't have players that play D and forward spot
         # TODO add back D
@@ -407,7 +411,8 @@ class DailyRosterBuilder:
                 if possible_rosters is None:
                     possible_rosters = valid_d
                 else:
-                    possible_rosters = pd.merge(possible_rosters.assign(key=0), valid_d[valid_d.index == 0].assign(key=0),
+                    possible_rosters = pd.merge(possible_rosters.assign(key=0),
+                                                valid_d[valid_d.index == 0].assign(key=0),
                                                 on='key').drop('key', axis=1)
 
         # score and resort
@@ -418,12 +423,98 @@ class DailyRosterBuilder:
             possible_rosters.reset_index(inplace=True, drop=True)
 
             roster_columns = [s for s in possible_rosters.columns if 'fpts' not in s]
-            row: pd.Series
-            for index, row in possible_rosters.iterrows():
-                cleaned_row = row.drop(pts_columns + ['pts']).dropna()
-                if not any(cleaned_row.duplicated()):
-                    return cleaned_row.dropna()
+
+            def find_best1():
+                def drop_columns():
+                    return possible_rosters.drop(pts_columns + ['pts'], axis=1)
+                with_dropped = drop_columns()
+
+                def first_valid1():
+                    def get_num_nas():
+                        return with_dropped.T.isna().sum()
+                    num_naas = get_num_nas()
+
+                    def get_num_uniques():
+                        return with_dropped.nunique(1)
+                    num_uniques = get_num_uniques()
+
+                    return ((len(self.roster_positions) - num_naas - num_uniques) == 0).idxmax()
+
+                first_valid = first_valid1()
+
+                def drop_naas():
+                    return with_dropped.iloc[first_valid,:].dropna()
+
+                final_value = drop_naas()
+                return final_value
+
+            return find_best1()
             #valid_rosters = possible_rosters[possible_rosters.apply(lambda x: not any(x.dropna().duplicated()), axis=1)]
 
 
         return None
+
+
+class RecursiveRosterBuilder:
+    def __init__(self, roster_makeup=None):
+        if roster_makeup is None:
+            roster_makeup = pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(","))
+        self.roster_makeup = roster_makeup
+        self.player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
+        # weight importance of the player stats
+        self.weights_series = pd.Series([2, 1.75, .5, .5, .5, .3, .5], index=self.player_stats)
+        self.roster_position_counts = roster_makeup.value_counts()
+
+    def _place_player(self, player, roster):
+        for position in player.eligible_positions:
+            if 'G' != position and 'IR' != position:
+                players_in_position = roster[position]
+                if len(players_in_position) < self.roster_position_counts[position]:
+                    roster[position].append(player)
+                    return
+                else:
+                    # position is full, should see if earlier placed player can move
+                    did_make_room = self._make_room(position, roster)
+                    if did_make_room:
+                        roster[position].append(player)
+                        return
+                    else:
+                        # print('Position full: {}'.format(position))
+                        pass
+
+
+    def _make_room(self, position, roster, full_positions=None):
+        for position_to_look_for_room in self.roster_makeup.unique():
+            # is there a player in this position that can move
+            for players in roster[position_to_look_for_room]:
+                for index, other_possible_positions in enumerate(players.eligible_positions):
+                    if other_possible_positions != 'IR':
+                        if len(
+                                roster[other_possible_positions]) < self.roster_position_counts[
+                            other_possible_positions] and other_possible_positions != position_to_look_for_room:
+                            roster[other_possible_positions].append(players)
+                            roster[position_to_look_for_room].remove(players)
+                            return True
+                    else:
+                        pass
+                        # TODO should remove IR players in find_best
+    def find_best(self, avail_players: pd.DataFrame):
+        # drop irs
+        # on_ir = set(['IR'])
+        # is_on_ir = on_ir.issubset
+        # avail_players = avail_players[[is_on_ir(l) for l in avail_players.eligible_positions.values.tolist()]]
+
+        avail_players['fpts'] = avail_players[self.player_stats].mul(self.weights_series).sum(1)
+        avail_players.sort_values(by=['fpts'], ascending=False, inplace=True)
+
+        roster = {p: [] for p in self.roster_makeup.unique()}
+        for player in avail_players.itertuples():
+            self._place_player(player, roster)
+
+        players = []
+        player_index = []
+        for posn in self.roster_makeup.unique():
+            for index in range(min(self.roster_position_counts[posn], len(roster[posn]))):
+                players.append(roster[posn][index].Index)
+                player_index.append("{}{}".format(posn, index + 1))
+        return pd.Series(players, index=player_index)
