@@ -95,7 +95,7 @@ class BestRankedPlayerScorer:
         roster_df = self.team_roster
         today = datetime.date.today()
         try:
-            roster_with_projections = self.player_projections.loc[roster_df.index,:]
+            roster_with_projections = self.player_projections.loc[roster_df.index.intersection(self.player_projections.index),:]
         except TypeError as e:
             print(e)
         # roster_with_projections.loc[:,'GamesInLineup'] = int(0)
