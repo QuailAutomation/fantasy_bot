@@ -353,7 +353,7 @@ class DailyRosterBuilder:
     def __init__(self):
         self.player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
         # weight importance of the player stats
-        self.weights_series = pd.Series([2, 1.75, .5, .5, .5, .3, .5], index=self.player_stats)
+        self.weights_series = pd.Series([1, 1, .5, .5, .5, .1, .5], index=self.player_stats)
         self.roster_positions = pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(","))
         self.roster_makeup = self.roster_positions.value_counts()
         self.pts_cols = []
@@ -462,7 +462,7 @@ class RecursiveRosterBuilder:
         self.roster_makeup = roster_makeup
         self.player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
         # weight importance of the player stats
-        self.weights_series = pd.Series([2, 1.75, .5, .5, .5, .3, .5], index=self.player_stats)
+        self.weights_series = pd.Series([1, .75, .5, .5, .5, .1, .3], index=self.player_stats)
         self.roster_position_counts = roster_makeup.value_counts()
 
     def _place_player(self, player, roster):
@@ -498,17 +498,16 @@ class RecursiveRosterBuilder:
                     else:
                         pass
                         # TODO should remove IR players in find_best
+
     def find_best(self, avail_players: pd.DataFrame):
         # drop irs
-        # on_ir = set(['IR'])
-        # is_on_ir = on_ir.issubset
-        # avail_players = avail_players[[is_on_ir(l) for l in avail_players.eligible_positions.values.tolist()]]
+        avail_players = avail_players[['IR' not in l for l in avail_players.eligible_positions.values.tolist()]]
 
-        avail_players['fpts'] = avail_players[self.player_stats].mul(self.weights_series).sum(1)
-        avail_players.sort_values(by=['fpts'], ascending=False, inplace=True)
+        avail_players.loc[:,'fpts'] = avail_players[self.player_stats].mul(self.weights_series).sum(1)
+        sorted_players = avail_players.sort_values(by=['fpts'], ascending=False)
 
         roster = {p: [] for p in self.roster_makeup.unique()}
-        for player in avail_players.itertuples():
+        for player in sorted_players.itertuples():
             self._place_player(player, roster)
 
         players = []

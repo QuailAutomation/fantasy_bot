@@ -32,7 +32,7 @@ class ScoreComparer:
         self.scorer = scorer
         self.week = week
         self.opp_sum = None
-        self.stdev_cap = 3
+        self.stdev_cap = 4
         self.stat_cats = []
         self.player_projections = player_projections
         #TODO this needs to handle goalies when ready
@@ -60,7 +60,7 @@ class ScoreComparer:
         assert(self.stdevs is not None)
 
         diff = (score_sum - self.opp_sum)/self.stdevs
-        return diff.clip(lower=-3, upper=3).sum()
+        return diff.clip(lower=-1 * self.stdev_cap, upper=self.stdev_cap).sum()
 
 
     def print_stdev(self):
@@ -133,6 +133,7 @@ class ManagerBot:
      #    self.pick_injury_reserve()
         self.logger.debug("auto pick opponent")
         self.auto_pick_opponent()
+        self.roster_changes_allowed = 4 - self._get_num_roster_changes_made()
 
     def _load_blacklist(self):
         fn = self.tm_cache.blacklist_cache_file()
@@ -439,7 +440,7 @@ class ManagerBot:
     def load_lineup(self):
         def loader():
             self.lineup = []
-            self.sync_lineup()
+            # self.sync_lineup()
             return self.lineup
 
         self.lineup = self.tm_cache.load_lineup(None, loader)
@@ -804,6 +805,31 @@ class ManagerBot:
         return self.lg.to_team(self.lg.team_key()).roster(
             day=self.lg.edit_date())
 
+    def _get_num_roster_changes_made(self):
+        # if the game week is in the future then we couldn't have already made changes
+        if datetime.date.today() < self.week[0]:
+            return 0
+
+        def retrieve_attribute_from_team_info(team_info, attribute):
+            for attr in team_info:
+                if attribute in attr:
+                    return attr[attribute]
+
+        raw_matchups = self.lg.matchups()
+        team_id = self.tm.team_key.split('.')[-1]
+        num_matchups = raw_matchups['fantasy_content']['league'][1]['scoreboard']['0']['matchups']['count']
+        for matchup_index in range(0, num_matchups):
+            matchup = raw_matchups['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup_index)]
+            for i in range(0, 2):
+                try:
+                    if retrieve_attribute_from_team_info(matchup['matchup']['0']['teams'][str(i)]['team'][0],
+                                                         'team_id') == team_id:
+                        return int(
+                            retrieve_attribute_from_team_info(matchup['matchup']['0']['teams'][str(i)]['team'][0],
+                                                              'roster_adds')['value'])
+                except TypeError as e:
+                    pass
+        assert False, 'Did not find roster changes for team'
 
 class RosterChanger:
     def __init__(self, lg, dry_run, orig_roster, lineup, bench,
@@ -931,3 +957,4 @@ class RosterChanger:
 
         if not self.dry_run:
             self.tm.change_positions(self.lg.edit_date(), pos_change)
+

@@ -1,10 +1,9 @@
 import pandas as pd
 import numpy as np
 
-from csh_fantasy_bot import bot, nhl, roster_change_optimizer, roster
+from csh_fantasy_bot import bot, nhl, roster_change_optimizer
 
 import logging
-
 logging.basicConfig(level=logging.DEBUG)
 
 pd.set_option('display.max_columns', 500)
@@ -23,13 +22,15 @@ def print_week_results(my_scores_summary):
     print("Score: {:4.2f}".format(sc))
 
 
-manager: bot.ManagerBot = bot.ManagerBot(18)
+manager: bot.ManagerBot = bot.ManagerBot(17)
+print("My team has {} roster changes available.".format(manager.roster_changes_allowed))
 scorer = nhl.BestRankedPlayerScorer(manager.lg, manager.tm, manager.ppool, manager.week)
 my_scores = scorer.score()
 print_week_results(my_scores.sum())
 
-roster_changes = []
-roster_changes.append([5363,7516, np.datetime64('2020-02-12')])
+roster_changes = list()
+roster_changes.append([5573,6779, np.datetime64('2020-02-08')])
+# roster_changes.append([4683,3788, np.datetime64('2020-02-12')])
 # roster_changes.append(roster_change_optimizer.RosterChange(5984,7267, np.datetime64('2020-02-03')))
 # roster_changes.append(roster_change_optimizer.RosterChange(4792,5569, np.datetime64('2020-02-09')))
 # roster_changes.append(roster_change_optimizer.RosterChange(5698,5380, np.datetime64('2020-02-04')))
@@ -56,7 +57,7 @@ def do_cprofile(func):
     return profiled_func
 
 
-#@do_cprofile
+# @do_cprofile
 def do_run():
     print('profiling')
     scorer.score(roster_change_set)

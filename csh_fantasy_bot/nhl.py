@@ -9,58 +9,10 @@ from csh_fantasy_bot import roster
 
 import cProfile
 player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
-stats_weights = [2, 1.75, .5, .5, .5, .1, .5]
-roster_makeup = "C,C,LW,LW,RW,RW,D,D,D,D".split(",")
+# stats_weights = [2, 1.75, .5, .5, .5, .1, .5]
+# roster_makeup = "C,C,LW,LW,RW,RW,D,D,D,D".split(",")
 
-roster_makeup_series = pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(",")).value_counts()
-
-class Scorer:
-    """Class that scores rosters that it is given"""
-
-    def __init__(self, cfg):
-        self.cfg = cfg
-        self.use_weekly_sched = cfg['Scorer'].getboolean('useWeeklySchedule')
-
-    def summarize(self, df):
-        """Summarize the dataframe into individual stat categories
-
-
-        :param df: Roster predictions to summarize
-        :type df: DataFrame
-        :return: Summarized predictions
-        :rtype: Series
-        """
-        temp_stat_cols = ['GA', 'SV']
-        stat_cols = ['G', 'A', 'SOG', 'PPP', 'PIM', 'W'] + temp_stat_cols
-
-        res = dict.fromkeys(stat_cols, 0)
-        for plyr in df.iterrows():
-            p = plyr[1]
-            for stat in stat_cols:
-                if not np.isnan(p[stat]):
-                    if self.use_weekly_sched:
-                        res[stat] += p[stat] / 82 * p['WK_G']
-                    else:
-                        res[stat] += p[stat]
-
-        # Handle ratio stats
-        if res['SV'] > 0:
-            res['SV%'] = res['SV'] / (res['SV'] + res['GA'])
-        else:
-            res['SV%'] = None
-
-        # Drop the temporary values used to calculate the ratio stats
-        for stat in temp_stat_cols:
-            del res[stat]
-
-        return res
-
-    def is_counting_stat(self, stat):
-        return stat not in ['SV%']
-
-    def is_highest_better(self, stat):
-        return True
-
+# roster_makeup_series = pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(",")).value_counts()
 
 class BestRankedPlayerScorer:
     nhl_schedule = {}
@@ -68,21 +20,21 @@ class BestRankedPlayerScorer:
     def __init__(self, league, team, player_projections, date_range):
         self.logger = logging.getLogger()
         self.league = league
+        self.league_edit_date = league.edit_date()
         self.team = team
-        #self.team_roster = pd.DataFrame(self.team.roster(day=date_range.date[0]))
-        self.team_roster = pd.DataFrame(self.team.roster(day=date_range[0]))
-        self.team_roster.set_index('player_id', inplace=True)
 
         self.player_projections = player_projections
         self.nhl_scraper: Scraper = Scraper()
         self.date_range = date_range
         self.cached_actual_results = {}
-        self.starting_goalies_df = RWScraper().starting_goalies()
+        # self.starting_goalies_df = RWScraper().starting_goalies()
         self.excel_writer = None
         # if there are no projections available, we will load from yahoo, and cache here
         self.cached_player_stats = {}
-        # self.roster_builder = roster.DailyRosterBuilder()
+        # cache rosters we load
+        self.cached_roster_stats = dict()
         self.roster_builder =roster.RecursiveRosterBuilder()
+
 
     def register_excel_writer(self,writer):
         self.excel_writer = writer
@@ -92,13 +44,9 @@ class BestRankedPlayerScorer:
     #     return locals()['val']
 
     def score(self, roster_change_set=None, results_printer=None):
-        roster_df = self.team_roster
-        today = datetime.date.today()
-        try:
-            roster_with_projections = self.player_projections.loc[roster_df.index.intersection(self.player_projections.index),:]
-        except TypeError as e:
-            print(e)
         # roster_with_projections.loc[:,'GamesInLineup'] = int(0)
+        roster_df = None
+        today = datetime.date.today()
         projected_week_results = None
         for single_date in self.date_range:
             # self.logger.debug("Date: %s", single_date)
@@ -116,16 +64,23 @@ class BestRankedPlayerScorer:
                     daily_stats = pd.DataFrame(stats).loc[:,['player_id'] + player_stats]
                     daily_stats.replace('-', np.nan, inplace=True)
                     daily_stats.set_index('player_id',inplace=True)
-                    # TODO would be ideal to drop non stat tracked stats, though must keep player id, team, etc
-                    # maybe this should be done over in compare, only compare stats we care about in league
-
-                    # daily_stats.drop(columns=['GP','PTS','PPG','PPA','PPP','GWG','GP','position_type'], inplace=True)
-
-                    # daily_stats.rename(columns={'FW': 'FOW'}, inplace=True)
                     self.cached_actual_results[single_date] = daily_stats.loc[~daily_stats.G.isnull(),:]
                 roster_results = self.cached_actual_results[single_date]
-                roster_player_id_list = self.cached_actual_results[single_date].index.tolist()
+                # roster_player_id_list = self.cached_actual_results[single_date].index.tolist()
             else:
+                if roster_df is None or single_date <= self.league_edit_date:
+                    if single_date not in self.cached_roster_stats:
+                        roster_df = pd.DataFrame(self.team.roster(day=single_date))
+                        roster_df.set_index('player_id', inplace=True)
+                        self.cached_roster_stats[single_date] = roster_df
+
+                    roster_df = self.cached_roster_stats[single_date]
+
+                    try:
+                        roster_with_projections = self.player_projections.loc[
+                                                  roster_df.index.intersection(self.player_projections.index), :]
+                    except TypeError as e:
+                        print(e)
                 if roster_change_set is not None:
                     roster_changes = roster_change_set.get(single_date)
                     if len(roster_changes) > 0:
@@ -134,14 +89,6 @@ class BestRankedPlayerScorer:
                                 self.player_projections.loc[row['player_in'], :])
                             roster_with_projections.loc[row['player_in'], 'GamesInLineup'] = 0
                             roster_with_projections.drop(row['player_out'], inplace=True)
-
-
-                        # if roster_change.change_date == single_date:
-                        #     roster_with_projections = roster_with_projections.append(
-                        #         self.player_projections.loc[roster_change.player_in, :])
-                        #     roster_with_projections.loc[roster_change.player_in, 'GamesInLineup'] = 0
-                        #
-                        #     roster_with_projections.drop(roster_change.player_out, inplace=True)
                 # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
                 ids_no_stats = list(
                     roster_with_projections.query('G != G & position_type == "P" & status != "IR" ').index.values)
@@ -151,13 +98,12 @@ class BestRankedPlayerScorer:
                     the_stats = self.league.player_stats(not_cached, 'season')
                     stats_to_track = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FW"]
                     for player_w_stats in the_stats:
-                        loaded_player_stats = dict((k, player_w_stats[k]) for k in stats_to_track)
+                        # loaded_player_stats = dict((k, player_w_stats[k]) for k in stats_to_track)
                         if player_w_stats['player_id'] not in self.cached_player_stats:
                             self.cached_player_stats[ player_w_stats['player_id']] = player_w_stats
 
                     for player_id in ids_no_stats:
                         player_w_stats = self.cached_player_stats[ player_w_stats['player_id']]
-                        # a_player = players[players.player_id == player_w_stats['player_id']]
                         for stat in stats_to_track:
                             try:
                                 if player_w_stats['GP']  != '-' and player_w_stats['GP'] > 0:
@@ -225,114 +171,3 @@ class BestRankedPlayerScorer:
                     projected_week_results = projected_week_results.append(roster_results)
         return projected_week_results
 
-    def _score_day(self, day):
-        pass
-
-    # fill roster, by using highest rated players as rated by fantasysp for the week.
-    def _select_roster(self, game_date):
-
-        return pd.DataFrame()
-
-
-class Roster:
-    def __init__(self):
-        self.logger = logging.getLogger()
-        self.roster = {'C': {'num': 2, 'players': []},
-                       'LW': {'num': 2, 'players': []},
-                       'RW': {'num': 2, 'players': []},
-                       'D': {'num': 4, 'players': []},
-                       'G': {'num': 2, 'players': []}}
-        self.full_positions = list()
-
-    def _clear_roster(self):
-        self.roster = {'C': {'num': 2, 'players': []},
-                       'LW': {'num': 2, 'players': []},
-                       'RW': {'num': 2, 'players': []},
-                       'D': {'num': 4, 'players': []},
-                       'G': {'num': 2, 'players': []}}
-        self.full_positions = list()
-
-    # using roster makeup, maximize points
-    def _add(self, position, player):
-        # print('Adding to position: {}:{}'.format(position, player['name_x']))
-        self.roster[position]['players'].append(player)
-
-    def _can_accept(self, player):
-        for position in player['eligible_positions']:
-            if position not in ['G', 'IR']:
-                try:
-                    if len(self.roster[position]['players']) < self.roster[position]['num']:
-                        return position
-                except TypeError:
-                    pass
-        # can we make room in any of the eligble positions
-
-        return False
-
-    def _place(self, row):
-        for posn in row['eligible_positions']:
-            if self._is_room_as(posn):
-                self.roster[posn]['players'].append(row)
-                return
-            else:
-                if self._free_position(posn):
-                    self.roster[posn]['players'].append(row)
-        # did not find room, lets see if we can make space
-
-    def _make_room(self, position):
-        for player in self.roster[position]['players']:
-            # can we move this player
-            for position in player['eligible_positions']:
-                if position != position:
-                    # we have an alternative position
-                    if self._is_room_as(position):
-                        print('can move to: {}'.format(position))
-                        return True
-                    else:
-                        print("can't move to: {}".format(position))
-        return False
-
-    def _is_room_as(self, position):
-        if len(self.roster[position]['players']) < self.roster[position]['num']:
-            return True
-        else:
-            return False
-
-    def _free_position(self, position):
-        return False
-
-    def daily_results(self, projected_results):
-
-        self._clear_roster()
-
-        for index in projected_results.index:
-            row = projected_results.loc[index]
-            # print("Processing idx: {}, name: {}".format(index,row['name_x']))
-            try:
-                if row.fpts > 0:
-                    position = self._can_accept(row)
-                    if position is not False:
-                        self._add(position, row)
-                    else:
-                        # print("rejected: {}, eligble positions: {}".format(row['name'], row['eligible_positions']))
-                        pass
-            except ValueError as e:
-                print(e)
-        # results = dict.fromkeys(player_stats, 0)
-        # roster = self.roster
-        # day_roster  = []
-        # for key in roster.keys():
-        #     for player in roster[key]['players']:
-        #         player['position'] = key
-        #         day_roster.append(player)
-        #
-        # day_df = pd.DataFrame(day_roster)
-        #
-        # if len(day_df) > 0:
-        #     return day_df.loc[:,player_stats], self.roster
-        # else:
-        #     return pd.DataFrame(), self.roster
-        return self.roster
-
-    def _print_roster(self):
-        pass
