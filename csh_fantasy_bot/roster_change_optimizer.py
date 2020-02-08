@@ -15,7 +15,7 @@ from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 
 import cProfile, pstats, io
 
-max_lineups = 5000
+max_lineups = 1500
 generations = 300
 
 
@@ -92,6 +92,8 @@ class GeneticAlgorithm:
         self.locked_ids = [e["player_id"] for e in locked_plyrs]
         self.oppenents_estimates = score_comparer.opp_sum
         self.league = score_comparer.league
+        # TODO this should be loaded from league
+        self.player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
         start_date, end_date = self.league.week_date_range(score_comparer.week)
         self.date_range = pd.date_range(start_date, end_date)
         # need what dates we can still do things when running during the week
@@ -588,7 +590,7 @@ class GeneticAlgorithm:
             # execution_time = stop - start
             # print("Program Executed in: {} ".format(execution_time))
             change_set.scoring_summary = the_score
-            change_set.score = self.score_comparer.compute_score(the_score.sum())
+            change_set.score = self.score_comparer.compute_score(the_score.loc[:,self.player_stats].sum())
             # return (team_name, opp_sum.sum().to_dict())
             # opp_sum = self.scorer.summarize(opp_df, week)
             pass

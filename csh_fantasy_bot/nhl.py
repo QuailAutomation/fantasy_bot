@@ -62,6 +62,7 @@ class BestRankedPlayerScorer:
                     lineup = opp_daily_roster.query('selected_position != "BN" & selected_position != "G"')
                     stats = self.league.player_stats(lineup.player_id.tolist(), "date", date=single_date)
                     daily_stats = pd.DataFrame(stats).loc[:,['player_id'] + player_stats]
+                    daily_stats.loc[:,'score_type'] = 'a'
                     daily_stats.replace('-', np.nan, inplace=True)
                     daily_stats.set_index('player_id',inplace=True)
                     self.cached_actual_results[single_date] = daily_stats.loc[~daily_stats.G.isnull(),:]
@@ -158,12 +159,14 @@ class BestRankedPlayerScorer:
                     best_roster = self.roster_builder.find_best(todays_projections)
                     if best_roster is not None:
                         roster_results = todays_projections.loc[best_roster.values.astype(int).tolist(), player_stats]
+                        roster_results.loc[:, 'score_type'] = 'p'
                     pass
 
             if roster_results is not None and len(roster_results) > 0:
                 # if self.excel_writer is not None:
                 #     roster_results.to_excel(self.excel_writer, single_date.strftime("%Y-%m-%d"))
-                roster_results.loc[:,'play_date'] = single_date
+                roster_results.loc[:,'play_date'] = single_date.date()
+
                 # self.logger.debug("roster:\n %s", roster_with_projections.head(20))
                 if projected_week_results is None:
                     projected_week_results = roster_results

@@ -97,7 +97,6 @@ class ManagerBot:
     """
     def __init__(self, week = None):
         self.logger = logging.getLogger()
-
         self.sc = OAuth2(None, None, from_file="oauth2.json")
         self.lg = yfa.League(self.sc, '396.l.53432')
         self.tm = self.lg.to_team(self.lg.team_key())
@@ -546,7 +545,7 @@ class ManagerBot:
         optimizer_func = self._get_lineup_optimizer_function()
 
         locked_plyrs = []
-        thres = 95
+        thres = 90
         for plyr in self.fetch_cur_lineup():
             if plyr['percent_owned'] >= thres or plyr['status'] == 'IR':
                 locked_plyrs.append(plyr)

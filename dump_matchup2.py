@@ -4,11 +4,12 @@ import numpy as np
 from csh_fantasy_bot import bot, nhl, roster_change_optimizer
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
+player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
 
 def print_week_results(my_scores_summary):
     sc = manager.score_comparer.compute_score(my_scores_summary)
@@ -26,11 +27,11 @@ manager: bot.ManagerBot = bot.ManagerBot(17)
 print("My team has {} roster changes available.".format(manager.roster_changes_allowed))
 scorer = nhl.BestRankedPlayerScorer(manager.lg, manager.tm, manager.ppool, manager.week)
 my_scores = scorer.score()
-print_week_results(my_scores.sum())
+print_week_results(my_scores.loc[:,player_stats].sum())
 
 roster_changes = list()
-roster_changes.append([5573,6779, np.datetime64('2020-02-08')])
-# roster_changes.append([4683,3788, np.datetime64('2020-02-12')])
+# roster_changes.append([5573,7536, np.datetime64('2020-02-09')])
+# roster_changes.append([5573,3788, np.datetime64('2020-02-08')])
 # roster_changes.append(roster_change_optimizer.RosterChange(5984,7267, np.datetime64('2020-02-03')))
 # roster_changes.append(roster_change_optimizer.RosterChange(4792,5569, np.datetime64('2020-02-09')))
 # roster_changes.append(roster_change_optimizer.RosterChange(5698,5380, np.datetime64('2020-02-04')))
@@ -66,5 +67,38 @@ def do_run():
 do_run()
 
 if len(roster_changes) > 0:
-    my_scores_with_roster_changes = scorer.score(roster_change_set)
-    print_week_results(my_scores_with_roster_changes.sum())
+    my_scores = scorer.score(roster_change_set)
+    print_week_results(my_scores.loc[:,player_stats].sum())
+
+my_scores.to_csv('team-results.csv')
+manager.all_players.to_csv('all-players.csv')
+manager.all_players.set_index('player_id', inplace=True)
+my_scores.loc[:,'name'] = manager.all_players.loc[my_scores.index,'name']
+my_scores.loc[:,'fantasy_team_id'] = manager.tm.team_key.split('.')[-1]
+print(my_scores.head(50))
+
+if True:
+    from elasticsearch import Elasticsearch
+    from elasticsearch import helpers
+
+    es = Elasticsearch(hosts='http://192.168.1.20:9200',http_compress=True)
+    my_scores.reset_index(inplace=True)
+    use_these_keys = my_scores.columns
+
+
+    def filterKeys(document):
+        return {key: document[key] for key in use_these_keys}
+
+
+    def doc_generator(df):
+        df_iter = df.iterrows()
+        for index, document in df_iter:
+            yield {
+                "_index": 'fantasy-bot-team-results',
+                "_type": "_doc",
+                "_id": "{}-{}-{}".format(document['player_id'], document['play_date'], document['score_type']),
+                "_source": filterKeys(document),
+            }
+
+
+    helpers.bulk(es, doc_generator(my_scores))
