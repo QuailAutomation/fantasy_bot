@@ -46,7 +46,7 @@ class BestRankedPlayerScorer:
     def score(self, roster_change_set=None, results_printer=None):
         # roster_with_projections.loc[:,'GamesInLineup'] = int(0)
         roster_df = None
-        today = datetime.date.today()
+        today = pd.Timestamp.today()
         projected_week_results = None
         for single_date in self.date_range:
             # self.logger.debug("Date: %s", single_date)
@@ -76,7 +76,10 @@ class BestRankedPlayerScorer:
                         self.cached_roster_stats[single_date] = roster_df
 
                     roster_df = self.cached_roster_stats[single_date]
-
+                    days_from_today = single_date - today
+                    # if within 3 days of today, let's remove OUT players
+                    if days_from_today.days < 3:
+                        roster_df = roster_df[roster_df.status != 'O']
                     try:
                         roster_with_projections = self.player_projections.loc[
                                                   roster_df.index.intersection(self.player_projections.index), :]
