@@ -564,7 +564,7 @@ class GeneticAlgorithm:
         Mutation simply means swapping out the player with a random player.
         """
 
-        mutate_pct = 5
+        mutate_pct = 2
         add_lineups = []
         rem_lineups = []
         selector = self._gen_player_selector(gen_type='random')
