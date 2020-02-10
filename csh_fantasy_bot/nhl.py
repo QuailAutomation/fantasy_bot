@@ -89,7 +89,10 @@ class BestRankedPlayerScorer:
                             roster_with_projections = roster_with_projections.append(
                                 self.player_projections.loc[row['player_in'], :])
                             roster_with_projections.loc[row['player_in'], 'GamesInLineup'] = 0
-                            roster_with_projections.drop(row['player_out'], inplace=True)
+                            try:
+                                roster_with_projections.drop(row['player_out'], inplace=True)
+                            except KeyError as e:
+                                print(e)
                 # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
                 ids_no_stats = list(
                     roster_with_projections.query('G != G & position_type == "P" & status != "IR" ').index.values)

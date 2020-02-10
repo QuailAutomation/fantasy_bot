@@ -15,8 +15,9 @@ from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 
 import cProfile, pstats, io
 
-max_lineups = 1500
-generations = 300
+max_lineups = 1000
+generations = 100
+ELITE_NUM = int(5)
 
 
 def profile(fnc):
@@ -104,10 +105,7 @@ class GeneticAlgorithm:
         self.date_range_for_changes = pd.date_range(first_change_date, self.date_range[-1])
         self.waivers = self.league.waivers()
         self.droppable_players = self._generate_droppable_players()
-        #  self.seed_lineup = self._generate_seed_lineup(locked_plyrs)
-        self.last_lineup_id = 0
         self.team_full_roster = self.league.to_team(self.league.team_key()).roster()
-        self.pbar = None
 
         self.my_scorer: BestRankedPlayerScorer = BestRankedPlayerScorer(self.league, self.my_team,
                                                                         self.ppool, self.date_range)
@@ -130,25 +128,22 @@ class GeneticAlgorithm:
         if len(self.population) == 0:
             return None
         for generation in range(generations):
-            if generation % 10 == 0:
+            if generation % 2 == 0:
                 best = self._compute_best_lineup()
                 print("Best as of: {}, pop len: {}".format(generation, len(self.population)))
-
+                print('player_out, player_in, change_date')
                 self._print_roster_change_set(best)
                 print(self.my_scorer.score(best).sum().to_dict())
                 print("Summary:\n{}".format(best.scoring_summary.head(20)))
             self._update_progress(generation)
+            print('mating: {}'.format(generation))
             self._mate()
-            # pr = cProfile.Profile()
-            # pr.enable()
+            print('mutating: {}'.format(generation))
             self._mutate()
-            # pr.disable()
-            # s = io.StringIO()
-            # sortby = 'cumulative'
-            # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-            # ps.print_stats()
-            # should sort population
-            self.population = sorted(self.population, key=lambda e: e.score, reverse=True)
+            try:
+                self.population = sorted(self.population, key=lambda e: e.score, reverse=True)
+            except AttributeError as e:
+                pass
         self.logger.info(
             "Ended with population size of {}".format(len(self.population)))
         return self._compute_best_lineup()
@@ -164,6 +159,8 @@ class GeneticAlgorithm:
                 print("Date: {} - Drop: {} ({})- Add: {} ({})".format(roster_move_date, player_out_name,
                                                                       row['player_out'], player_in_name,
                                                                       row['player_in']))
+                # print("roster_changes.append([{}, {}, np.datetime64('{}')])".format(row['player_out'], row['player_in'],
+                #                                                                     roster_move_date))
 
             except IndexError as e:
                 print(e)
@@ -176,30 +173,6 @@ class GeneticAlgorithm:
             if plyer['player_id'] not in waivers_ids and plyer['position_type'] != 'G':
                 droppable_players.append(plyer['player_id'])
         return droppable_players
-
-    def _gen_lineup_id(self):
-        self.last_lineup_id += 1
-        return self.last_lineup_id
-
-    def _to_sids(self, lineup):
-        """Return a sorted list of player IDs"""
-        return sorted([e["player_id"] for e in lineup])
-
-    def _is_dup_sids(self, sids):
-        """Check if any lineup in the population matches the given sids"""
-        for l in self.population:
-            if sids == l['sids']:
-                return True
-        return False
-
-    def _log_lineup(self, descr, lineup):
-        self.logger.info("Lineup: ID={}, Desc={}, Score={}".format(
-            lineup['id'], descr, lineup['score']))
-        for plyr in lineup['players']:
-            self.logger.info(
-                "{} - {} ({}%)".format(plyr['selected_position'],
-                                       plyr['name_x'],
-                                       plyr['percent_owned']))
 
     def _init_progress_bar(self, generations):
         """
@@ -219,11 +192,6 @@ class GeneticAlgorithm:
         :param generations: Max number of generations
         """
         self.pbar.update(generation + 1)
-
-    def _log_population(self):
-        return
-        for i, lineup in enumerate(self.population):
-            self._log_lineup("Initial Population " + str(i), lineup)
 
     def _get_num_roster_changes_made(self):
         # if the game week is in the future then we couldn't have already made changes
@@ -262,8 +230,6 @@ class GeneticAlgorithm:
             if len(self.population) >= max_lineups:
                 break
             self._generate_roster_change_sets(selector, max_lineups)
-
-        self._log_population()
 
     def _generate_seed_lineup(self, locked_plyrs):
         """
@@ -322,29 +288,6 @@ class GeneticAlgorithm:
                 break
         return fit
 
-    def _fit_plyr_to_lineup(self, plyr, lineup):
-        """
-        Tries to fit the player to the lineup.
-
-        If the lineup becomes full, then it will be add to the population.
-
-        :param plyr: Player attempt to add
-        :param lineup: Current lineup
-        :return: True if player was added
-        """
-        fit = False
-        try:
-            assert (plyr['status'] == '')
-            plyr['selected_position'] = np.nan
-            lineup = self.roster_bldr.fit_if_space(lineup, plyr)
-            fit = True
-
-            if len(lineup) == self.roster_bldr.max_players():
-                self._add_completed_lineup(lineup)
-        except LookupError:
-            pass  # Try fitting in the next lineup
-        return fit
-
     def _generate_roster_change_sets(self, selector, max_roster_change_sets):
         # how many roster changes have been made so far
         # when is next date we can make roster changes for ?
@@ -361,14 +304,12 @@ class GeneticAlgorithm:
             if plyr['player_id'] in team_roster.player_id.values or plyr['position_type'] == 'G':
                 continue
 
-            drop_date = random.choice(self.date_range_for_changes)
+            drop_date = random.choice(self.date_range_for_changes).date()
 
             if last_roster_change_set.is_full():
                 if last_roster_change_set not in self.population:
                     roster_change_sets.append(last_roster_change_set)
                 last_roster_change_set = RosterChangeSet(max_allowed=self.roster_changes_allowed)
-                # print("created new roster change set")
-                # roster_change_sets.append(last_roster_change_set)
 
             while not last_roster_change_set.is_full():
                 # let's pick someone to remove
@@ -390,46 +331,11 @@ class GeneticAlgorithm:
         # score each of the change sets
         for index, change_set in enumerate(roster_change_sets):
             if change_set.score is None:
-                # the_score = self.my_scorer.score(change_set).sum().to_dict()
-                # change_set.base_score = the_score
                 self._set_scores([change_set])
-                # change_set.score = self.score_comparer.compute_score(the_score)
-                # return (team_name, opp_sum.sum().to_dict())
-                # opp_sum = self.scorer.summarize(opp_df, week)
                 if index % 19 == 0:
                     print("scored: {}, ({})".format(index, change_set.score))
             pass
             # opp_sum = my_scorer.score()
-
-    def _generate_lineups(self, max_lineups, selector):
-        """
-        Create lineups for initial population
-
-        New lineups will be added to self.population.
-
-        :param max_lineups: The maximum number of lineups to have in
-        :param selector: PlayerSelector to use to pick players to fill lineups
-        self.population
-        """
-        assert (len(self.population) < max_lineups)
-        lineups = []
-        for plyr in selector.select():
-            fit = False
-            if len(self.population) == max_lineups:
-                return
-            if plyr['player_id'] in self.locked_ids or plyr['position_type'] == 'G':
-                continue
-            for lineup in lineups:
-                if len(lineup) == self.roster_bldr.max_players():
-                    continue
-                fit = self._fit_plyr_to_lineup(plyr, lineup)
-                if fit:
-                    break
-
-            if not fit:
-                lineup = copy.deepcopy(self.seed_lineup)
-                lineups.append(lineup)
-                self._fit_plyr_to_lineup(plyr, lineup)
 
     def _remove_from_pop(self, lineup):
         for i, p in enumerate(self.population):
@@ -460,19 +366,24 @@ class GeneticAlgorithm:
         The selection process regarding who to mate is determined using the
         selectionStyle config parameter.
         """
-        mates = self._pick_lineups()
-        if mates:
-            if mates[0] == mates[1]:
-                pass
-            self._remove_from_pop(mates[0])
-            self._remove_from_pop(mates[1])
-            offspring = self._produce_offspring(mates)
-            # for i, lineup in enumerate(offspring):
-            #     self._log_lineup("Offspring " + str(i), lineup)
-            for off in offspring:
-                if off not in self.population:
-                    self.population.append(off)
+        new_pop = []
+        for elite in self.population[:ELITE_NUM + 1]:
+            new_pop.append(elite)
+        while len(new_pop) < len(self.population):
+            mates = self._pick_lineups()
+            if mates:
+                if mates[0] == mates[1]:
+                    pass
+                # self._remove_from_pop(mates[0])
+                # self._remove_from_pop(mates[1])
+                offspring = self._produce_offspring(mates)
+                # for i, lineup in enumerate(offspring):
+                #     self._log_lineup("Offspring " + str(i), lineup)
+                for off in offspring:
+                    # if off not in new_pop:
+                    new_pop.append(off)
             # self.population = self.population + offspring
+        self.population = new_pop
 
     def _pick_lineups(self):
         """
@@ -483,7 +394,7 @@ class GeneticAlgorithm:
 
         :return: List of lineups.  Return None if not enough lineups exists.
         """
-        k = int(128)
+        k = int(4)
         if k > len(self.population):
             pw = math.floor(math.log(len(self.population), 2))
             k = 2 ** pw
@@ -497,8 +408,11 @@ class GeneticAlgorithm:
         for _ in range(int(rounds)):
             next_participants = []
             for opp_1, opp_2 in zip(participants[0::2], participants[1::2]):
-                assert (opp_1.score is not None)
-                assert (opp_2.score is not None)
+                try:
+                    assert (opp_1.score is not None)
+                    assert (opp_2.score is not None)
+                except AttributeError as e:
+                    pass
                 if opp_1.score > opp_2.score:
                     next_participants.append(opp_1)
                 else:
@@ -508,7 +422,6 @@ class GeneticAlgorithm:
         if participants[0] == participants[1]:
             self.logger.warning("_pick_lineups is returning the same participants")
             return None
-            # assert(participants[0] != participants[1])
         return participants
 
     def _produce_offspring(self, mates):
@@ -531,46 +444,46 @@ class GeneticAlgorithm:
         # del (mates[1][-num_roster_changes_to_remove:])
 
         offspring = []
+        offspring1 = RosterChangeSet(
+            max_allowed=len(mates[0]) - num_roster_changes_to_remove + num_roster_changes_to_remove_2)
         try:
-            offspring1 = RosterChangeSet(len(mates[0]) - num_roster_changes_to_remove + num_roster_changes_to_remove_2)
-            for change in mates[0][0:-num_roster_changes_to_remove]:
-                offspring1.add(change)
+            for change in mates[0].get_changes().iloc[len(mates[0]) - num_roster_changes_to_remove:, :].itertuples():
+                offspring1.add(change.player_out, change.player_in, change.change_date)
             if num_roster_changes_to_remove_2 > 0:
-                for change in changes_to_remove_2:
-                    offspring1.add(change)
+                for change in changes_to_remove_2.itertuples():
+                    offspring1.add(change.player_out, change.player_in, change.change_date)
             offspring.append(offspring1)
         except:
-            pass
             # print("Offspring rejected, player already going in/out")
+            offspring.append(mates[0])
 
+        offspring2 = RosterChangeSet(
+            max_allowed=len(mates[1]) - num_roster_changes_to_remove_2 + num_roster_changes_to_remove)
         try:
-            offspring2 = RosterChangeSet(len(mates[1]) - num_roster_changes_to_remove_2 + num_roster_changes_to_remove)
-            for change in mates[1][0:-num_roster_changes_to_remove_2]:
-                offspring2.add(change)
+            for change in mates[1].get_changes().iloc[0:-num_roster_changes_to_remove_2:, :].itertuples():
+                offspring2.add(change.player_out, change.player_in, change.change_date)
             if num_roster_changes_to_remove > 0:
-                for change in changes_to_remove:
-                    offspring2.add(change)
+                for change in changes_to_remove.itertuples():
+                    offspring2.add(change.player_out, change.player_in, change.change_date)
             offspring.append(offspring2)
         except:
-            pass
-            # print("Offspring rejected, player already going in/out")
+            # print('Offspring rejected, player in or out exists')
+            offspring.append(mates[1])
+        # print("Offspring rejected, player already going in/out")
 
         # offspring = [offspring1, offspring2]
-        self._set_scores(offspring)
+        # self._set_scores(offspring)
 
-        offspring = sorted(offspring, key=lambda e: e.score, reverse=True)
+        # offspring = sorted(offspring, key=lambda e: e.score, reverse=True)
         # Remove any identical offspring.  If two offspring are identical they
         # will be adjacent to each other because they have the same score.
-        for i in range(len(offspring) - 1, 0, -1):
-            if offspring[i] == offspring[i - 1]:
-                del (offspring[i])
-        if len(offspring) < 2:
-            pass
+        # for i in range(len(offspring) - 1, 0, -1):
+        #     if offspring[i] == offspring[i - 1]:
+        #         del (offspring[i])
+        # if len(offspring) < 2:
+        #     pass
         # Check for duplicate lineups in the general population
         # while self._is_dup_sids(offspring[0]['sids']):
-        for off in offspring:
-            if off in self.population:
-                del (off)
 
         # if len(offspring) > 0:
         #     if offspring[0] in self.population:
@@ -584,64 +497,9 @@ class GeneticAlgorithm:
         #                                                            self.ppool, self.date_range)
         # score each of the change sets
         for change_set in roster_change_sets:
-            # start = timeit.default_timer()
             the_score = self.my_scorer.score(change_set)
-            # stop = timeit.default_timer()
-            # execution_time = stop - start
-            # print("Program Executed in: {} ".format(execution_time))
             change_set.scoring_summary = the_score
-            change_set.score = self.score_comparer.compute_score(the_score.loc[:,self.player_stats].sum())
-            # return (team_name, opp_sum.sum().to_dict())
-            # opp_sum = self.scorer.summarize(opp_df, week)
-            pass
-            # opp_sum = my_scorer.score()
-
-    def _create_player_pool(self, lineups):
-        """
-        Produces a player pool from a set of lineups
-
-        The player pool is suitable for use with the PlayerSelector
-
-        :param lineups: Set of lineups to create a pool out of
-        :return: DataFrame of all of the unique players in the lineups
-        """
-        df = pd.DataFrame()
-        player_ids = []
-        for lineup in lineups:
-            for i, plyr in enumerate(lineup['players']):
-                # Avoid adding duplicate players to the pool
-                if plyr['player_id'] not in player_ids:
-                    df = df.append(plyr, ignore_index=True)
-                    player_ids.append(plyr['player_id'])
-        return df
-
-    def _complete_lineup(self, ppool, lineup):
-        """
-        Complete a lineup so that it has the max number of players
-
-        The players are selected at random.
-
-        :param ppool: Player pool to pull from
-        :param lineup: Lineup to fill.  Can be [].
-        :return: List that contains the players in the lineup
-        """
-        ids = [e['player_id'] for e in lineup]
-        selector = roster.PlayerSelector(ppool)
-        selector.shuffle()
-        for plyr in selector.select():
-            # Do not add the player if it is already in the lineup
-            if plyr['player_id'] in ids:
-                continue
-            try:
-                plyr['selected_position'] = np.nan
-                lineup = self.roster_bldr.fit_if_space(lineup, plyr)
-            except LookupError:
-                pass
-            if len(lineup) == self.roster_bldr.max_players():
-                return lineup
-        raise RuntimeError(
-            "Walked all of the players but couldn't create a lineup.  Have "
-            "{} players".format(len(lineup)))
+            change_set.score = self.score_comparer.compute_score(the_score.loc[:, self.player_stats].sum())
 
     def _mutate_roster_change(self, lineup, selector, team_roster):
         roster_change_to_mutate_index = random.randint(1, len(lineup)) - 1
@@ -651,7 +509,9 @@ class GeneticAlgorithm:
         if len(self.date_range_for_changes) > 1 and random_number < 30:
             # lets mutate date
             while True:
-                drop_date = random.choice(self.date_range_for_changes)
+                drop_date = random.choice(self.date_range_for_changes).date()
+
+
                 if drop_date != roster_change_to_mutate.change_date:
                     mutated_roster_change = [roster_change_to_mutate.player_out,
                                              roster_change_to_mutate.player_in,
@@ -662,7 +522,7 @@ class GeneticAlgorithm:
 
             pass
 
-        elif random_number < 50:
+        elif random_number < 40:
             # lets mutate player out
             for _ in range(50):
                 player_to_remove = random.choice(self.droppable_players)
@@ -713,12 +573,14 @@ class GeneticAlgorithm:
         for index, lineup in enumerate(self.population):
 
             # lets not mutate the top 2, and only sets with atleast 1 roster change
-            if index < 2 or len(lineup) == 0:
+            if index < ELITE_NUM or len(lineup) == 0:
                 continue
 
             if random.randint(1, 100) <= mutate_pct:
                 self._mutate_roster_change(lineup, selector, team_roster)
-
+            else:
+                if lineup.score is None:
+                    self._set_scores([lineup])
                 # TODO we should check if this roster set now equals another
                 # for i, pop in enumerate(self.population):
                 #     if pop == lineup and i != index:
@@ -734,47 +596,22 @@ class GeneticAlgorithm:
         # except ValueError:
         #     pass
         # lets always create a copy of our current best, and mutate it
-        cloned_best = deepcopy(self.population[0])
-        self._mutate_roster_change(cloned_best, selector, team_roster)
-        self.last_mutated_roster_change = cloned_best
-
-        self.population.append(cloned_best)
+        # cloned_best = deepcopy(self.population[0])
+        # self._mutate_roster_change(cloned_best, selector, team_roster)
+        # self.last_mutated_roster_change = cloned_best
+        #
+        # self.population.append(cloned_best)
 
 
 import datetime
-
-# class RosterChange:
-#     def __init__(self, player_out, player_in, change_date):
-#         self.player_out = player_out
-#         self.player_in = player_in
-#         self.change_date = change_date
-#         try:
-#             self.equality_value = "O{}I{}D{}".format(self.player_out, self.player_in,
-#                                                      np.datetime_as_string(self.change_date, unit='D'))
-#         except TypeError as e:
-#             pass
-#
-#     def __eq__(self, other):
-#         try:
-#             return self.equality_value == other.equality_value
-#         except:
-#             return False
-#
-#     def __add__(self, other):
-#         return self.equality_value.__add__(other.equality_value)
-#
-#     def apply(self, roster):
-#         pass
-
-
 from collections.abc import Sequence
 
 
-class RosterChangeSet(Sequence):
+class RosterChangeSet:
 
-    def __init__(self, changes=None, max_allowed=4):
-        self.number_roster_changes = len(changes) if changes is not None else random.randint(0,
-                                                                                             max_allowed)
+    def __init__(self, changes=None, max_allowed=None):
+        self.number_roster_changes = random.randint(0,max_allowed) if max_allowed is None else max_allowed
+
         # date, list changes
         self.roster_changes = pd.DataFrame(columns=['change_date', 'player_out', 'player_in', 'equality_score'])
         self.equality_value = None
@@ -784,11 +621,13 @@ class RosterChangeSet(Sequence):
                 self.add(change.player_out, change.player_in, change.change_date)
         super().__init__()
 
+
     def __deepcopy__(self, memodict={}):
         cloned_roster_changes = self.roster_changes.copy()
 
         return RosterChangeSet(cloned_roster_changes)
         # new_rc_set = RosterChangeSet()
+
 
     def __getitem__(self, i):
         try:
@@ -796,51 +635,64 @@ class RosterChangeSet(Sequence):
         except TypeError:
             pass
 
+
     def __len__(self):
         return len(self.roster_changes)
+
 
     def _compute_equality_score(self):
         self.equality_value = "RC" + self.roster_changes.loc[:, 'equality_score'].str.cat()
 
+
     def __eq__(self, other):
         if self.equality_value is None:
             self.equality_value = self._compute_equality_score()
+        if isinstance(other,RosterChangeSet):
+            return self.equality_value == other.equality_value
+        else:
+            return False
 
-        return self.equality_value == other.equality_value
 
     def __delitem__(self, key):
-        self.roster_changes.drop(self.roster_changes.index[key],inplace=True)
+        self.roster_changes.drop(self.roster_changes.index[key], inplace=True)
         self._compute_equality_score()
+
 
     def can_drop_player(self, drop_player):
         return len(self.roster_changes) < self.number_roster_changes and drop_player not in self.roster_changes.loc[:,
                                                                                             'player_out'].values
 
+
     def add(self, player_out, player_in, change_date):
         if len(self.roster_changes.index) < self.number_roster_changes:
-            if player_out in self.roster_changes.loc[:, 'player_out'] or player_in in self.roster_changes.loc[:,
-                                                                                      'player_in']:
+            if player_out in self.roster_changes.loc[:, 'player_out'].values or player_in in self.roster_changes.loc[:,
+                                                                                      'player_in'].values:
                 raise Exception("Having same player in/out on multiple roster changes not supported")
-            date_string = ''
-            if isinstance(change_date,datetime.date):
+            if isinstance(change_date, datetime.date):
                 date_string = str(change_date)
             else:
-                 date_string = np.datetime_as_string(change_date, unit='D')
+                date_string = np.datetime_as_string(change_date, unit='D')
             equality_score = "O{}I{}D{}".format(player_out, player_in,
                                                 date_string)
-            # self.roster_changes = self.roster_changes.append()
             self.roster_changes.loc[len(self.roster_changes)] = [change_date, player_out, player_in, equality_score]
             self._compute_equality_score()
         else:
             raise Exception("Roster change set already full")
+
 
     def replace(self, old_roster_change, new_roster_change):
         self.roster_changes.drop(
             self.roster_changes[self.roster_changes.player_out == old_roster_change['player_out']].index, inplace=True)
         self.add(*new_roster_change)
 
+
     def is_full(self):
         return len(self.roster_changes) == self.number_roster_changes
 
+
     def get(self, date):
         return self.roster_changes[self.roster_changes['change_date'] == date]
+
+
+    def get_changes(self):
+        return self.roster_changes

@@ -14,29 +14,35 @@ player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
 def print_week_results(my_scores_summary):
     sc = manager.score_comparer.compute_score(my_scores_summary)
     differences = my_scores_summary - manager.score_comparer.opp_sum
-    score = differences / manager.score_comparer.stdevs
+
+    means = pd.DataFrame([my_scores_summary, manager.score_comparer.opp_sum]).mean()
+    # differences / means
+    score = differences / means
     # cat_win = 1 if my_scores.sum() > manager.score_comparer.opp_sum else -1
     summary_df = pd.DataFrame(
-        [my_scores_summary, manager.score_comparer.opp_sum, differences, manager.score_comparer.stdevs, score],
-        index=['my-scores', 'opponent', 'difference', 'std dev', 'score'])
+        [my_scores_summary, manager.score_comparer.opp_sum, differences, means, manager.score_comparer.league_means, manager.score_comparer.stdevs, score],
+        index=['my-scores', 'opponent', 'difference', 'mean-opp','mean-league','std dev', 'score'])
     print(summary_df.head(10))
     print("Score: {:4.2f}".format(sc))
 
 
-manager: bot.ManagerBot = bot.ManagerBot(17)
+manager: bot.ManagerBot = bot.ManagerBot(18)
 print("My team has {} roster changes available.".format(manager.roster_changes_allowed))
 scorer = nhl.BestRankedPlayerScorer(manager.lg, manager.tm, manager.ppool, manager.week)
 my_scores = scorer.score()
 print_week_results(my_scores.loc[:,player_stats].sum())
 
 roster_changes = list()
-# roster_changes.append([5573,7536, np.datetime64('2020-02-09')])
-# roster_changes.append([5573,3788, np.datetime64('2020-02-08')])
+roster_changes.append([3788,7111, np.datetime64('2020-02-13')])
+roster_changes.append([5573,3980, np.datetime64('2020-02-14')])
+roster_changes.append([4683,6055, np.datetime64('2020-02-11')])
+roster_changes.append([4792,5380, np.datetime64('2020-02-15')])
+
 # roster_changes.append(roster_change_optimizer.RosterChange(5984,7267, np.datetime64('2020-02-03')))
 # roster_changes.append(roster_change_optimizer.RosterChange(4792,5569, np.datetime64('2020-02-09')))
 # roster_changes.append(roster_change_optimizer.RosterChange(5698,5380, np.datetime64('2020-02-04')))
 roster_change_set = roster_change_optimizer.RosterChangeSet(
-    pd.DataFrame(roster_changes, columns=['player_out', 'player_in', 'change_date']))
+    pd.DataFrame(roster_changes, columns=['player_out', 'player_in', 'change_date']),max_allowed=len(roster_changes))
 
 import cProfile, pstats, io
 
@@ -77,7 +83,7 @@ my_scores.loc[:,'name'] = manager.all_players.loc[my_scores.index,'name']
 my_scores.loc[:,'fantasy_team_id'] = manager.tm.team_key.split('.')[-1]
 print(my_scores.head(50))
 
-if True:
+if False:
     from elasticsearch import Elasticsearch
     from elasticsearch import helpers
 

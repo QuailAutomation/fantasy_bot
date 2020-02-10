@@ -32,7 +32,7 @@ class ScoreComparer:
         self.scorer = scorer
         self.week = week
         self.opp_sum = None
-        self.stdev_cap = 4
+        self.stdev_cap = .2
         self.stat_cats = []
         self.player_projections = player_projections
         #TODO this needs to handle goalies when ready
@@ -40,7 +40,7 @@ class ScoreComparer:
             if stat['position_type'] == 'P':
                 self.stat_cats.append(stat['display_name'])
         self.stdevs = self._compute_agg(lg_lineups, 'std')
-
+        self.league_means = self._compute_agg(lg_lineups, 'mean')
     def set_opponent(self, opp_sum):
         """
         Set the stat category totals for the opponent
@@ -58,8 +58,8 @@ class ScoreComparer:
         """
         assert(self.opp_sum is not None), "Must call set_opponent() first"
         assert(self.stdevs is not None)
-
-        diff = (score_sum - self.opp_sum)/self.stdevs
+        means = pd.DataFrame([score_sum,self.opp_sum]).mean()
+        diff = (score_sum - means)/means
         return diff.clip(lower=-1 * self.stdev_cap, upper=self.stdev_cap).sum()
 
 
@@ -87,9 +87,9 @@ class ScoreComparer:
                 df = pd.DataFrame(data=lineup, columns=lineup[0].index)
 
             # score_sum = self.scorer.summarize(df,week)
-            scores = scores.append(df, ignore_index=True)
+            scores = scores.append(df.loc[:,self.stat_cats].sum(), ignore_index=True)
         # print(scores.head())
-        return scores.agg([agg]).loc['std',:]
+        return scores.agg([agg]).loc[agg,:]
 
 
 class ManagerBot:
