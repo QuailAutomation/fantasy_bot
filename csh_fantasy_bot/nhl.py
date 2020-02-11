@@ -70,7 +70,9 @@ class BestRankedPlayerScorer:
                 # roster_player_id_list = self.cached_actual_results[single_date].index.tolist()
             else:
                 if roster_df is None or single_date <= self.league_edit_date:
+
                     if single_date not in self.cached_roster_stats:
+                        print("loading day's roster")
                         roster_df = pd.DataFrame(self.team.roster(day=single_date))
                         roster_df.set_index('player_id', inplace=True)
                         self.cached_roster_stats[single_date] = roster_df
@@ -101,8 +103,9 @@ class BestRankedPlayerScorer:
                     roster_with_projections.query('G != G & position_type == "P" & status != "IR" ').index.values)
                 if len(ids_no_stats) > 0:
                     not_cached = [i for i in ids_no_stats if i not in self.cached_player_stats]
-                    print("loading {} player's info because projections missing({})".format(len(not_cached),not_cached))
-                    the_stats = self.league.player_stats(not_cached, 'season')
+                    if len(not_cached):
+                        print("loading {} player's info because projections missing({})".format(len(not_cached),not_cached))
+                        the_stats = self.league.player_stats(not_cached, 'season')
                     stats_to_track = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FW"]
                     for player_w_stats in the_stats:
                         # loaded_player_stats = dict((k, player_w_stats[k]) for k in stats_to_track)

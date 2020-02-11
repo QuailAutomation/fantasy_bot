@@ -433,7 +433,7 @@ class ManagerBot:
                                                                     self.week)
         #opp_sum = self.scorer.summarize(opp_df, week)
         opp_sum = my_scorer.score().sum()
-        print(opp_sum.head(20))
+       # print(opp_sum.head(20))
         return (team_name, opp_sum.to_dict())
 
     def load_lineup(self):

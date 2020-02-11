@@ -33,10 +33,10 @@ my_scores = scorer.score()
 print_week_results(my_scores.loc[:,player_stats].sum())
 
 roster_changes = list()
-roster_changes.append([3788,7111, np.datetime64('2020-02-13')])
-roster_changes.append([5573,3980, np.datetime64('2020-02-14')])
-roster_changes.append([4683,6055, np.datetime64('2020-02-11')])
-roster_changes.append([4792,5380, np.datetime64('2020-02-15')])
+# roster_changes.append([4683,5033, np.datetime64('2020-02-11')])
+# roster_changes.append([3788,6055, np.datetime64('2020-02-11')])
+roster_changes.append([4792,5096, np.datetime64('2020-02-16')])
+# roster_changes.append([4792,5380, np.datetime64('2020-02-15')])
 
 # roster_changes.append(roster_change_optimizer.RosterChange(5984,7267, np.datetime64('2020-02-03')))
 # roster_changes.append(roster_change_optimizer.RosterChange(4792,5569, np.datetime64('2020-02-09')))
@@ -64,7 +64,7 @@ def do_cprofile(func):
     return profiled_func
 
 
-# @do_cprofile
+@do_cprofile
 def do_run():
     print('profiling')
     scorer.score(roster_change_set)

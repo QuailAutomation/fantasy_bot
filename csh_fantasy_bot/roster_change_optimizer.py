@@ -1,9 +1,8 @@
 #!/bin/python
 
-import copy
-from copy import deepcopy
 import timeit
 import logging
+import datetime
 import numpy as np
 import pandas as pd
 from progressbar import ProgressBar, Percentage, Bar
@@ -15,7 +14,7 @@ from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 
 import cProfile, pstats, io
 
-max_lineups = 1000
+max_lineups = 400
 generations = 100
 ELITE_NUM = int(5)
 
@@ -129,7 +128,7 @@ class GeneticAlgorithm:
             return None
         for generation in range(generations):
             if generation % 2 == 0:
-                best = self._compute_best_lineup()
+                best = self.population[0]
                 print("Best as of: {}, pop len: {}".format(generation, len(self.population)))
                 print('player_out, player_in, change_date')
                 self._print_roster_change_set(best)
@@ -140,13 +139,19 @@ class GeneticAlgorithm:
             self._mate()
             print('mutating: {}'.format(generation))
             self._mutate()
-            try:
-                self.population = sorted(self.population, key=lambda e: e.score, reverse=True)
-            except AttributeError as e:
-                pass
+            print('Done mutating')
+            print('looking for unscored roster change sets')
+            unscored = [rc for rc in self.population if rc.score is None]
+            print("num unscored: {}".format(len(unscored)))
+            self._set_scores(unscored)
+
+            print("sorting population")
+            self.population = sorted(self.population, key=lambda e: e.score, reverse=True)
+            print("done sort")
+
         self.logger.info(
             "Ended with population size of {}".format(len(self.population)))
-        return self._compute_best_lineup()
+        return self.population[0]
 
     def _print_roster_change_set(self, roster_changes):
         print("Suggestions for roster changes")
@@ -502,7 +507,10 @@ class GeneticAlgorithm:
             change_set.score = self.score_comparer.compute_score(the_score.loc[:, self.player_stats].sum())
 
     def _mutate_roster_change(self, lineup, selector, team_roster):
-        roster_change_to_mutate_index = random.randint(1, len(lineup)) - 1
+        try:
+            roster_change_to_mutate_index = random.randint(1, len(lineup)) - 1
+        except ValueError as e:
+            pass
         roster_change_to_mutate = lineup[roster_change_to_mutate_index]
         # lets mutate this change set
         random_number = random.randint(1, 100)
@@ -570,41 +578,28 @@ class GeneticAlgorithm:
         selector = self._gen_player_selector(gen_type='random')
         team_roster = pd.DataFrame(self.team_full_roster)
 
-        for index, lineup in enumerate(self.population):
-
-            # lets not mutate the top 2, and only sets with atleast 1 roster change
-            if index < ELITE_NUM or len(lineup) == 0:
-                continue
-
-            if random.randint(1, 100) <= mutate_pct:
-                self._mutate_roster_change(lineup, selector, team_roster)
-            else:
-                if lineup.score is None:
-                    self._set_scores([lineup])
-                # TODO we should check if this roster set now equals another
-                # for i, pop in enumerate(self.population):
-                #     if pop == lineup and i != index:
-                #         # this change set is now a duplicate of another, so remove from population
-                #         del(self.population[index])
-
-        # if self.last_mutated_roster_change is not None:
-        # try:
-        #  self.population.remove(self.last_mutated_roster_change)
-        #   index_of = self.population.index(self.last_mutated_roster_change)
-        # if index_of > 0:
-        #     self.population.remove(self.last_mutated_roster_change)
-        # except ValueError:
-        #     pass
-        # lets always create a copy of our current best, and mutate it
-        # cloned_best = deepcopy(self.population[0])
-        # self._mutate_roster_change(cloned_best, selector, team_roster)
-        # self.last_mutated_roster_change = cloned_best
+        to_mutate = random.sample(self.population[ELITE_NUM:], int((len(self.population) - ELITE_NUM) * 2/100))
+        for rc in to_mutate:
+            self._mutate_roster_change(rc, selector, team_roster)
+            if rc.score is None:
+                self._set_scores([rc])
+        # for index, lineup in enumerate(self.population):
         #
-        # self.population.append(cloned_best)
+        #     # lets not mutate the top 2, and only sets with atleast 1 roster change
+        #     if index < ELITE_NUM or len(lineup) == 0:
+        #         continue
+        #
+        #     if random.randint(1, 100) <= mutate_pct:
+        #         self._mutate_roster_change(lineup, selector, team_roster)
+        #     if lineup.score is None:
+        #         self._set_scores([lineup])
+        #         # TODO we should check if this roster set now equals another
+        #         # for i, pop in enumerate(self.population):
+        #         #     if pop == lineup and i != index:
+        #         #         # this change set is now a duplicate of another, so remove from population
+        #         #         del(self.population[index])
 
 
-import datetime
-from collections.abc import Sequence
 
 
 class RosterChangeSet:
