@@ -135,19 +135,12 @@ class GeneticAlgorithm:
                 print(self.my_scorer.score(best).sum().to_dict())
                 print("Summary:\n{}".format(best.scoring_summary.head(20)))
             self._update_progress(generation)
-            print('mating: {}'.format(generation))
             self._mate()
-            print('mutating: {}'.format(generation))
             self._mutate()
-            print('Done mutating')
-            print('looking for unscored roster change sets')
             unscored = [rc for rc in self.population if rc.score is None]
-            print("num unscored: {}".format(len(unscored)))
             self._set_scores(unscored)
 
-            print("sorting population")
             self.population = sorted(self.population, key=lambda e: e.score, reverse=True)
-            print("done sort")
 
         self.logger.info(
             "Ended with population size of {}".format(len(self.population)))

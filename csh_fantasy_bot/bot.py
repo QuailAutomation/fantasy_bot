@@ -91,6 +91,21 @@ class ScoreComparer:
         # print(scores.head())
         return scores.agg([agg]).loc[agg,:]
 
+    def print_week_results(self, my_scores_summary):
+        sc = self.compute_score(my_scores_summary)
+        differences = my_scores_summary - self.opp_sum
+
+        means = pd.DataFrame([my_scores_summary, self.opp_sum]).mean()
+        # differences / means
+        score = differences / means
+        # cat_win = 1 if my_scores.sum() > manager.score_comparer.opp_sum else -1
+        summary_df = pd.DataFrame(
+            [my_scores_summary, self.opp_sum, differences, means, self.league_means,
+             self.stdevs, score],
+            index=['my-scores', 'opponent', 'difference', 'mean-opp', 'mean-league', 'std dev', 'score'])
+        print(summary_df.head(10))
+        print("Score: {:4.2f}".format(sc))
+
 
 class ManagerBot:
     """A class that encapsulates an automated Yahoo! fantasy manager.
@@ -549,38 +564,12 @@ class ManagerBot:
         for plyr in self.fetch_cur_lineup():
             if plyr['percent_owned'] >= thres or plyr['status'] == 'IR':
                 locked_plyrs.append(plyr)
-        # self._print_roster_change_set([])
 
         best_lineup = optimizer_func(self.score_comparer,
                                      self.my_team_bldr,
                                      self.ppool, locked_plyrs)
         if best_lineup:
-            self._print_roster_change_set(best_lineup)
-      #      self.lineup = copy.deepcopy(best_lineup)
-      #      self.pick_bench()
-      #      self.print_roster()
-
-    def _print_roster_change_set(self, roster_changes):
-        print("Suggestions for roster changes")
-        for change in roster_changes:
-            try:
-                player_out_name = self.ppool.loc[change.player_out,'name']
-                player_in_name = self.ppool.loc[change.player_in,'name']
-                roster_move_date = change.change_date
-                print ("Date: {} - Drop: {} - Add: {}".format(roster_move_date,player_out_name,player_in_name))
-                print ("Score: {}",roster_changes.score)
-            except KeyError as e :
-                print(e)
-        print("Projected scores for original: ")
-        my_score :BestRankedPlayerScorer = BestRankedPlayerScorer(self.lg,self.tm, self.ppool, self.week)
-
-        my_scores = my_score.score().sum()
-        my_improved_scores = my_score.score(roster_changes).sum()
-
-        print("Original results:\n {}".format(my_scores))
-        print("Improved results:\n {}".format(my_improved_scores))
-        print("Opponent results:\n {}".format(self.opp_sum))
-        pass
+            self.score_comparer.print_week_results(best_lineup.scoring_summary.loc[:,self.score_comparer.stat_cats].sum())
 
     def show_score(self):
         if self.opp_sum is None:
