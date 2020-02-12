@@ -18,9 +18,9 @@ my_scores = scorer.score()
 manager.score_comparer.print_week_results(my_scores.sum())
 
 roster_changes = list()
-roster_changes.append([4988,5096, np.datetime64('2020-02-13')])
-roster_changes.append([3788,4328, np.datetime64('2020-02-14')])
-# roster_changes.append([4792,5096, np.datetime64('2020-02-16')])
+roster_changes.append([5573,4978, np.datetime64('2020-02-13')])
+roster_changes.append([4792,5405, np.datetime64('2020-02-13')])
+# roster_changes.append([3788,3980, np.datetime64('2020-02-13')])
 # roster_changes.append([4792,5380, np.datetime64('2020-02-15')])
 
 # roster_changes.append(roster_change_optimizer.RosterChange(5984,7267, np.datetime64('2020-02-03')))
@@ -69,7 +69,7 @@ my_scores.loc[:,'fantasy_team_id'] = manager.tm.team_key.split('.')[-1]
 my_scores.loc[:,'week_number'] = week_number
 
 
-if False:
+if True:
     from elasticsearch import Elasticsearch
     from elasticsearch import helpers
 

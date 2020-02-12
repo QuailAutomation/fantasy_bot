@@ -14,7 +14,7 @@ from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 
 import cProfile, pstats, io
 
-max_lineups = 400
+max_lineups = 100
 generations = 100
 ELITE_NUM = int(5)
 
@@ -367,7 +367,10 @@ class GeneticAlgorithm:
         new_pop = []
         for elite in self.population[:ELITE_NUM + 1]:
             new_pop.append(elite)
-        while len(new_pop) < len(self.population):
+
+        attempt = 0
+        while len(new_pop) < len(self.population) and attempt < len(self.population) * 2:
+            attempt += 1
             mates = self._pick_lineups()
             if mates:
                 if mates[0] == mates[1]:
