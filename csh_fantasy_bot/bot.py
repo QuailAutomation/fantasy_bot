@@ -92,15 +92,17 @@ class ScoreComparer:
         return scores.agg([agg]).loc[agg,:]
 
     def print_week_results(self, my_scores_summary):
-        sc = self.compute_score(my_scores_summary)
-        differences = my_scores_summary - self.opp_sum
+        scoring_stats = my_scores_summary.loc[self.stat_cats]
+        opp_scoring_stats = self.opp_sum.loc[self.stat_cats]
+        sc = self.compute_score(scoring_stats)
+        differences = scoring_stats - opp_scoring_stats
 
-        means = pd.DataFrame([my_scores_summary, self.opp_sum]).mean()
+        means = pd.DataFrame([scoring_stats, opp_scoring_stats]).mean()
         # differences / means
         score = differences / means
         # cat_win = 1 if my_scores.sum() > manager.score_comparer.opp_sum else -1
         summary_df = pd.DataFrame(
-            [my_scores_summary, self.opp_sum, differences, means, self.league_means,
+            [scoring_stats, opp_scoring_stats, differences, means, self.league_means,
              self.stdevs, score],
             index=['my-scores', 'opponent', 'difference', 'mean-opp', 'mean-league', 'std dev', 'score'])
         print(summary_df.head(10))

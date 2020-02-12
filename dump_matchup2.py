@@ -10,33 +10,17 @@ logging.basicConfig(level=logging.INFO)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
-player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
-
-def print_week_results(my_scores_summary):
-    sc = manager.score_comparer.compute_score(my_scores_summary)
-    differences = my_scores_summary - manager.score_comparer.opp_sum
-
-    means = pd.DataFrame([my_scores_summary, manager.score_comparer.opp_sum]).mean()
-    # differences / means
-    score = differences / means
-    # cat_win = 1 if my_scores.sum() > manager.score_comparer.opp_sum else -1
-    summary_df = pd.DataFrame(
-        [my_scores_summary, manager.score_comparer.opp_sum, differences, means, manager.score_comparer.league_means, manager.score_comparer.stdevs, score],
-        index=['my-scores', 'opponent', 'difference', 'mean-opp','mean-league','std dev', 'score'])
-    print(summary_df.head(10))
-    print("Score: {:4.2f}".format(sc))
-
 week_number = 18
 manager: bot.ManagerBot = bot.ManagerBot(week_number)
 print("My team has {} roster changes available.".format(manager.roster_changes_allowed))
 scorer = nhl.BestRankedPlayerScorer(manager.lg, manager.tm, manager.ppool, manager.week)
 my_scores = scorer.score()
-print_week_results(my_scores.loc[:,player_stats].sum())
+manager.score_comparer.print_week_results(my_scores.sum())
 
 roster_changes = list()
-# roster_changes.append([4683,5033, np.datetime64('2020-02-11')])
-# roster_changes.append([3788,6055, np.datetime64('2020-02-11')])
-roster_changes.append([4792,5096, np.datetime64('2020-02-16')])
+roster_changes.append([4988,5096, np.datetime64('2020-02-13')])
+roster_changes.append([3788,4328, np.datetime64('2020-02-14')])
+# roster_changes.append([4792,5096, np.datetime64('2020-02-16')])
 # roster_changes.append([4792,5380, np.datetime64('2020-02-15')])
 
 # roster_changes.append(roster_change_optimizer.RosterChange(5984,7267, np.datetime64('2020-02-03')))
@@ -75,7 +59,7 @@ do_run()
 
 if len(roster_changes) > 0:
     my_scores = scorer.score(roster_change_set)
-    print_week_results(my_scores.loc[:,player_stats].sum())
+    manager.score_comparer.print_week_results(my_scores.sum())
 
 my_scores.to_csv('team-results.csv')
 manager.all_players.to_csv('all-players.csv')
@@ -84,9 +68,8 @@ my_scores.loc[:,'name'] = manager.all_players.loc[my_scores.index,'name']
 my_scores.loc[:,'fantasy_team_id'] = manager.tm.team_key.split('.')[-1]
 my_scores.loc[:,'week_number'] = week_number
 
-print(my_scores.head(50))
 
-if True:
+if False:
     from elasticsearch import Elasticsearch
     from elasticsearch import helpers
 
