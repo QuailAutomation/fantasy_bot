@@ -502,62 +502,64 @@ class GeneticAlgorithm:
     def _mutate_roster_change(self, lineup, selector, team_roster):
         try:
             roster_change_to_mutate_index = random.randint(1, len(lineup)) - 1
+
+            roster_change_to_mutate = lineup[roster_change_to_mutate_index]
+            # lets mutate this change set
+            random_number = random.randint(1, 100)
+            if len(self.date_range_for_changes) > 1 and random_number < 30:
+                # lets mutate date
+                while True:
+                    drop_date = random.choice(self.date_range_for_changes).date()
+
+
+                    if drop_date != roster_change_to_mutate.change_date:
+                        mutated_roster_change = [roster_change_to_mutate.player_out,
+                                                 roster_change_to_mutate.player_in,
+                                                 drop_date]
+                        lineup.replace(roster_change_to_mutate, mutated_roster_change)
+                        # print('mutated date')
+                        break
+
+                pass
+
+            elif random_number < 40:
+                # lets mutate player out
+                for _ in range(50):
+                    player_to_remove = random.choice(self.droppable_players)
+                    proposed_player_exists = any(rc.player_out == player_to_remove for rc in lineup)
+                    if not proposed_player_exists:
+                        mutated_roster_change = [player_to_remove, roster_change_to_mutate.player_in,
+                                                 roster_change_to_mutate.change_date]
+
+                        # move lineup, add this mutated
+                        # del (lineup[roster_change_to_mutate_index])
+                        # lineup.add(mutated_roster_change)
+                        lineup.replace(roster_change_to_mutate, mutated_roster_change)
+                        # print("Mutated player out")
+
+                        break
+            elif random_number < 80:
+                # lets mutate player in
+                for plyr in selector.select():
+                    if plyr['player_id'] in team_roster.player_id.values or plyr['position_type'] == 'G':
+                        continue
+                    if not any(rc.player_in == plyr['player_id'] for rc in lineup):
+                        # print("Have player to add")
+                        mutated_roster_change = [roster_change_to_mutate.player_out, plyr['player_id'],
+                                                 roster_change_to_mutate.change_date]
+                        lineup.replace(roster_change_to_mutate, mutated_roster_change)
+                        break
+            elif 80 < random_number < 85:
+                # remove a roster change - don't have to worry about zero roster changes, eliminated 0 ones already
+                del (lineup[roster_change_to_mutate_index])
+            else:
+                # add a new roster change
+                # print("Implement adding new roster change to set: {}, index: {}".format(random_number, index) )
+                pass
+            self._set_scores([lineup])
         except ValueError as e:
+            print(e)
             pass
-        roster_change_to_mutate = lineup[roster_change_to_mutate_index]
-        # lets mutate this change set
-        random_number = random.randint(1, 100)
-        if len(self.date_range_for_changes) > 1 and random_number < 30:
-            # lets mutate date
-            while True:
-                drop_date = random.choice(self.date_range_for_changes).date()
-
-
-                if drop_date != roster_change_to_mutate.change_date:
-                    mutated_roster_change = [roster_change_to_mutate.player_out,
-                                             roster_change_to_mutate.player_in,
-                                             drop_date]
-                    lineup.replace(roster_change_to_mutate, mutated_roster_change)
-                    # print('mutated date')
-                    break
-
-            pass
-
-        elif random_number < 40:
-            # lets mutate player out
-            for _ in range(50):
-                player_to_remove = random.choice(self.droppable_players)
-                proposed_player_exists = any(rc.player_out == player_to_remove for rc in lineup)
-                if not proposed_player_exists:
-                    mutated_roster_change = [player_to_remove, roster_change_to_mutate.player_in,
-                                             roster_change_to_mutate.change_date]
-
-                    # move lineup, add this mutated
-                    # del (lineup[roster_change_to_mutate_index])
-                    # lineup.add(mutated_roster_change)
-                    lineup.replace(roster_change_to_mutate, mutated_roster_change)
-                    # print("Mutated player out")
-
-                    break
-        elif random_number < 80:
-            # lets mutate player in
-            for plyr in selector.select():
-                if plyr['player_id'] in team_roster.player_id.values or plyr['position_type'] == 'G':
-                    continue
-                if not any(rc.player_in == plyr['player_id'] for rc in lineup):
-                    # print("Have player to add")
-                    mutated_roster_change = [roster_change_to_mutate.player_out, plyr['player_id'],
-                                             roster_change_to_mutate.change_date]
-                    lineup.replace(roster_change_to_mutate, mutated_roster_change)
-                    break
-        elif 80 < random_number < 85:
-            # remove a roster change - don't have to worry about zero roster changes, eliminated 0 ones already
-            del (lineup[roster_change_to_mutate_index])
-        else:
-            # add a new roster change
-            # print("Implement adding new roster change to set: {}, index: {}".format(random_number, index) )
-            pass
-        self._set_scores([lineup])
 
     def _mutate(self):
         """

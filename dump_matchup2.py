@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from datetime import datetime, timezone
 
 from csh_fantasy_bot import bot, nhl, roster_change_optimizer
 
@@ -25,8 +26,8 @@ def print_week_results(my_scores_summary):
     print(summary_df.head(10))
     print("Score: {:4.2f}".format(sc))
 
-
-manager: bot.ManagerBot = bot.ManagerBot(18)
+week_number = 18
+manager: bot.ManagerBot = bot.ManagerBot(week_number)
 print("My team has {} roster changes available.".format(manager.roster_changes_allowed))
 scorer = nhl.BestRankedPlayerScorer(manager.lg, manager.tm, manager.ppool, manager.week)
 my_scores = scorer.score()
@@ -64,7 +65,7 @@ def do_cprofile(func):
     return profiled_func
 
 
-@do_cprofile
+#@do_cprofile
 def do_run():
     print('profiling')
     scorer.score(roster_change_set)
@@ -81,9 +82,11 @@ manager.all_players.to_csv('all-players.csv')
 manager.all_players.set_index('player_id', inplace=True)
 my_scores.loc[:,'name'] = manager.all_players.loc[my_scores.index,'name']
 my_scores.loc[:,'fantasy_team_id'] = manager.tm.team_key.split('.')[-1]
+my_scores.loc[:,'week_number'] = week_number
+
 print(my_scores.head(50))
 
-if False:
+if True:
     from elasticsearch import Elasticsearch
     from elasticsearch import helpers
 
@@ -92,19 +95,48 @@ if False:
     use_these_keys = my_scores.columns
 
 
-    def filterKeys(document):
-        return {key: document[key] for key in use_these_keys}
+    def filterKeys(document, columns):
+        return {key: document[key] for key in columns}
 
 
-    def doc_generator(df):
+    def doc_generator_team_results(df):
         df_iter = df.iterrows()
         for index, document in df_iter:
             yield {
                 "_index": 'fantasy-bot-team-results',
-                "_type": "_doc",
+                "_type": "team-results",
                 "_id": "{}-{}-{}".format(document['player_id'], document['play_date'], document['score_type']),
-                "_source": filterKeys(document),
+                "_source": filterKeys(document,use_these_keys),
             }
 
 
-    helpers.bulk(es, doc_generator(my_scores))
+    helpers.bulk(es, doc_generator_team_results(my_scores))
+
+    # dump projections
+
+    projections = manager.all_players[manager.all_players.position_type == 'P']
+    projections.reset_index(inplace=True)
+
+    projections = manager.pred_bldr.predict(projections)
+    # projections = projections.replace(np.nan, '', regex=True)
+    projection_date = datetime(2020,2,10, tzinfo=timezone.utc)
+    projections.loc[:, 'projection_date'] = projection_date
+    stats = ['G','A','SOG','+/-','HIT','PIM','FW']
+    player_projection_columns =['name','eligible_positions','team_id','team_name','projection_date'] + stats
+    def doc_generator_projections(df):
+        df_iter = df.iterrows()
+        for index, document in df_iter:
+            try:
+                if not np.isnan(document['G']):
+                    yield {
+                        "_index": 'fantasy-bot-player-projections',
+                        "_type": "player_projections",
+                        "_id": "{}".format(index),
+                        "_source": filterKeys(document,player_projection_columns),
+                    }
+            except Exception as e:
+                pass
+
+
+    helpers.bulk(es, doc_generator_projections(projections))
+    pass
