@@ -14,7 +14,7 @@ from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 
 import cProfile, pstats, io
 
-max_lineups = 100
+max_lineups = 400
 generations = 100
 ELITE_NUM = int(5)
 
@@ -434,14 +434,22 @@ class GeneticAlgorithm:
         """
         assert (len(mates) == 2)
         assert (mates[0] != mates[1])
+        changes_to_remove = []
+        num_roster_changes_to_remove = 1
         # let's remove second 1/2 of roster changes in first parent.  will add those to other parent.
-        num_roster_changes_to_remove = int(len(mates[0]) / 2)
-
-        changes_to_remove = mates[0][-num_roster_changes_to_remove:]
-        # del(mates[0][-num_roster_changes_to_remove:])
+        if len(mates[0]) > 1:
+            num_roster_changes_to_remove = 1
+            # changes_to_remove = mates[0][-num_roster_changes_to_remove:]
+            changes_to_remove = random.choice(mates[0])
+        # num_roster_changes_to_remove = int(len(mates[0]) / 2)
         # lets remove second 1/2 of roster changes in second, add those to 1st parent
-        num_roster_changes_to_remove_2 = int(len(mates[1]) / 2)
-        changes_to_remove_2 = mates[1][-num_roster_changes_to_remove_2:]
+        # num_roster_changes_to_remove_2 = int(len(mates[1]) / 2)
+        changes_to_remove_2 = []
+        num_roster_changes_to_remove_2 = 0
+        if len(mates[1]) > 1:
+            num_roster_changes_to_remove_2
+        # changes_to_remove_2 = mates[1][-num_roster_changes_to_remove_2:]
+            changes_to_remove_2 = random.choice(mates[0])
         # del (mates[1][-num_roster_changes_to_remove:])
 
         offspring = []

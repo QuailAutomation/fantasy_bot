@@ -137,6 +137,7 @@ class ManagerBot:
         self.injury_reserve = []
         self.opp_sum = None
         self.opp_team_name = None
+        self.opp_team_key = None
         self.init_prediction_builder()
         self.fetch_player_pool()
         self.all_players = self.fetch_all_players()
@@ -396,7 +397,7 @@ class ManagerBot:
                 format(len(fa)))
             return fa
 
-        expiry = datetime.timedelta(minutes= 60)
+        expiry = datetime.timedelta(minutes= 360)
         return self.lg_cache.load_free_agents(expiry, loader)
 
     def fetch_league_lineups(self):
@@ -414,7 +415,7 @@ class ManagerBot:
             self.logger.info("All lineups fetched.")
             return lineups
 
-        return self.lg_cache.load_league_lineup(datetime.timedelta(hours=1),
+        return self.lg_cache.load_league_lineup(datetime.timedelta(hours=6),
                                                 loader)
 
     def invalidate_free_agents(self, plyrs):
@@ -449,9 +450,9 @@ class ManagerBot:
         my_scorer: BestRankedPlayerScorer = BestRankedPlayerScorer(self.lg, self.lg.to_team(opp_team_key),self.pred_bldr.predict(self.all_players),
                                                                     self.week)
         #opp_sum = self.scorer.summarize(opp_df, week)
-        opp_sum = my_scorer.score().sum()
+        opp_sum = my_scorer.score()
        # print(opp_sum.head(20))
-        return (team_name, opp_sum.to_dict())
+        return (team_name, opp_sum)
 
     def load_lineup(self):
         def loader():
@@ -674,7 +675,7 @@ class ManagerBot:
 
     def pick_opponent(self, opp_team_key):
         (self.opp_team_name, self.opp_sum) = self.sum_opponent(opp_team_key)
-        self.score_comparer.set_opponent(self.opp_sum)
+        self.score_comparer.set_opponent(self.opp_sum.sum())
 
     def auto_pick_opponent(self):
 
@@ -686,12 +687,12 @@ class ManagerBot:
         #     edit_wk += 1
 
         try:
-            opp_team_key = self.tm.matchup(edit_wk)
+            self.opp_team_key = self.tm.matchup(edit_wk)
         except RuntimeError:
             self.logger.info("Could not find opponent.  Picking ourselves...")
             opp_team_key = self.lg.team_key()
 
-        self.pick_opponent(opp_team_key)
+        self.pick_opponent(self.opp_team_key)
 
     def evaluate_trades(self, dry_run, verbose):
         """

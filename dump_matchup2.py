@@ -10,7 +10,40 @@ logging.basicConfig(level=logging.INFO)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
+from elasticsearch import Elasticsearch
+from elasticsearch import helpers
+
 week_number = 18
+
+es = Elasticsearch(hosts='http://192.168.1.20:9200', http_compress=True)
+
+
+def filter_keys(document, columns):
+    return {key: document[key] for key in columns}
+
+def write_team_results_es(scoring_data, team_id):
+    '''write out weekly scoring results to ES'''
+
+    scoring_data.loc[:, 'name'] = manager.all_players.loc[scoring_data.index, 'name']
+    scoring_data.loc[:, 'week_number'] = week_number
+    scoring_data.loc[:, 'fantasy_team_id'] = team_id
+    columns = my_scores.columns
+    data = scoring_data.reset_index()
+
+    def doc_generator_team_results(df):
+        df_iter = df.iterrows()
+        for index, document in df_iter:
+            yield {
+                "_index": 'fantasy-bot-team-results',
+                "_type": "team-results",
+                "_id": "{}-{}-{}".format(document['player_id'], document['play_date'], document['score_type']),
+                "_source": filter_keys(document, columns),
+            }
+
+    helpers.bulk(es, doc_generator_team_results(data))
+
+
+
 manager: bot.ManagerBot = bot.ManagerBot(week_number)
 print("My team has {} roster changes available.".format(manager.roster_changes_allowed))
 scorer = nhl.BestRankedPlayerScorer(manager.lg, manager.tm, manager.ppool, manager.week)
@@ -18,9 +51,9 @@ my_scores = scorer.score()
 manager.score_comparer.print_week_results(my_scores.sum())
 
 roster_changes = list()
-roster_changes.append([5573,4978, np.datetime64('2020-02-13')])
-roster_changes.append([4792,5405, np.datetime64('2020-02-13')])
-# roster_changes.append([3788,3980, np.datetime64('2020-02-13')])
+roster_changes.append([5573,6372, np.datetime64('2020-02-15')])
+roster_changes.append([3788,7067, np.datetime64('2020-02-16')])
+# roster_changes.append([4792,5405, np.datetime64('2020-02-13')])
 # roster_changes.append([4792,5380, np.datetime64('2020-02-15')])
 
 # roster_changes.append(roster_change_optimizer.RosterChange(5984,7267, np.datetime64('2020-02-03')))
@@ -61,41 +94,23 @@ if len(roster_changes) > 0:
     my_scores = scorer.score(roster_change_set)
     manager.score_comparer.print_week_results(my_scores.sum())
 
+
 my_scores.to_csv('team-results.csv')
 manager.all_players.to_csv('all-players.csv')
 manager.all_players.set_index('player_id', inplace=True)
-my_scores.loc[:,'name'] = manager.all_players.loc[my_scores.index,'name']
-my_scores.loc[:,'fantasy_team_id'] = manager.tm.team_key.split('.')[-1]
-my_scores.loc[:,'week_number'] = week_number
 
 
-if True:
-    from elasticsearch import Elasticsearch
-    from elasticsearch import helpers
-
-    es = Elasticsearch(hosts='http://192.168.1.20:9200',http_compress=True)
-    my_scores.reset_index(inplace=True)
-    use_these_keys = my_scores.columns
+def extract_team_id(team_key):
+    return team_key.split('.')[-1]
 
 
-    def filterKeys(document, columns):
-        return {key: document[key] for key in columns}
+if False:
 
-
-    def doc_generator_team_results(df):
-        df_iter = df.iterrows()
-        for index, document in df_iter:
-            yield {
-                "_index": 'fantasy-bot-team-results',
-                "_type": "team-results",
-                "_id": "{}-{}-{}".format(document['player_id'], document['play_date'], document['score_type']),
-                "_source": filterKeys(document,use_these_keys),
-            }
-
-
-    helpers.bulk(es, doc_generator_team_results(my_scores))
-
+    write_team_results_es(my_scores,extract_team_id(manager.tm.team_key))
     # dump projections
+
+    opp_scores = manager.opp_sum
+    write_team_results_es(opp_scores,extract_team_id(manager.opp_team_key))
 
     projections = manager.all_players[manager.all_players.position_type == 'P']
     projections.reset_index(inplace=True)
@@ -106,6 +121,8 @@ if True:
     projections.loc[:, 'projection_date'] = projection_date
     stats = ['G','A','SOG','+/-','HIT','PIM','FW']
     player_projection_columns =['name','eligible_positions','team_id','team_name','projection_date'] + stats
+
+
     def doc_generator_projections(df):
         df_iter = df.iterrows()
         for index, document in df_iter:
@@ -115,7 +132,7 @@ if True:
                         "_index": 'fantasy-bot-player-projections',
                         "_type": "player_projections",
                         "_id": "{}".format(index),
-                        "_source": filterKeys(document,player_projection_columns),
+                        "_source": filter_keys(document,player_projection_columns),
                     }
             except Exception as e:
                 pass

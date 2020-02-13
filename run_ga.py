@@ -3,7 +3,7 @@ import pandas as pd
 from csh_fantasy_bot import automation
 import cProfile, pstats, io
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.CRITICAL)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
