@@ -117,8 +117,6 @@ class ManagerBot:
         self.sc = OAuth2(None, None, from_file="oauth2.json")
         self.lg = yfa.League(self.sc, '396.l.53432')
         self.tm = self.lg.to_team(self.lg.team_key())
-        # TODO this seems of limited use, picking roster for today
-        self.team_full_roster = self.lg.to_team(self.lg.team_key()).roster()
         self.league_week = week if week is not None else self.lg.current_week()
         (start_week, end_week) = self.lg.week_date_range(self.league_week)
         self.week = pd.date_range(start_week, end_week)
@@ -564,7 +562,7 @@ class ManagerBot:
         optimizer_func = self._get_lineup_optimizer_function()
 
         locked_plyrs = []
-        thres = 90
+        thres = 93
         for plyr in self.fetch_cur_lineup():
             if plyr['percent_owned'] >= thres or plyr['status'] == 'IR':
                 locked_plyrs.append(plyr)

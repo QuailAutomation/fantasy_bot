@@ -53,7 +53,7 @@ class BestRankedPlayerScorer:
             roster_results = None
             the_roster = None
             roster_player_id_list = []
-            if single_date < today.date():
+            if single_date <= today.date():
                 if single_date not in self.cached_actual_results:
                     # retrieve actual results as in past
                     the_roster = self.team.roster(day=single_date)

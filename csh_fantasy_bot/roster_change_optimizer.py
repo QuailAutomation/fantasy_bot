@@ -15,7 +15,7 @@ from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 
 import cProfile, pstats, io
 
-max_lineups = 3000
+max_lineups = 1000
 generations = 100
 ELITE_NUM = int(5)
 
@@ -105,7 +105,7 @@ class GeneticAlgorithm:
         self.date_range_for_changes = pd.date_range(first_change_date, self.date_range[-1])
         self.waivers = self.league.waivers()
         self.droppable_players = self._generate_droppable_players()
-        self.team_full_roster = self.league.to_team(self.league.team_key()).roster()
+        self.team_full_roster = self.league.to_team(self.league.team_key()).roster(day=self.league.edit_date())
 
         self.my_scorer: BestRankedPlayerScorer = BestRankedPlayerScorer(self.league, self.my_team,
                                                                         self.ppool, self.date_range)
@@ -242,7 +242,8 @@ class GeneticAlgorithm:
     def _init_population(self):
         self.population = []
         self.last_mutated_roster_change = None
-        selector = self._gen_player_selector(gen_type='pct_own')
+        # selector = self._gen_player_selector(gen_type='pct_own')
+        selector = self._gen_player_selector(gen_type='fpts')
         self._generate_roster_change_sets(selector, max_lineups)
 
         selector = self._gen_player_selector(gen_type='random')
@@ -284,6 +285,13 @@ class GeneticAlgorithm:
         if gen_type == 'pct_own':
             selector.set_descending_categories([])
             selector.rank(['percent_owned'])
+        elif gen_type =='fpts':
+            player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
+            weights_series = pd.Series([1, 1, .5, .5, .5, .3, .5], index=player_stats)
+            selector.ppool['fpts'] = selector.ppool[player_stats].mul(weights_series).sum(1)
+
+            selector.set_descending_categories([])
+            selector.rank(['fpts'])
         else:
             assert (gen_type == 'random')
             selector.shuffle()

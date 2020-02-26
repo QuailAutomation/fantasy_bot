@@ -53,7 +53,7 @@ my_scores = scorer.score()
 manager.score_comparer.print_week_results(my_scores.sum())
 
 roster_changes = list()
-# roster_changes.append([3349,3357, np.datetime64('2020-02-22')])
+roster_changes.append([6376,5639, np.datetime64('2020-02-26')])
 # roster_changes.append([6750,6376, np.datetime64('2020-02-23')])
 # roster_changes.append([4792,5405, np.datetime64('2020-02-13')])
 # roster_changes.append([4792,5380, np.datetime64('2020-02-15')])
@@ -106,7 +106,7 @@ def extract_team_id(team_key):
     return team_key.split('.')[-1]
 
 
-if True:
+if False:
 
     write_team_results_es(my_scores, extract_team_id(manager.tm.team_key))
     # dump projections
