@@ -56,15 +56,19 @@ class BestRankedPlayerScorer:
             if single_date < today.date():
                 if single_date not in self.cached_actual_results:
                     # retrieve actual results as in past
-                    pass
                     the_roster = self.team.roster(day=single_date)
-                    opp_daily_roster = pd.DataFrame(the_roster)
-                    lineup = opp_daily_roster.query('selected_position != "BN" & selected_position != "G"')
+                    daily_roster = pd.DataFrame(the_roster)
+                    lineup = daily_roster.query('selected_position != "BN" & selected_position != "G"')
                     stats = self.league.player_stats(lineup.player_id.tolist(), "date", date=single_date)
+                    lineup.set_index('player_id', inplace=True)
                     daily_stats = pd.DataFrame(stats).loc[:,['player_id'] + player_stats]
+                    daily_stats.set_index('player_id', inplace=True)
+                    daily_stats = daily_stats.merge(lineup['selected_position'], left_index=True, right_index=True)
+                    # daily_stats.loc[:,'selected_position'] = daily_roster['selected_position']
                     daily_stats.loc[:,'score_type'] = 'a'
+
                     daily_stats.replace('-', np.nan, inplace=True)
-                    daily_stats.set_index('player_id',inplace=True)
+
                     self.cached_actual_results[single_date] = daily_stats.loc[~daily_stats.G.isnull(),:]
                 roster_results = self.cached_actual_results[single_date]
                 # roster_player_id_list = self.cached_actual_results[single_date].index.tolist()
@@ -88,7 +92,7 @@ class BestRankedPlayerScorer:
                         print(e)
                 if roster_change_set is not None:
                     roster_changes = roster_change_set.get(single_date)
-                    if len(roster_changes) > 0:
+                    if roster_changes is not None and len(roster_changes) > 0:
                         for _,row in roster_changes.iterrows():
                             roster_with_projections = roster_with_projections.append(
                                 self.player_projections.loc[row['player_in'], :])
@@ -96,7 +100,7 @@ class BestRankedPlayerScorer:
                             try:
                                 roster_with_projections.drop(row['player_out'], inplace=True)
                             except KeyError as e:
-                                print(e)
+                                logging.error(e)
                 # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
                 ids_no_stats = list(
                     roster_with_projections.query('G != G & position_type == "P" & status != "IR" ').index.values)
@@ -165,10 +169,13 @@ class BestRankedPlayerScorer:
                     # todays_projections = todays_projections.sort_values(by=['fpts'], ascending=False)
                     # self.logger.debug("Daily roster:\n %s", todays_projections.head(20))
                     best_roster = self.roster_builder.find_best(todays_projections)
-                    if best_roster is not None:
+                    if best_roster is not None and len(best_roster) > 0:
                         roster_results = todays_projections.loc[best_roster.values.astype(int).tolist(), player_stats]
                         roster_results.loc[:, 'score_type'] = 'p'
-                    pass
+                        #swap values, index so we can set roster position for players
+                        swapped_roster = pd.Series([p.split('.')[0] for p in best_roster.index.values], index=best_roster )
+                        roster_results['selected_position'] = swapped_roster
+                        pass
 
             if roster_results is not None and len(roster_results) > 0:
                 # if self.excel_writer is not None:

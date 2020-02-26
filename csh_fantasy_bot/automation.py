@@ -10,7 +10,7 @@ class Driver(object):
     :param cfg: ConfigParser read in
     """
     def __init__(self):
-        self.bot = bot.ManagerBot(18)
+        self.bot = bot.ManagerBot(20)
 
     def run(self):
         # self.bot.sync_lineup()

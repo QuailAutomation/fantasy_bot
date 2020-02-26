@@ -103,8 +103,8 @@ class ScoreComparer:
         # cat_win = 1 if my_scores.sum() > manager.score_comparer.opp_sum else -1
         summary_df = pd.DataFrame(
             [scoring_stats, opp_scoring_stats, differences, means, self.league_means,
-             self.stdevs, score],
-            index=['my-scores', 'opponent', 'difference', 'mean-opp', 'mean-league', 'std dev', 'score'])
+             self.stdevs, differences/self.stdevs, score],
+            index=['my-scores', 'opponent', 'difference', 'mean-opp', 'mean-league', 'std dev', 'num_stds', 'score'])
         print(summary_df.head(10))
         print("Score: {:4.2f}".format(sc))
 
@@ -117,6 +117,7 @@ class ManagerBot:
         self.sc = OAuth2(None, None, from_file="oauth2.json")
         self.lg = yfa.League(self.sc, '396.l.53432')
         self.tm = self.lg.to_team(self.lg.team_key())
+        # TODO this seems of limited use, picking roster for today
         self.team_full_roster = self.lg.to_team(self.lg.team_key()).roster()
         self.league_week = week if week is not None else self.lg.current_week()
         (start_week, end_week) = self.lg.week_date_range(self.league_week)
@@ -351,7 +352,7 @@ class ManagerBot:
             # rcont = roster.Container(None, None)
             # rcont.add_players(plyr_pool)
             my_roster = pd.DataFrame(plyr_pool)
-            my_roster = my_roster[my_roster.status != 'O']
+            # my_roster = my_roster[my_roster.status != 'O']
             self._fix_yahoo_team_abbr(my_roster)
             self.nhl_scraper = Scraper()
 
