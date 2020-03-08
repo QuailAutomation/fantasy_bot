@@ -1,0 +1,52 @@
+language: python
+
+python:
+  - 3.6
+# use this to control what branches get built.
+# http://docs.shippable.com/ci/advancedOptions/branches/
+#branches:
+#  only:
+#    - master
+
+# using pre-defined build variables
+# full list http://docs.shippable.com/ci/advancedOptions/environmentVariables/
+env:
+  global:
+    - DOCKER_REPO=fantasy-bot
+    - DOCKER_ACC=craigham # {account name}
+    - CURRENT_VERSION=0.1.$BUILD_NUMBER
+
+build:
+  ci:
+    - SHORT_COMMIT="$(echo $COMMIT | cut -b -7 )"
+    - "pip install -r requirements.txt"
+    #Create folders for test and code coverage
+    - mkdir -p shippable/testresults
+#    - nosetests test_tempSensor.py --with-xunit --xunit-file=shippable/testresults/nosetests.xml
+#    - which python && coverage run --branch test_tempSensor.py
+#    - which python && coverage xml -o shippable/codecoverage/coverage.xml test_tempSensor.py
+  # http://docs.shippable.com/ci/shippableyml/#post_ci
+  on_success:
+    - if [ "$BRANCH" == "master" ]; then docker run --rm --privileged multiarch/qemu-user-static:register --reset; fi
+    - if [ "$BRANCH" == "master" ]; then docker build -t $DOCKER_ACC/$DOCKER_REPO:shippable --build-arg git_commit=$SHORT_COMMIT --build-arg version=$CURRENT_VERSION .; fi
+    - if [ "$BRANCH" == "master" ]; then docker push $DOCKER_ACC/$DOCKER_REPO:shippable; fi
+    - if [ "$BRANCH" == "master" ]; then wget https://5028-88013053-gh.circle-artifacts.com/1/work/build/docker-linux-amd64; fi
+    - if [ "$BRANCH" == "master" ]; then mv docker-linux-amd64 docker; fi
+    - if [ "$BRANCH" == "master" ]; then chmod +x docker; fi
+    - if [ "$BRANCH" == "master" ]; then ./docker -D manifest create "$DOCKER_ACC/$DOCKER_REPO:$CURRENT_VERSION" "$DOCKER_ACC/$DOCKER_REPO:shippable"; fi
+    - if [ "$BRANCH" == "master" ]; then ./docker manifest annotate "$DOCKER_ACC/$DOCKER_REPO:$CURRENT_VERSION" "$DOCKER_ACC/$DOCKER_REPO:shippable" --os linux --arch arm; fi
+    - if [ "$BRANCH" == "master" ]; then ./docker manifest push "$DOCKER_ACC/$DOCKER_REPO:$CURRENT_VERSION"; fi
+    # latest now
+    - if [ "$BRANCH" == "master" ]; then ./docker -D manifest create "$DOCKER_ACC/$DOCKER_REPO:latest" "$DOCKER_ACC/$DOCKER_REPO:shippable"; fi
+    - if [ "$BRANCH" == "master" ]; then ./docker manifest annotate "$DOCKER_ACC/$DOCKER_REPO:latest" "$DOCKER_ACC/$DOCKER_REPO:shippable" --os linux --arch arm; fi
+    - if [ "$BRANCH" == "master" ]; then ./docker manifest push "$DOCKER_ACC/$DOCKER_REPO:latest"; fi
+
+
+# Integrations are used to connect external resources to CI
+# http://docs.shippable.com/integrations/overview/
+integrations:
+  # adding docker hub integration so that credentials are available to CI Job
+  # http://docs.shippable.com/integrations/imageRegistries/dockerHub/
+  hub:
+    - integrationName: docker-hub-craigham
+      type: docker

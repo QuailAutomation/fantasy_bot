@@ -100,11 +100,13 @@ class ScoreComparer:
         means = pd.DataFrame([scoring_stats, opp_scoring_stats]).mean()
         # differences / means
         score = differences / means
+        cat_win_loss = score.mask(score < 0, -1)
+        cat_win_loss = cat_win_loss.mask(cat_win_loss > 0, 1)
         # cat_win = 1 if my_scores.sum() > manager.score_comparer.opp_sum else -1
         summary_df = pd.DataFrame(
             [scoring_stats, opp_scoring_stats, differences, means, self.league_means,
-             self.stdevs, differences/self.stdevs, score],
-            index=['my-scores', 'opponent', 'difference', 'mean-opp', 'mean-league', 'std dev', 'num_stds', 'score'])
+             self.stdevs, differences/self.stdevs, score,cat_win_loss],
+            index=['my-scores', 'opponent', 'difference', 'mean-opp', 'mean-league', 'std dev', 'num_stds', 'score','win_loss'])
         print(summary_df.head(10))
         print("Score: {:4.2f}".format(sc))
 
@@ -691,6 +693,9 @@ class ManagerBot:
             self.logger.info("Could not find opponent.  Picking ourselves...")
             opp_team_key = self.lg.team_key()
 
+        if self.opp_team_key is None:
+            print('no opp found, plugging in Lee for playoffs')
+            self.opp_team_key = '396.l.53432.t.4'
         self.pick_opponent(self.opp_team_key)
 
     def evaluate_trades(self, dry_run, verbose):

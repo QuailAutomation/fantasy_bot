@@ -15,7 +15,7 @@ from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 
 import cProfile, pstats, io
 
-max_lineups = 1000
+max_lineups = 3000
 generations = 100
 ELITE_NUM = int(5)
 
@@ -335,8 +335,10 @@ class GeneticAlgorithm:
             if plyr['player_id'] in team_roster.player_id.values or plyr['position_type'] == 'G' or plyr[
                 'status'] == 'IR':
                 continue
-
-            drop_date = random.choice(self.date_range_for_changes).date()
+            try:
+                drop_date = random.choice(self.date_range_for_changes).date()
+            except IndexError as e:
+                logging.error(e)
 
             if len(last_roster_change_set.roster_changes) == number_roster_changes_to_place:
                 if last_roster_change_set not in self.population:

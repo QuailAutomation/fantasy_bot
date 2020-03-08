@@ -1,4 +1,4 @@
-FROM python:3.7-buster
+FROM arm32v7/python:3.7-buster
 
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends build-essential gcc
@@ -9,7 +9,6 @@ WORKDIR /
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app/. /app/app
 COPY csh_fantasy_bot /app/csh_fantasy_bot
 COPY oauth2.json /app
 COPY run_ga.py /app

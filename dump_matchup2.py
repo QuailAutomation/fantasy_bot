@@ -13,7 +13,14 @@ pd.set_option('display.width', 1000)
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 
-week_number = 20
+from csh_fantasy_bot import celery
+
+week_number = 21
+
+
+stats = ['G','A','SOG','+/-','HIT','PIM','FW']
+weights_series = pd.Series([1, .75, 1, .5, 1, .1, 1], index=stats)
+
 
 es = Elasticsearch(hosts='http://192.168.1.20:9200', http_compress=True)
 
@@ -27,7 +34,7 @@ def write_team_results_es(scoring_data, team_id):
     scoring_data.loc[:, 'name'] = manager.all_players.loc[scoring_data.index, 'name']
     scoring_data.loc[:, 'week_number'] = week_number
     scoring_data.loc[:, 'fantasy_team_id'] = team_id
-    columns = my_scores.columns.tolist()
+    columns = scoring_data.columns.tolist()
     columns.append('player_id')
     data = scoring_data.reset_index()
 
@@ -47,14 +54,21 @@ def write_team_results_es(scoring_data, team_id):
 
 
 manager: bot.ManagerBot = bot.ManagerBot(week_number)
+
+
+manager.ppool.loc[:,'fpts'] = manager.ppool[stats].mul(weights_series).sum(1)
+
+celery.refresh.delay('craig')
+
+sorted = manager.ppool.sort_values(by=['fpts'], ascending=False)
 print("My team has {} roster changes available.".format(manager.roster_changes_allowed))
 scorer = nhl.BestRankedPlayerScorer(manager.lg, manager.tm, manager.ppool, manager.week)
 my_scores = scorer.score()
 manager.score_comparer.print_week_results(my_scores.sum())
 
 roster_changes = list()
-roster_changes.append([6376,5639, np.datetime64('2020-02-26')])
-# roster_changes.append([6750,6376, np.datetime64('2020-02-23')])
+roster_changes.append([6041,3357, np.datetime64('2020-03-03')])
+# roster_changes.append([5698,6381, np.datetime64('2020-03-02')])
 # roster_changes.append([4792,5405, np.datetime64('2020-02-13')])
 # roster_changes.append([4792,5380, np.datetime64('2020-02-15')])
 
@@ -103,7 +117,7 @@ manager.all_players.set_index('player_id', inplace=True)
 
 
 def extract_team_id(team_key):
-    return team_key.split('.')[-1]
+    return int(team_key.split('.')[-1])
 
 
 if False:
@@ -122,7 +136,7 @@ if False:
     # projection_date = datetime(2020,2,10, tzinfo=timezone.utc)
     projection_date = datetime.now(tz=timezone.utc).date()
     projections.loc[:, 'projection_date'] = projection_date
-    stats = ['G','A','SOG','+/-','HIT','PIM','FW']
+
     player_projection_columns =['name','eligible_positions','team_id','team_name','projection_date','player_id'] + stats
 
 
