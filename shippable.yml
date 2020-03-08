@@ -19,7 +19,7 @@ env:
 build:
   ci:
     - SHORT_COMMIT="$(echo $COMMIT | cut -b -7 )"
-    - "pip install -r requirements.txt"
+#    - "pip install -r requirements.txt"
     #Create folders for test and code coverage
     - mkdir -p shippable/testresults
 #    - nosetests test_tempSensor.py --with-xunit --xunit-file=shippable/testresults/nosetests.xml
