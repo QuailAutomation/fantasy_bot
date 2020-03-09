@@ -29,11 +29,11 @@ build:
   on_success:
     - if [ "$BRANCH" == "master" ]; then docker run --rm --privileged multiarch/qemu-user-static:register --reset; fi
     - if [ "$BRANCH" == "master" ]; then docker build -t $DOCKER_ACC/$DOCKER_REPO:shippable --build-arg git_commit=$SHORT_COMMIT --build-arg version=$CURRENT_VERSION -f Dockerfile.arm .; fi
-#    - if [ "$BRANCH" == "master" ]; then docker push $DOCKER_ACC/$DOCKER_REPO:shippable; fi
+    - if [ "$BRANCH" == "master" ]; then docker push $DOCKER_ACC/$DOCKER_REPO:shippable; fi
 #    - if [ "$BRANCH" == "master" ]; then wget https://5028-88013053-gh.circle-artifacts.com/1/work/build/docker-linux-amd64; fi
 #    - if [ "$BRANCH" == "master" ]; then mv docker-linux-amd64 docker; fi
 #    - if [ "$BRANCH" == "master" ]; then chmod +x docker; fi
-    - if [ "$BRANCH" == "master" ]; then ./docker -D manifest create "$DOCKER_ACC/$DOCKER_REPO:$CURRENT_VERSION" "$DOCKER_ACC/$DOCKER_REPO:shippable"; fi
+    - if [ "$BRANCH" == "master" ]; then docker -D manifest create "$DOCKER_ACC/$DOCKER_REPO:$CURRENT_VERSION" "$DOCKER_ACC/$DOCKER_REPO:shippable"; fi
     - if [ "$BRANCH" == "master" ]; then ./docker manifest annotate "$DOCKER_ACC/$DOCKER_REPO:$CURRENT_VERSION" "$DOCKER_ACC/$DOCKER_REPO:shippable" --os linux --arch arm; fi
     - if [ "$BRANCH" == "master" ]; then ./docker manifest push "$DOCKER_ACC/$DOCKER_REPO:$CURRENT_VERSION"; fi
     # latest now
