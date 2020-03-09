@@ -8,9 +8,8 @@ python:
 #  only:
 #    - master
 runtime:
-  nodePool:
-    - shippable_shared_aarch64
-    - default_node_pool
+  nodePool: shippable_shared_aarch64
+
 # using pre-defined build variables
 # full list http://docs.shippable.com/ci/advancedOptions/environmentVariables/
 env:
