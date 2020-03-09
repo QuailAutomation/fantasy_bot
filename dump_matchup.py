@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 if not os.path.exists('oauth2.json'):
-    creds = {'consumer_key': 'my_key', 'consumer_secret': 'my_secret'}
+    creds = {'consumer_key': 'dj0yJmk9YXJDdGpEUzd4cmc3JmQ9WVdrOWNXNVJUVmsxTnpZbWNHbzlNQS0tJnM9Y29uc3VtZXJzZWNyZXQmc3Y9MCZ4PTM4', 'consumer_secret': 'c4a61d95f87d7b17faf29bac31c454bd7e97b9e9'}
     with open('oauth2.json', "w") as f:
         f.write(json.dumps(creds))
 

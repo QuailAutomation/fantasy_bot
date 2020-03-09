@@ -17,11 +17,15 @@ pd.set_option('display.width', 1000)
 logger = logging.getLogger(__name__)
 
 if not os.path.exists('oauth2.json'):
-    creds = {'consumer_key': 'my_key', 'consumer_secret': 'my_secret'}
+    creds = {'consumer_key': 'dj0yJmk9b3g2TzBaWUJQV0FuJmQ9WVdrOVV6ZFlVRWhKTXpJbWNHbzlNQS0tJnM9Y29uc3VtZXJzZWNyZXQmc3Y9MCZ4PWNm',
+             'consumer_secret': '4006b6334b4c5a7fa3d5d482b5a9006ee6304857'}
     with open('oauth2.json', "w") as f:
         f.write(json.dumps(creds))
 
 oauth = OAuth2(None, None, from_file='oauth2.json')
+
+if not oauth.token_is_valid():
+    oauth.refresh_access_token()
 
 league = League(oauth,'396.l.53432')
 my_team: Team= league.to_team(league.team_key())
