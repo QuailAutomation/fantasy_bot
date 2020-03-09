@@ -15,6 +15,7 @@ env:
     - DOCKER_REPO=fantasy-bot
     - DOCKER_ACC=craigham # {account name}
     - CURRENT_VERSION=0.1.$BUILD_NUMBER
+    - DOCKER_CLI_EXPERIMENTAL=enabled
 
 build:
   ci:
