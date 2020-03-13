@@ -151,7 +151,8 @@ class ManagerBot:
      #    self.pick_injury_reserve()
         self.logger.debug("auto pick opponent")
         self.auto_pick_opponent()
-        self.roster_changes_allowed = 4 - self._get_num_roster_changes_made()
+        self.roster_changes_made = self._get_num_roster_changes_made()
+        self.roster_changes_allowed = 4 - self.roster_changes_made
 
     def _load_blacklist(self):
         fn = self.tm_cache.blacklist_cache_file()
@@ -824,6 +825,10 @@ class ManagerBot:
                                                               'roster_adds')['value'])
                 except TypeError as e:
                     pass
+        #TODO should check if playoffs
+        plug_value = 0
+        print("returning {} for roster changes, as no matchup found".format(plug_value))
+        return plug_value
         assert False, 'Did not find roster changes for team'
 
 class RosterChanger:

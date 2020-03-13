@@ -109,8 +109,6 @@ class GeneticAlgorithm:
 
         self.my_scorer: BestRankedPlayerScorer = BestRankedPlayerScorer(self.league, self.my_team,
                                                                         self.ppool, self.date_range)
-        self.roster_changes_allowed = 4 - self._get_num_roster_changes_made()
-
     def _check_elite_hasnt_regressed(self, last_elite_score):
         try:
             if self.population[ELITE_NUM - 1].score < last_elite_score:
@@ -213,44 +211,21 @@ class GeneticAlgorithm:
         """
         self.pbar.update(generation + 1)
 
-    def _get_num_roster_changes_made(self):
-        # if the game week is in the future then we couldn't have already made changes
-        if datetime.date.today() < self.date_range[0]:
-            return 0
-
-        def retrieve_attribute_from_team_info(team_info, attribute):
-            for attr in team_info:
-                if attribute in attr:
-                    return attr[attribute]
-
-        raw_matchups = self.league.matchups()
-        team_id = self.my_team.team_key.split('.')[-1]
-        num_matchups = raw_matchups['fantasy_content']['league'][1]['scoreboard']['0']['matchups']['count']
-        for matchup_index in range(0, num_matchups):
-            matchup = raw_matchups['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup_index)]
-            for i in range(0, 2):
-                try:
-                    if retrieve_attribute_from_team_info(matchup['matchup']['0']['teams'][str(i)]['team'][0],
-                                                         'team_id') == team_id:
-                        return int(
-                            retrieve_attribute_from_team_info(matchup['matchup']['0']['teams'][str(i)]['team'][0],
-                                                              'roster_adds')['value'])
-                except TypeError as e:
-                    pass
-        assert False, 'Did not find roster changes for team'
-
     def _init_population(self):
         self.population = []
         self.last_mutated_roster_change = None
+        #TODO this is a hard code, manager should be setting
+        # TODO get this to work for zero
+        changes_allowed = 4
         # selector = self._gen_player_selector(gen_type='pct_own')
         selector = self._gen_player_selector(gen_type='fpts')
-        self._generate_roster_change_sets(selector, max_lineups)
+        self._generate_roster_change_sets(selector, max_lineups, roster_changes_allowed=changes_allowed)
 
         selector = self._gen_player_selector(gen_type='random')
         for _ in range(max_lineups * 2):
             if len(self.population) >= max_lineups:
                 break
-            self._generate_roster_change_sets(selector, max_lineups)
+            self._generate_roster_change_sets(selector, max_lineups, roster_changes_allowed=changes_allowed)
 
     def _generate_seed_lineup(self, locked_plyrs):
         """
@@ -316,7 +291,7 @@ class GeneticAlgorithm:
                 break
         return fit
 
-    def _generate_roster_change_sets(self, selector, max_roster_change_sets):
+    def _generate_roster_change_sets(self, selector, max_roster_change_sets, roster_changes_allowed):
         # how many roster changes have been made so far
         # when is next date we can make roster changes for ?
         # adjust date range so doesn't try for roster changes earlier in week
@@ -324,9 +299,9 @@ class GeneticAlgorithm:
         team_roster = pd.DataFrame(self.team_full_roster)
         roster_change_sets = self.population
         # always start with no roster changes
-        roster_change_sets.append(RosterChangeSet(max_allowed=self.roster_changes_allowed))
-        last_roster_change_set: RosterChangeSet = RosterChangeSet(max_allowed=self.roster_changes_allowed)
-        number_roster_changes_to_place = random.randint(1, self.roster_changes_allowed)
+        roster_change_sets.append(RosterChangeSet(max_allowed=roster_changes_allowed))
+        last_roster_change_set: RosterChangeSet = RosterChangeSet(max_allowed=roster_changes_allowed)
+        number_roster_changes_to_place = random.randint(1, roster_changes_allowed)
         for plyr in selector.select():
             fit = False
             if len(self.population) == max_roster_change_sets:
@@ -343,8 +318,8 @@ class GeneticAlgorithm:
             if len(last_roster_change_set.roster_changes) == number_roster_changes_to_place:
                 if last_roster_change_set not in self.population:
                     roster_change_sets.append(last_roster_change_set)
-                last_roster_change_set = RosterChangeSet(max_allowed=self.roster_changes_allowed)
-                number_roster_changes_to_place = random.randint(1, self.roster_changes_allowed)
+                last_roster_change_set = RosterChangeSet(max_allowed=roster_changes_allowed)
+                number_roster_changes_to_place = random.randint(1, roster_changes_allowed)
 
             while len(last_roster_change_set.roster_changes) < number_roster_changes_to_place:
                 # let's pick someone to remove
