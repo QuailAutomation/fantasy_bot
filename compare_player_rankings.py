@@ -1,5 +1,8 @@
 import os
+import json
 from csh_fantasy_bot import bot
+from get_docker_secret import get_docker_secret
+from yahoo_oauth import OAuth2
 
 
 week_number = 21
