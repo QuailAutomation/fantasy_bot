@@ -15,6 +15,8 @@ from elasticsearch import helpers
 
 from csh_fantasy_bot import celery
 
+import os
+
 week_number = 21
 
 
@@ -52,8 +54,12 @@ def write_team_results_es(scoring_data, team_id):
     helpers.bulk(es, doc_generator_team_results(data))
 
 
-
-manager: bot.ManagerBot = bot.ManagerBot(week_number)
+manager: bot.ManagerBot = None
+if 'YAHOO_OAUTH_FILE' in os.environ:
+    auth_file = os.environ['YAHOO_OAUTH_FILE']
+    manager = bot.ManagerBot(week_number,oauth_file=auth_file)
+else:
+    manager = bot.ManagerBot(week_number)
 
 
 manager.ppool.loc[:,'fpts'] = manager.ppool[stats].mul(weights_series).sum(1)

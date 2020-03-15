@@ -114,9 +114,11 @@ class ScoreComparer:
 class ManagerBot:
     """A class that encapsulates an automated Yahoo! fantasy manager.
     """
-    def __init__(self, week = None):
+    def __init__(self, week = None, oauth_file = 'oauth2.json'):
         self.logger = logging.getLogger()
-        self.sc = OAuth2(None, None, from_file="oauth2.json")
+        if 'YAHOO_OAUTH_FILE' in os.environ:
+            oauth_file = os.environ['YAHOO_OAUTH_FILE']
+        self.sc = OAuth2(None, None, from_file=oauth_file)
         self.lg = yfa.League(self.sc, '396.l.53432')
         self.tm = self.lg.to_team(self.lg.team_key())
         self.league_week = week if week is not None else self.lg.current_week()
