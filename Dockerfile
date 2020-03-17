@@ -16,3 +16,5 @@ COPY compare_player_rankings.py /app
 WORKDIR /app
 
 CMD ["python","compare_player_rankings.py"]
+#celery -A csh_fantasy_bot worker
+# celery -A csh_fantasy_bot beat --loglevel=DEBUG

@@ -1,6 +1,8 @@
+import os
 from celery import Celery
 
-app = Celery('tasks', broker='amqp://admin:mypass@192.168.1.20:5672')
+rabbit_url = os.environ['CELERY_BROKER_URL', 'amqp://admin:mypass@rabbitmq:5672']
+app = Celery('tasks', broker=rabbit_url)
 
 app.conf.beat_schedule = {
   'refresh': {
