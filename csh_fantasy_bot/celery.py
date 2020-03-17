@@ -7,7 +7,7 @@ app = Celery('tasks', broker=rabbit_url)
 app.conf.beat_schedule = {
   'refresh': {
     'task': 'refresh',
-    'schedule': 10
+    'schedule': 60
   },
 }
 
