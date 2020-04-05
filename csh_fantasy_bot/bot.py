@@ -343,7 +343,7 @@ class ManagerBot:
             all.rename(columns={'id': 'team_id'}, inplace=True)
             return all
 
-        expiry = datetime.timedelta(minutes=6 * 60)
+        expiry = datetime.timedelta(minutes=6 * 60 * 20)
         return self.lg_cache.load_all_players(expiry,all_loader)
 
 
@@ -401,7 +401,7 @@ class ManagerBot:
                 format(len(fa)))
             return fa
 
-        expiry = datetime.timedelta(minutes= 360)
+        expiry = datetime.timedelta(minutes= 360 * 50)
         return self.lg_cache.load_free_agents(expiry, loader)
 
     def fetch_league_lineups(self):

@@ -9,8 +9,60 @@ services:
 #    image: "craigham/yahoo-bot:latest"
 #    command: [celery, beat, --app=worker.app, --loglevel=INFO]
 
-  worker:
-    image: worker
-    command: [celery, app.worker, --app=worker.app, --concurrency=20, --loglevel=DEBUG]
-    environment: &env
-      - CELERY_BROKER_URL=amqp://guest:guest@192.168.1.20:5672/fantasy_bot
+#  worker:
+#    image: worker
+#    command: [celery, app.worker, --app=worker.app, --concurrency=20, --loglevel=DEBUG]
+#    environment: &env
+#      - CELERY_BROKER_URL=amqp://guest:guest@192.168.1.20:5672/fantasy_bot
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.8.2
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+      - XPACK_MONITORING_ENABLED=false
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana-oss:6.8.2
+    ports:
+      - "5601:5601"
+    environment:
+#      - SERVER_NAME=jackie.local
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    #     - XPACK_MONITORING_ENABLED=false
+    #     - XPACK_MONITORING_UI_CONTAINER_ELASTICSEARCH_ENABLED=false
+    #     - XPACK_SECURITY_ENABLED=false
+    #  volumes:
+    #    - ./kibana.yml:/usr/share/kibana/config/kibana.yml
+    depends_on:
+      - elasticsearch
+  rabbitmq:
+    image: rabbitmq:3
+    ports:
+      - "5672:5672"
+    container_name: rabbitmq
+
+  flower:
+    image: mher/flower
+    ports:
+      - "8888:8888"
+    environment:
+      - CELERY_BROKER_URL=pyamqp://guest:guest@rabbitmq:5672
+      - FLOWER_PORT=8888
+      - CELERY_TIMEZONE='America/Pacific'
+
+  rebrow:
+    image: marian/rebrow
+    ports:
+      - "5001:5001"
+#    networks:
+#      - fantasy-bot
+#      - proxy
+    depends_on:
+      - redis

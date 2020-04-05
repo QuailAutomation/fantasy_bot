@@ -129,7 +129,7 @@ class BestRankedPlayerScorer:
                                                                                                            player_w_stats[
                                                                                                                'GP']
                             except TypeError as e:
-                                print("No actual stats available for: {}".format(player_w_stats))
+                                logging.error("No actual stats available for: {}".format(player_w_stats))
                                 break
 
                 todays_projections = roster_with_projections.loc[:,['team_id','eligible_positions'] + player_stats].copy()
@@ -178,11 +178,7 @@ class BestRankedPlayerScorer:
                         pass
 
             if roster_results is not None and len(roster_results) > 0:
-                # if self.excel_writer is not None:
-                #     roster_results.to_excel(self.excel_writer, single_date.strftime("%Y-%m-%d"))
                 roster_results.loc[:,'play_date'] = single_date.date()
-
-                # self.logger.debug("roster:\n %s", roster_with_projections.head(20))
                 if projected_week_results is None:
                     projected_week_results = roster_results
                 else:

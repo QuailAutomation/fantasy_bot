@@ -24,15 +24,17 @@ stats = ['G','A','SOG','+/-','HIT','PIM','FW']
 weights_series = pd.Series([1, .75, 1, .5, 1, .1, 1], index=stats)
 
 
-es = Elasticsearch(hosts='http://192.168.1.20:9200', http_compress=True)
+# es = Elasticsearch(hosts='http://192.168.1.20:9200', http_compress=True)
+es = Elasticsearch(hosts='http://localhost:9200', http_compress=True)
 
 
 def filter_keys(document, columns):
     return {key: document[key] for key in columns}
 
+
 def write_team_results_es(scoring_data, team_id):
     '''write out weekly scoring results to ES'''
-
+    scoring_data['timestamp'] = scoring_data['play_date']
     scoring_data.loc[:, 'name'] = manager.all_players.loc[scoring_data.index, 'name']
     scoring_data.loc[:, 'week_number'] = week_number
     scoring_data.loc[:, 'fantasy_team_id'] = team_id
@@ -64,7 +66,7 @@ else:
 
 manager.ppool.loc[:,'fpts'] = manager.ppool[stats].mul(weights_series).sum(1)
 
-celery.refresh.delay('craig')
+# celery.refresh.delay('craig')
 
 sorted = manager.ppool.sort_values(by=['fpts'], ascending=False)
 print("My team has {} roster changes available.".format(manager.roster_changes_allowed))
@@ -73,7 +75,7 @@ my_scores = scorer.score()
 manager.score_comparer.print_week_results(my_scores.sum())
 
 roster_changes = list()
-roster_changes.append([6041,3357, np.datetime64('2020-03-03')])
+# roster_changes.append([6041,3357, np.datetime64('2020-03-03')])
 # roster_changes.append([5698,6381, np.datetime64('2020-03-02')])
 # roster_changes.append([4792,5405, np.datetime64('2020-02-13')])
 # roster_changes.append([4792,5380, np.datetime64('2020-02-15')])
@@ -126,8 +128,7 @@ def extract_team_id(team_key):
     return int(team_key.split('.')[-1])
 
 
-if False:
-
+if True:
     write_team_results_es(my_scores, extract_team_id(manager.tm.team_key))
     # dump projections
 
