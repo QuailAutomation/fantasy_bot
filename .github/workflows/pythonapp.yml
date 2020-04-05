@@ -10,28 +10,63 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
-
+  # build:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #   - name: Set up Python 3.8
+  #     uses: actions/setup-python@v1
+  #     with:
+  #       python-version: 3.8
+  #   - name: Install dependencies
+  #     run: |
+  #       python -m pip install --upgrade pip
+  #       pip install -r requirements.txt
+  #   - name: Lint with flake8
+  #     run: |
+  #       pip install flake8
+  #       # stop the build if there are Python syntax errors or undefined names
+  #       flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+  #       # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+  #       flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+  #   - name: Test with pytest
+  #     run: |
+  #       pip install pytest
+  #       pytest
+  
+  buildx:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v1
-      with:
-        python-version: 3.8
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    - name: Lint with flake8
-      run: |
-        pip install flake8
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest
-      run: |
-        pip install pytest
-        pytest
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+      -
+        name: Set up Docker Buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v1
+        with:
+          version: latest
+      -
+        name: Available platforms
+        run: echo ${{ steps.buildx.outputs.platforms }}
+      
+      - 
+        name: Docker Login
+        if: success()
+        env:
+          DOCKER_PASSWORD: ${{ secrets.docker_hub_password }}
+        run: |
+          echo "${DOCKER_PASSWORD}" | docker login --username "${{ secrets.docker_hub_username }}" --password-stdin
+      -
+        name: Run Buildx
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm/v7 \
+            --output "type=image,push=true" \
+            -t craigham/fantasy-bot:latest .
+
+      - 
+        name: Clear
+        if: always()
+        run: |
+          rm -f ${HOME}/.docker/config.json
