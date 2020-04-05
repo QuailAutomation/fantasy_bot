@@ -1,0 +1,6 @@
+[submodule "library/nhl_scraper"]
+	path = library/nhl_scraper
+	url = git@github.com:QuailAutomation/nhl_scraper.git
+[submodule "library/yahoo_fantasy_api"]
+	path = library/yahoo_fantasy_api
+	url = git://github.com/QuailAutomation/yahoo_fantasy_api

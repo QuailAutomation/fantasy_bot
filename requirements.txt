@@ -1,9 +1,11 @@
 pandas==1.0.1
--e git+git://github.com/QuailAutomation/nhl_scraper@master#egg=nhl_scraper
+#-e git+git://github.com/QuailAutomation/nhl_scraper@master#egg=nhl_scraper
+-e library/nhl_scraper
 selenium
 beautifulsoup4==4.8.2
 lxml==4.5.0
--e git+git://github.com/QuailAutomation/yahoo_fantasy_api@master#egg=yahoo_fantasy_api
+#-e git+git://github.com/QuailAutomation/yahoo_fantasy_api@master#egg=yahoo_fantasy_api
+-e library/yahoo_fantasy_api
 yahoo_oauth==0.1.9
 unidecode
 progressbar
