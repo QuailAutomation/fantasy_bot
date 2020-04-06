@@ -456,7 +456,10 @@ class DailyRosterBuilder:
 
 
 class RecursiveRosterBuilder:
+    """Builds bost roster of players using predicted stats and a weighting."""
+    
     def __init__(self, roster_makeup=None):
+        """Initialize."""
         if roster_makeup is None:
             roster_makeup = pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(","))
         self.roster_makeup = roster_makeup
