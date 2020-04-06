@@ -122,17 +122,17 @@ class Parser:
     def predict(self, my_roster):
         """Build a dataset of hockey predictions for the week
 
-                The pool of players is passed into this function through roster_const.
-                It will generate a DataFrame for these players with their predictions.
+        The pool of players is passed into this function through roster_const.
+        It will generate a DataFrame for these players with their predictions.
 
-                The returning DataFrame has rows for each player, and columns for each
-                prediction stat.
+        The returning DataFrame has rows for each player, and columns for each
+        prediction stat.
 
-                :param roster_cont: Roster of players to generate predictions for
-                :type roster_cont: roster.Container object
-                :return: Dataset of predictions
-                :rtype: DataFrame
-                """
+        :param roster_cont: Roster of players to generate predictions for
+        :type roster_cont: roster.Container object
+        :return: Dataset of predictions
+        :rtype: DataFrame
+        """
         # Produce a DataFrame using preds as the base.  We'll filter out
         # all of the players not in roster_cont by doing a join of the two
         # data frames.  This also has the affect of attaching eligible

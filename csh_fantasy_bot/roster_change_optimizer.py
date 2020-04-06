@@ -21,7 +21,7 @@ ELITE_NUM = int(5)
 
 
 def profile(fnc):
-    """A decorator that uses cProfile to profile a function"""
+    """Decorator that uses cProfile to profile a function."""
 
     def inner(*args, **kwargs):
         pr = cProfile.Profile()
@@ -37,7 +37,7 @@ def profile(fnc):
 def optimize_with_genetic_algorithm(score_comparer, roster_bldr,
                                     avail_plyrs, locked_plyrs):
     """
-    Loader for the GeneticAlgorithm class
+    Loader for the GeneticAlgorithm class.
 
     See GeneticAlgorithm.__init__ for parameter type descriptions.
     """
@@ -48,7 +48,7 @@ def optimize_with_genetic_algorithm(score_comparer, roster_bldr,
 
 class GeneticAlgorithm:
     """
-    Optimize the lineup using a genetic algorithm
+    Optimize the lineup using a genetic algorithm.
 
     The traits of the algorithm and how it relates to lineup building is
     as follows:
@@ -204,7 +204,7 @@ class GeneticAlgorithm:
 
     def _update_progress(self, generation):
         """
-        Shows progress of the lineup selection
+        Shows progress of the lineup selection.
 
         :param generation: Current generation number
         :param generations: Max number of generations
