@@ -1,5 +1,5 @@
-FROM python:3.8-buster
-# FROM craigham/pandas-1.0.1:latest
+# FROM python:3.8-buster
+FROM craigham/pandas-1.0.1:latest
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends build-essential gcc
 # Make sure we use the virtualenv:
