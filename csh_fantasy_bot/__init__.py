@@ -10,6 +10,7 @@ def make_celery(app_name=__name__):
     backend = "redis://localhost:6379/0"
     broker = rabbit_url
     logging.info(f"Celery connecting to rabbit broker {broker}")
+    app = Celery(app_name, broker=broker) # backend=backend,
     app.conf.beat_schedule = {
   # 'refresh': {
   #   'task': 'refresh',
@@ -20,6 +21,6 @@ def make_celery(app_name=__name__):
     'schedule': 300
   },
 }
-    return Celery(app_name, broker=broker) # backend=backend,
+    return app
 
 celery = make_celery()
