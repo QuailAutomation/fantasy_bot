@@ -1,7 +1,17 @@
 import time
 import random
+import logging
+
+from yahoo_oauth import OAuth2
+from yahoo_fantasy_api import League
 
 from csh_fantasy_bot import celery
+from csh_fantasy_bot.yahoo_fantasy import check_for_new_changes
+
+oauth = OAuth2(None, None, from_file='oauth2.json')
+league: League = League(oauth,'396.l.53432')
+leagues = {'396.l.53432':league}
+
 
 @celery.task()
 def make_file(fname, content):
@@ -28,3 +38,18 @@ def long_task(self):
         time.sleep(1)
     return {'current': 100, 'total': 100, 'status': 'Task completed!',
             'result': 42}
+
+
+@celery.task(bind=True, name='check_roster_moves')
+def check_roster_moves(self):
+    found_new_moves = check_for_new_changes(league, True)
+    logging.debug("found new roster moves: {}".format(found_new_moves))
+    if found_new_moves:
+        flush_caches.delay(league.league_id)
+    return True
+
+
+@celery.task(bind=True, name='flush_caches')
+def flush_caches(self, league_id):
+    logging.info('Flush Cache: {}'.format(league_id))
+    return True
