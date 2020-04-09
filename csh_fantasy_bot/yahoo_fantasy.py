@@ -27,7 +27,7 @@ def _get_last_processed_roster_change_id():
 
 
 def check_for_new_changes(league, write_new=True):
-    ''''''
+    """Check if there have been roster moves since last check."""
     found_new_transactions = False
     last_processed_id = _get_last_processed_roster_change_id()
 

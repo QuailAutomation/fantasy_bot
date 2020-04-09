@@ -1,3 +1,4 @@
+"""Run flask."""
 from csh_fantasy_bot import factory
 import csh_fantasy_bot
 

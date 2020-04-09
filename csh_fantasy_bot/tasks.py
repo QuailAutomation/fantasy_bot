@@ -35,6 +35,7 @@ def long_task(self):
         self.update_state(state='PROGRESS',
                           meta={'current': i, 'total': total,
                                 'status': message})
+                                
         time.sleep(1)
     return {'current': 100, 'total': 100, 'status': 'Task completed!',
             'result': 42}
@@ -53,3 +54,9 @@ def check_roster_moves(self):
 def flush_caches(self, league_id):
     logging.info('Flush Cache: {}'.format(league_id))
     return True
+
+
+@celery.task(bind=True, name='refresh')
+def refresh(self):
+    print('refresh called')
+    return 'Success'
