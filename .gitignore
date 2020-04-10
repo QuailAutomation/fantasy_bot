@@ -3,3 +3,4 @@ oauth2.json
 venv/
 .cache/
 .vscode/
+celerybeat-schedule.db
