@@ -5,7 +5,7 @@ import logging
 from yahoo_oauth import OAuth2
 from yahoo_fantasy_api import League
 
-from csh_fantasy_bot import celery
+from csh_fantasy_bot.extensions import celery
 from csh_fantasy_bot.yahoo_fantasy import check_for_new_changes
 
 oauth = OAuth2(None, None, from_file='oauth2.json')

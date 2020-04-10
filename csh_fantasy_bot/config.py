@@ -1,0 +1,22 @@
+"""Configuration for app."""
+import os
+
+ENV = os.getenv("FLASK_ENV")
+DEBUG = ENV == "development"
+CELERY_TIMEZONE = 'US/Pacific'
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL",default='amqp://guest:guest@localhost:5672')
+# celery_result_backend = os.getenv("CELERY_RESULT_BACKEND_URL")
+CELERY_IMPORTS = ('csh_fantasy_bot.tasks')
+CELERYBEAT_SCHEDULE = {
+        'refresh': {
+            'task': 'refresh',
+            'schedule': 60
+        },
+            'check_roster_moves': {
+            'task': 'check_roster_moves',
+            'schedule': 300
+        },
+    }
+
+CELERY_TASK_FILE_WRITE_PATH = "/Users/craigh/dev/fantasy_bot"
+

@@ -21,11 +21,12 @@ class Config(object):
             'schedule': 300
         },
     }
+    
 
 
 class DevelopmentConfig(Config):
     DEBUG = True
-   
+    CELERY_TASK_FILE_WRITE_PATH = "/Users/craigh/dev/fantasy_bot"
 
 
 class ProductionConfig(Config):
