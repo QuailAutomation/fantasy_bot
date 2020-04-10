@@ -12,6 +12,7 @@ from elasticsearch_dsl import Document, Date, Nested, Boolean, \
 
 from yahoo_fantasy_api import league,team
 from csh_fantasy_bot import bot
+from csh_fantasy_bot.config import ELASTIC_URL
 
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
@@ -21,7 +22,7 @@ if 'YAHOO_OAUTH_FILE' in os.environ:
 else:
     oauth_file = 'oauth2.json'
 
-es = Elasticsearch(hosts='http://localhost:9200', http_compress=True)
+es = Elasticsearch(hosts=ELASTIC_URL, http_compress=True)
 
 # class PlayerScoring(InnerDoc):
 #     type = Text(fields={'raw': Keyword()})

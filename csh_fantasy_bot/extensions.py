@@ -5,4 +5,8 @@ initialized in application factory
 """
 from celery import Celery
 
+
 celery = Celery()
+
+
+
