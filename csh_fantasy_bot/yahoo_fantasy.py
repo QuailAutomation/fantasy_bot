@@ -4,7 +4,9 @@ import json
 
 from elasticsearch import RequestError
 from elasticsearch_dsl import connections
-connections.create_connection(hosts=['localhost'], timeout=20)
+
+from csh_fantasy_bot.config import ELASTIC_URL
+connections.create_connection(hosts=[ELASTIC_URL], timeout=20)
 
 es_logger = logging.getLogger('elasticsearch')
 es_logger.setLevel(logging.WARNING)
