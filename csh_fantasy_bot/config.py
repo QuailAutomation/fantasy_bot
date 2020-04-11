@@ -8,10 +8,10 @@ CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL",default='amqp://guest:guest@lo
 # celery_result_backend = os.getenv("CELERY_RESULT_BACKEND_URL")
 CELERY_IMPORTS = ('csh_fantasy_bot.tasks')
 CELERYBEAT_SCHEDULE = {
-        'refresh': {
-            'task': 'refresh',
-            'schedule': 60
-        },
+        # 'refresh': {
+        #     'task': 'refresh',
+        #     'schedule': 60
+        # },
             'check_roster_moves': {
             'task': 'check_roster_moves',
             'schedule': 300
