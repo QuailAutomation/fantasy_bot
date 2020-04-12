@@ -47,10 +47,10 @@ services:
   flower:
     image: mher/flower
     ports:
-      - "8889:8888"
+      - "8887:8888"
     environment:
       - CELERY_BROKER_URL=pyamqp://guest:guest@rabbitmq:5672
-      - FLOWER_PORT=8888
+      - FLOWER_PORT=8887
       - CELERY_TIMEZONE='America/Pacific'
 
   rebrow:

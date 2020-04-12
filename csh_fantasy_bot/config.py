@@ -20,4 +20,4 @@ CELERYBEAT_SCHEDULE = {
 
 CELERY_TASK_FILE_WRITE_PATH = "/Users/craigh/dev/fantasy_bot"
 
-ELASTIC_URL = os.getenv("ELASTIC_URL", default="http://loclalhost:9200")
+ELASTIC_URL = os.getenv("ELASTIC_URL", default="http://localhost:9200")

@@ -19,14 +19,16 @@ import copy
 
 class ScoreComparer:
     """
-    Class that compares the scores of two lineups and computes whether it is
-    *better* (in the fantasy sense)
+    Class that compares the scores of two lineups.
+     
+    Computes whether it is *better* (in the fantasy sense).
 
     :param cfg: Configparser object
     :param scorer: Object that computes scores for the categories
     :param lg_lineups: All of the lineups in the league.  This is used to
         compute a standard deviation of all of the stat categories.
     """
+
     def __init__(self,  scorer, lg_lineups, lg, week, player_projections):
         self.league = lg
         self.scorer = scorer
@@ -43,7 +45,7 @@ class ScoreComparer:
         self.league_means = self._compute_agg(lg_lineups, 'mean')
     def set_opponent(self, opp_sum):
         """
-        Set the stat category totals for the opponent
+        Set the stat category totals for the opponent.
 
         :param opp_sum: Sum of all of the categories of your opponent
         """
@@ -51,7 +53,7 @@ class ScoreComparer:
 
     def compute_score(self, score_sum):
         """
-        Calculate a lineup score by comparing it against the standard devs
+        Calculate a lineup score by comparing it against the standard devs.
 
         :param lineup: Lineup to compute standard deviation from
         :return: Standard deviation score
@@ -71,7 +73,7 @@ class ScoreComparer:
 
     def _compute_agg(self, lineups, agg):
         """
-        Compute an aggregation of each of the categories
+        Compute an aggregation of each of the categories.
 
         :param lineups: Lineups to compute the aggregation on
         :return: Aggregation compuation for each category
@@ -112,8 +114,8 @@ class ScoreComparer:
 
 
 class ManagerBot:
-    """A class that encapsulates an automated Yahoo! fantasy manager.
-    """
+    """A class that encapsulates an automated Yahoo! fantasy manager."""
+
     def __init__(self, week = None, oauth_file = 'oauth2.json'):
         self.logger = logging.getLogger()
         if 'YAHOO_OAUTH_FILE' in os.environ:

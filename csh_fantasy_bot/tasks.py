@@ -6,11 +6,11 @@ from yahoo_oauth import OAuth2
 from yahoo_fantasy_api import League
 
 from csh_fantasy_bot.extensions import celery
-from csh_fantasy_bot.yahoo_fantasy import check_for_new_changes
+
 
 oauth = OAuth2(None, None, from_file='oauth2.json')
-league: League = League(oauth,'396.l.53432')
-leagues = {'396.l.53432':league}
+# league: League = League(oauth,'396.l.53432')
+# leagues = {'396.l.53432':league}
 
 
 @celery.task()
@@ -43,6 +43,7 @@ def long_task(self):
 
 @celery.task(bind=True, name='check_roster_moves')
 def check_roster_moves(self):
+    from csh_fantasy_bot.yahoo_fantasy import check_for_new_changes
     found_new_moves = check_for_new_changes(league, True)
     logging.debug("found new roster moves: {}".format(found_new_moves))
     if found_new_moves:
@@ -60,3 +61,9 @@ def flush_caches(self, league_id):
 def refresh(self):
     print('refresh called')
     return 'Success'
+
+@celery.task(bind=True, name='load_draft')
+def load_draft(self, league_id):
+    """Load draft results and stuff into ES."""
+    from csh_fantasy_bot.yahoo_fantasy_tasks.draft import export_draft_es
+    return export_draft_es(league_id)

@@ -4,8 +4,7 @@ from csh_fantasy_bot.extensions import celery
 
 
 def create_app(testing=False, cli=False):
-    """Application factory, used to create application.
-    """
+    """Application factory, used to create application."""
     app = Flask('csh_fantasy_bot')
     app.config.from_object("csh_fantasy_bot.config")
 

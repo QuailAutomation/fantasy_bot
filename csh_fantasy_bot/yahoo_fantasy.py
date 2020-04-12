@@ -15,7 +15,7 @@ from elasticsearch_dsl import Document, Date, Nested, Boolean, \
     analyzer, InnerDoc, Completion, Keyword, Text, Search
 
 def _get_last_processed_roster_change_id():
-    ''' read from es to find id of last league transaction'''
+    """Read from es to find id of last league transaction."""
     last_id = 0
     try:
         s = Search(index='fantasy-bot-league-transactions').sort('-id')
