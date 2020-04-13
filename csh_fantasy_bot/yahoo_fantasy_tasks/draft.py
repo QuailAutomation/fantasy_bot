@@ -8,12 +8,13 @@ from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.config import ELASTIC_URL
 
 
+
 def export_draft_es(league_id):
     """Read draft results for league, write to ES."""
     league = FantasyLeague(oauth_token,league_id)
     all_players_df = league.all_players()
     all_players_df.set_index('player_id', inplace=True)
-
+    teams = league.teams()
     draft_results = league.draft_results()
     print(f"Number of players drafted {len(draft_results)}")
     es = Elasticsearch(hosts=ELASTIC_URL, http_compress=True)
@@ -22,6 +23,7 @@ def export_draft_es(league_id):
             document['player_id'] = int(document['player_key'].split('.')[-1])
             document['draft_year'] = draft_year
             document['fantasy_team_id'] = int(document['team_key'].split('.')[-1])
+            document['team_name'] = teams[document['fantasy_team_id'] - 1]['name']
             document['league_ID'] = int(document['team_key'].split('.')[2])
             document['timestamp'] = draft_date
             try:

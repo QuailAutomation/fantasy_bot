@@ -71,6 +71,13 @@ def load_draft(self, league_id):
 
 @celery.task(bind=True, name='export_boxscores')
 def export_boxscores(self):
-    """Load draft results and stuff into ES."""
+    """Load boxscores and stuff into ES."""
     from csh_fantasy_bot.yahoo_fantasy_tasks.boxscores import export_boxscores
     return export_boxscores()
+
+@celery.task(bind=True, name='generate_player_predictions')
+def generate_player_predictions(self):
+    """Generate player preictions and save pickle file."""
+    # from csh_fantasy_bot.yahoo_fantasy_tasks.boxscores import export_boxscores
+    # return export_boxscores()
+
