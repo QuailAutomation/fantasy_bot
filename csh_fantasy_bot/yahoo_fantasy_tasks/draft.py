@@ -1,12 +1,13 @@
 """Write draft results to ES."""
 import datetime
+import logging
+
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 
 from csh_fantasy_bot.yahoo_fantasy_tasks import oauth_token
 from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.config import ELASTIC_URL
-
 
 
 def export_draft_es(league_id):
