@@ -59,6 +59,7 @@ def flush_caches(self, league_id):
 
 @celery.task(bind=True, name='refresh')
 def refresh(self):
+    """Dummy task."""
     print('refresh called')
     return 'Success'
 
@@ -67,3 +68,9 @@ def load_draft(self, league_id):
     """Load draft results and stuff into ES."""
     from csh_fantasy_bot.yahoo_fantasy_tasks.draft import export_draft_es
     return export_draft_es(league_id)
+
+@celery.task(bind=True, name='export_boxscores')
+def export_boxscores(self):
+    """Load draft results and stuff into ES."""
+    from csh_fantasy_bot.yahoo_fantasy_tasks.boxscores import export_boxscores
+    return export_boxscores()
