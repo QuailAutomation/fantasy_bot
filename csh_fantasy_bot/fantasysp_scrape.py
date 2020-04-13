@@ -51,9 +51,6 @@ class Parser:
         else:
             self.positions = ['C','LW','RW','D','G']
 
-
-
-
         player_headings = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW"]
         headings = ["Name", "Tm", "Pos", "GAMES"]
         df = pd.DataFrame(data=[], columns=headings)
