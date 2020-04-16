@@ -53,6 +53,4 @@ class FantasyLeague(League):
                              'Phi': 'PHI'}
         df["editorial_team_abbr"].replace(nhl_team_mappings, inplace=True)
     
-    def draft_results(self):
-        """Return json representation of draft."""
-        return super().draft_results()
+    
