@@ -11,6 +11,8 @@ connections.create_connection(hosts=[ELASTIC_URL], timeout=20)
 es_logger = logging.getLogger('elasticsearch')
 es_logger.setLevel(logging.WARNING)
 
+log = logging.getLogger(__name__)
+
 from elasticsearch_dsl import Document, Date, Nested, Boolean, \
     analyzer, InnerDoc, Completion, Keyword, Text, Search
 

@@ -1,5 +1,9 @@
 """Configuration for app."""
 import os
+import logging
+
+log = logging.getLogger(__name__)
+
 
 ENV = os.getenv("FLASK_ENV")
 DEBUG = ENV == "development"
@@ -21,4 +25,4 @@ CELERYBEAT_SCHEDULE = {
 CELERY_TASK_FILE_WRITE_PATH = "/Users/craigh/dev/fantasy_bot"
 
 ELASTIC_URL = os.getenv("ELASTIC_URL", default="http://localhost:9200")
-print(f"Elastic_Url is: {ELASTIC_URL}")
+log.warn(f"Elastic_Url is: {ELASTIC_URL}")
