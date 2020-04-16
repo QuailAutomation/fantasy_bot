@@ -9,7 +9,7 @@ from csh_fantasy_bot.extensions import celery
 
 
 oauth = OAuth2(None, None, from_file='oauth2.json')
-league: League = FantasyLeague('396.l.53432')
+league = FantasyLeague('396.l.53432')
 # leagues = {'396.l.53432':league}
 
 
