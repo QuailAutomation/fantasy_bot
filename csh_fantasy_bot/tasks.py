@@ -3,13 +3,13 @@ import random
 import logging
 
 from yahoo_oauth import OAuth2
-from yahoo_fantasy_api import League
+from csh_fantasy_bot.league import FantasyLeague
 
 from csh_fantasy_bot.extensions import celery
 
 
 oauth = OAuth2(None, None, from_file='oauth2.json')
-# league: League = League(oauth,'396.l.53432')
+league: League = FantasyLeague('396.l.53432')
 # leagues = {'396.l.53432':league}
 
 
