@@ -148,7 +148,8 @@ class Parser:
 
         df = pd.merge(my_roster, self.ppool[["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW",'name', 'Tm'] + Parser.goalie_headings], left_on=['name','abbrev'], right_on=['name', 'Tm'], how='left')
         df.rename(columns={'FOW': 'FW'}, inplace=True)
-        df.set_index('player_id',inplace=True)
+        if 'player_id' in df.columns:
+            df.set_index('player_id',inplace=True)
         return df
 
     def parse(self):

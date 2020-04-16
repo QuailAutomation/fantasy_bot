@@ -5,14 +5,13 @@ import logging
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 
-from csh_fantasy_bot.yahoo_fantasy_tasks import oauth_token
 from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.config import ELASTIC_URL
 
 
 def export_draft_es(league_id):
     """Read draft results for league, write to ES."""
-    league = FantasyLeague(oauth_token,league_id)
+    league = FantasyLeague(league_id)
     all_players_df = league.all_players()
     all_players_df.set_index('player_id', inplace=True)
     teams = league.teams()

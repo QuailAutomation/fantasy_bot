@@ -24,45 +24,6 @@ else:
 
 es = Elasticsearch(hosts=ELASTIC_URL, http_compress=True)
 
-# class PlayerScoring(InnerDoc):
-#     type = Text(fields={'raw': Keyword()})
-#     g = Float()
-#     a = Float()
-#     fw = Float()
-#     plusminus = Float()
-#     hit = Float()
-#     pim = Float()
-#     sog = Float()
-#     content = Text(analyzer='snowball')
-#     created_at = Date()
-#
-#     def age(self):
-#         return datetime.now() - self.created_at
-#
-# class ScoringResult(Document):
-#     player_id = Short()
-#     player_name = Text()
-#     game_date = Date()
-#
-#     published = Boolean()
-#     category = Text(
-#         analyzer=html_strip,
-#         fields={'raw': Keyword()}
-#     )
-#
-#     comments = Nested(Comment)
-#
-#     class Index:
-#         name = 'blog'
-#
-#     def add_comment(self, author, content):
-#         self.comments.append(
-#           Comment(author=author, content=content, created_at=datetime.now()))
-#
-#     def save(self, ** kwargs):
-#         self.created_at = datetime.now()
-#         return super().save(** kwargs)
-
 manager = bot.ManagerBot(1)
 sc = manager.sc
 lg = manager.lg

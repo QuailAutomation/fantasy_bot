@@ -82,7 +82,7 @@ def generate_player_predictions(self):
     # return export_boxscores()
 
 @celery.task(bind=True, name='export_teams_results')
-def export_teams_results(self):
+def export_teams_results(self,league_id=None, start_date=None,end_date=None):
     """Export the results for each fantasy team to ES."""
-    # from csh_fantasy_bot.yahoo_fantasy_tasks.boxscores import export_boxscores
-    # return export_boxscores()
+    from csh_fantasy_bot.yahoo_fantasy_tasks.team import export_results
+    export_results(league_id, start_date, end_date)

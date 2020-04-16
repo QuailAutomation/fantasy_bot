@@ -1,19 +1,21 @@
-"""Classes to represent League entities"""
+"""Classes to represent League entities."""
 from datetime import datetime, timedelta
 import pandas as pd
 
 from nhl_scraper.nhl import Scraper
-from yahoo_fantasy_api import League
+from yahoo_fantasy_api import League,Team
 from csh_fantasy_bot import utils
+
+from csh_fantasy_bot.yahoo_fantasy_tasks import oauth_token
 
 class FantasyLeague(League):
     """Represents a league in yahoo."""
-    
-    def __init__(self, sc, league_id):
+
+    def __init__(self, league_id):
         """Instantiate the league."""
-        super().__init__(sc, league_id)
+        super().__init__(oauth_token, league_id)
         self.lg_cache = utils.LeagueCache()
-    
+
     def all_players(self):
         """Return all players in league."""
         def all_loader():
@@ -32,6 +34,14 @@ class FantasyLeague(League):
         expiry = timedelta(minutes=6 * 60 * 20)
         return self.lg_cache.load_all_players(expiry,all_loader)
     
+    def team_by_id(self, team_id):
+        """Use the last part of team id for resolve team."""
+        return Team(self.sc, f"{self.league_id}.t.{team_id}")
+
+    def team_by_key(self,team_key):
+        """Resolve team for passed in key."""
+        return Team(self.sc, team_key)
+
     def _fix_yahoo_team_abbr(self, df):
         nhl_team_mappings = {'LA': 'LAK', 'Ott': 'OTT', 'Bos': 'BOS', 'SJ': 'SJS', 'Anh': 'ANA', 'Min': 'MIN',
                              'Nsh': 'NSH',
