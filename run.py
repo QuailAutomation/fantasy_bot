@@ -25,6 +25,12 @@ def makefile(fname, content):
     make_file.delay(fpath, content)
     return f"Find your file @ <code>{fpath}</code>"
 
+@app.route('/run_ga/<string:week>')
+def load_draft(week):
+    from csh_fantasy_bot.tasks import run_ga
+    run_ga.delay(week)
+    return 'Sucessfully started GA.'
+
 
 if __name__ == "__main__":
     if 'ipython' != sys.argv[1]:

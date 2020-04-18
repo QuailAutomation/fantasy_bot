@@ -86,3 +86,11 @@ def export_teams_results(self,league_id=None, start_date=None,end_date=None):
     """Export the results for each fantasy team to ES."""
     from csh_fantasy_bot.yahoo_fantasy_tasks.team import export_results
     export_results(league_id, start_date, end_date)
+
+@celery.task(bind=True, name='run_ga')
+def run_ga(self,league_id='396.l.53432', week=None):
+    """Start genetic algorithm."""
+    from csh_fantasy_bot import automation
+    driver = automation.Driver(week)
+    driver.run()
+    
