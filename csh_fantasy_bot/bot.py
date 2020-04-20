@@ -16,7 +16,6 @@ import importlib
 import copy
 
 
-
 class ScoreComparer:
     """
     Class that compares the scores of two lineups.
@@ -28,19 +27,12 @@ class ScoreComparer:
     :param lg_lineups: All of the lineups in the league.  This is used to
         compute a standard deviation of all of the stat categories.
     """
-
-    def __init__(self,  scorer, lg_lineups, lg, week, player_projections):
-        self.league = lg
+    def __init__(self,  scorer, lg_lineups, player_projections, stat_categories):
         self.scorer = scorer
-        self.week = week
         self.opp_sum = None
         self.stdev_cap = .2
-        self.stat_cats = []
+        self.stat_cats = stat_categories
         self.player_projections = player_projections
-        #TODO this needs to handle goalies when ready
-        for stat in lg.stat_categories():
-            if stat['position_type'] == 'P':
-                self.stat_cats.append(stat['display_name'])
         self.stdevs = self._compute_agg(lg_lineups, 'std')
         self.league_means = self._compute_agg(lg_lineups, 'mean')
     def set_opponent(self, opp_sum):
@@ -79,8 +71,6 @@ class ScoreComparer:
         :return: Aggregation compuation for each category
         :rtype: DataFrame
         """
-        start_week, end_week = self.league.week_date_range(self.week)
-        week = pd.date_range(start_week, end_week)
         scores = pd.DataFrame()
         for lineup in lineups:
             if type(lineup) is pd.DataFrame:
@@ -88,9 +78,7 @@ class ScoreComparer:
             else:
                 df = pd.DataFrame(data=lineup, columns=lineup[0].index)
 
-            # score_sum = self.scorer.summarize(df,week)
             scores = scores.append(df.loc[:,self.stat_cats].sum(), ignore_index=True)
-        # print(scores.head())
         return scores.agg([agg]).loc[agg,:]
 
     def print_week_results(self, my_scores_summary):
@@ -122,11 +110,12 @@ class ManagerBot:
             oauth_file = os.environ['YAHOO_OAUTH_FILE']
         self.sc = OAuth2(None, None, from_file=oauth_file)
         self.lg = yfa.League(self.sc, '396.l.53432')
+        self.stat_categories = [stat['display_name'] for stat in self.lg.stat_categories() if stat['position_type'] == 'P']
         self.tm = self.lg.to_team(self.lg.team_key())
-        self.league_week = week if week is not None else self.lg.current_week()
+        self.league_week = week or self.lg.current_week()
         (start_week, end_week) = self.lg.week_date_range(self.league_week)
         self.week = pd.date_range(start_week, end_week)
-        self.tm_cache = utils.TeamCache(self.lg.team_key())
+        self.tm_cache = utils.TeamCache(self.tm.team_key)
         self.lg_cache = utils.LeagueCache()
         self.pred_bldr = None
         self.my_team_bldr = self._construct_roster_builder()
@@ -146,7 +135,8 @@ class ManagerBot:
         self.init_prediction_builder()
         self.fetch_player_pool()
         self.all_players = self.fetch_all_players()
-        self.score_comparer: ScoreComparer = ScoreComparer(self.scorer, self.fetch_league_lineups(),self.lg, self.league_week,self.pred_bldr.predict(self.all_players))
+        
+        self.score_comparer: ScoreComparer = ScoreComparer(self.scorer, self.fetch_league_lineups(), self.pred_bldr.predict(self.all_players), self.stat_categories)
         self.logger.debug("Reading Free Agents")
         # self.fetch_player_pool()
         self.logger.debug("Loading Lineups")
@@ -302,10 +292,10 @@ class ManagerBot:
         ids_no_stats = list(
             players.query('G != G & position_type == "P" & status != "IR"').index.values)
         the_stats = self.lg.player_stats(ids_no_stats, 'season')
-        stats_to_track = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FW"]
+        
         for player_w_stats in the_stats:
             # a_player = players[players.player_id == player_w_stats['player_id']]
-            for stat in stats_to_track:
+            for stat in self.stat_categories:
                 if player_w_stats['GP'] > 0:
                     #  hack for now because yahoo returns FW but rest of code uses FOW
                     # if stat != 'FOW':
@@ -372,10 +362,10 @@ class ManagerBot:
             # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
             ids_no_stats = list(players.query('on_my_team == 1 & G != G & position_type == "P" & status != "IR" ').index.values)
             the_stats = self.lg.player_stats(ids_no_stats,'season')
-            stats_to_track = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FW"]
+            
             for player_w_stats in the_stats:
                 # a_player = players[players.player_id == player_w_stats['player_id']]
-                for stat in stats_to_track:
+                for stat in self.stat_categories:
                     if player_w_stats['GP'] > 0:
                         players.loc[player_w_stats['player_id'], [stat]] = player_w_stats[stat] / player_w_stats['GP']
 
@@ -575,8 +565,7 @@ class ManagerBot:
                 locked_plyrs.append(plyr)
 
         best_lineup = optimizer_func(self.score_comparer,
-                                     self.my_team_bldr,
-                                     self.ppool, locked_plyrs)
+                                     self.ppool, locked_plyrs, self.lg, self.league_week)
         if best_lineup:
             self.score_comparer.print_week_results(best_lineup.scoring_summary.loc[:,self.score_comparer.stat_cats].sum())
 
@@ -798,11 +787,8 @@ class ManagerBot:
         position_types = {'mlb': ['B', 'P'], 'nhl': ['P']}
         return position_types[settings['game_code']]
 
-    def _is_predicted_stat(self, stat):
-        return stat in ["G","A","+/-","PIM","SOG","FOW","HIT"].split(',')
-
     def _get_orig_roster(self):
-        return self.lg.to_team(self.lg.team_key()).roster(
+        return self.tm.roster(
             day=self.lg.edit_date())
 
     def _get_num_roster_changes_made(self):

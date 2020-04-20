@@ -244,7 +244,7 @@ class Builder:
             return False
 
     def _swap_eligible_pos_recurse(self, roster, player, swapped_plyrs):
-        """Recursively swap positions with players until all positions are used
+        """Recursively swap positions with players until all positions are used.
 
         :param roster: The roster to work with
         :type roster: pandas.DataFrame
@@ -321,13 +321,12 @@ class PlayerSelector:
 
     def shuffle(self):
         """
-        Shuffle the player pool in order to produce a random roster
+        Shuffle the player pool in order to produce a random roster.
         """
         self.ppool = self.ppool.sample(frac=1).reset_index(drop=True)
 
     def select(self):
-        """Iterate over players in the pool according to the rank
-
+        """Iterate over players in the pool according to the rank.
         This is to be called after rank().  It will return the players starting
         with the top ranked player.
         """
@@ -349,119 +348,11 @@ import numpy as np
 from itertools import combinations
 
 
-class DailyRosterBuilder:
-    def __init__(self):
-        self.player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
-        # weight importance of the player stats
-        self.weights_series = pd.Series([1, 1, .5, .5, .5, .3, .5], index=self.player_stats)
-        self.roster_positions = pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(","))
-        self.roster_makeup = self.roster_positions.value_counts()
-        self.pts_cols = []
-        for pos in self.roster_makeup.index.unique():
-            for index in range(self.roster_makeup[pos]):
-                self.pts_cols.append('{}{}-fpts'.format(pos, index+1))
-
-    def find_best(self, player_pool):
-        player_pool['fpts'] = player_pool[self.player_stats].mul(self.weights_series).sum(1)
-        player_pool.sort_values(by=['fpts'], ascending=False, inplace=True)
-
-        def generate_combinations_for_position(pos, ppool):
-            players = ppool[ppool.eligible_positions.apply(lambda x: pos in x)]
-            combo_list = []
-            no_players = {}
-            for index in range(self.roster_makeup[pos]):
-                no_players['{}{}'.format(pos,index+1)] = np.nan
-                no_players['{}{}-fpts'.format(pos, index + 1)] = np.nan
-            combo_list.append(no_players)
-            if len(players) > 0:
-                for position_combo in combinations(players.index, min(len(players), self.roster_makeup[pos])):
-                    combo_dict = {}
-                    for index, id in enumerate(position_combo):
-                        the_index = index
-                        combo_dict["{}{}".format(pos, index + 1)] = id
-                        combo_dict["{}{}-fpts".format(pos, index + 1)] = ppool.loc[id,'fpts']
-                    combo_list.append(combo_dict)
-
-                return pd.DataFrame(combo_list)
-            else:
-                return None
-
-        def do_merge(possible, position_df):
-            return pd.merge(possible_rosters.assign(key=0), position_df.assign(key=0),
-                                                on='key').drop('key', axis=1)
-
-        possible_rosters = None
-        for position in self.roster_makeup.index.drop('D').unique():
-            position_df = generate_combinations_for_position(position, player_pool)
-            if position_df is not None:
-                if possible_rosters is None:
-                    possible_rosters = position_df
-                else:
-                    possible_rosters = do_merge(possible_rosters, position_df)
-
-        # now we do left join with best D.  Saves cartesian and don't have players that play D and forward spot
-        # TODO add back D
-        dmen_df = generate_combinations_for_position('D', player_pool)
-        if dmen_df is not None:
-            valid_d = dmen_df[dmen_df.apply(lambda x: not any(x.dropna().duplicated()), axis=1)]
-            valid_d['pts'] = valid_d[[s for s in valid_d.columns if 'fpts' in s]].sum(axis=1)
-            valid_d.sort_values(by=['pts'], ascending=False, inplace=True)
-            valid_d.reset_index(inplace=True, drop=True)
-            if len(valid_d) > 0:
-                if possible_rosters is None:
-                    possible_rosters = valid_d
-                else:
-                    possible_rosters = pd.merge(possible_rosters.assign(key=0),
-                                                valid_d[valid_d.index == 0].assign(key=0),
-                                                on='key').drop('key', axis=1)
-
-        # score and resort
-        if possible_rosters is not None:
-            pts_columns = [s for s in possible_rosters.columns if 'fpts' in s]
-            possible_rosters['pts'] = possible_rosters[pts_columns].sum(axis=1)
-            possible_rosters.sort_values(by=['pts'], ascending=False, inplace=True)
-            possible_rosters.reset_index(inplace=True, drop=True)
-
-            roster_columns = [s for s in possible_rosters.columns if 'fpts' not in s]
-
-            def find_best1():
-                def drop_columns():
-                    return possible_rosters.drop(pts_columns + ['pts'], axis=1)
-                with_dropped = drop_columns()
-
-                def first_valid1():
-                    def get_num_nas():
-                        return with_dropped.T.isna().sum()
-                    num_naas = get_num_nas()
-
-                    def get_num_uniques():
-                        return with_dropped.nunique(1)
-                    num_uniques = get_num_uniques()
-
-                    return ((len(self.roster_positions) - num_naas - num_uniques) == 0).idxmax()
-
-                first_valid = first_valid1()
-
-                def drop_naas():
-                    return with_dropped.iloc[first_valid,:].dropna()
-
-                final_value = drop_naas()
-                return final_value
-
-            return find_best1()
-            #valid_rosters = possible_rosters[possible_rosters.apply(lambda x: not any(x.dropna().duplicated()), axis=1)]
-
-
-        return None
-
-
 class RecursiveRosterBuilder:
     """Builds bost roster of players using predicted stats and a weighting."""
     
-    def __init__(self, roster_makeup=None):
+    def __init__(self, roster_makeup=pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(","))):
         """Initialize."""
-        if roster_makeup is None:
-            roster_makeup = pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(","))
         self.roster_makeup = roster_makeup
         self.player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
         # weight importance of the player stats
