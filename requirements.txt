@@ -20,3 +20,4 @@ elasticsearch-dsl==6.4.0
 flask==1.1.1
 pydocstyle==5.0.*
 jsons==1.1.2
+graypy==2.1.0
