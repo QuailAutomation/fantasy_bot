@@ -94,3 +94,10 @@ def run_ga(self,league_id='396.l.53432', week=None):
     driver = automation.Driver(week)
     driver.run()
     
+@celery.task(bind=True, name='score_week')
+def score_week(self, my_scorer, roster_change_sets, score_comparer):
+    """Score some roster results."""
+    for change_set in roster_change_sets:
+        the_score = self.my_scorer.score(change_set)
+        change_set.scoring_summary = the_score
+        change_set.score = self.score_comparer.compute_score(the_score)

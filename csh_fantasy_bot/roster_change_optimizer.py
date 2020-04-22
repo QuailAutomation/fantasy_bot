@@ -159,7 +159,7 @@ class GeneticAlgorithm:
             self._check_elite_hasnt_regressed(last_elite_score)
 
             last_elite_score = self.population[ELITE_NUM - 1].score
-        self.logger.info(
+        self.log.info(
             "Ended with population size of {}".format(len(self.population)))
         return self.population[0]
 
@@ -455,7 +455,7 @@ class GeneticAlgorithm:
         for change_set in roster_change_sets:
             the_score = self.my_scorer.score(change_set)
             change_set.scoring_summary = the_score
-            change_set.score = self.score_comparer.compute_score(the_score.loc[:, self.player_stats].sum())
+            change_set.score = self.score_comparer.compute_score(the_score)
 
     def _mutate_roster_change(self, lineup, selector, team_roster):
         rc_index = ['player_out', 'player_in', 'change_date']
@@ -580,16 +580,13 @@ class GeneticAlgorithm:
 
 class RosterChangeSet:
     def __init__(self, changes=None, max_allowed=4):
-        # self.number_roster_changes = random.randint(0, max_allowed)
         self.max_allowed_changes = max_allowed
-        # date, list changes
-        self.roster_changes = pd.DataFrame(columns=['change_date', 'player_out', 'player_in', 'equality_score'])
         self._equality_value = None
         self.score = None
+        self.roster_changes = pd.DataFrame(columns=['change_date', 'player_out', 'player_in', 'equality_score'])
         if changes is not None:
             for change in changes.itertuples():
                 self.add(change.player_out, change.player_in, change.change_date)
-        super().__init__()
 
     @property
     def equality_value(self):
@@ -681,6 +678,13 @@ class RosterChangeSet:
 
     def get_changes(self):
         return self.roster_changes
+
+from json import JSONEncoder
+
+class RosterChangeSetEncoder(JSONEncoder):
+        def default(self, o):
+            return o.__dict__
+
 
 
 class RosterException(Exception):

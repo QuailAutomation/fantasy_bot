@@ -30,4 +30,5 @@ def do_run():
     driver = automation.Driver(20)
     driver.run()
 
-do_run()
+if __name__ == "__main__":
+    do_run()

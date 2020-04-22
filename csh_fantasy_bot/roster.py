@@ -351,12 +351,18 @@ from itertools import combinations
 class RecursiveRosterBuilder:
     """Builds bost roster of players using predicted stats and a weighting."""
     
-    def __init__(self, roster_makeup=pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(","))):
+    def __init__(self, roster_makeup=pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(",")), stats_weights=None):
         """Initialize."""
         self.roster_makeup = roster_makeup
-        self.player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
+        
         # weight importance of the player stats
-        self.weights_series = pd.Series([1, .75, .5, .5, 1, .1, 1], index=self.player_stats)
+        if stats_weights is not None:
+            self.player_stats = list(stats_weights.index.values)
+            self.weights_series = stats_weights 
+        else:
+            self.player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
+            self.weights_series = pd.Series([1, .75, .5, .5, 1, .1, 1], index=self.player_stats)
+            
         self.roster_position_counts = roster_makeup.value_counts()
 
     def _place_player(self, player, roster):

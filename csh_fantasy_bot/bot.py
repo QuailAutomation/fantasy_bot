@@ -50,10 +50,11 @@ class ScoreComparer:
         :param lineup: Lineup to compute standard deviation from
         :return: Standard deviation score
         """
+        my_scores = score_sum.loc[:, self.stat_cats].sum()
         assert(self.opp_sum is not None), "Must call set_opponent() first"
         assert(self.stdevs is not None)
-        means = pd.DataFrame([score_sum,self.opp_sum]).mean()
-        diff = (score_sum - means)/means
+        means = pd.DataFrame([my_scores,self.opp_sum]).mean()
+        diff = (my_scores - means)/means
         return diff.clip(lower=-1 * self.stdev_cap, upper=self.stdev_cap).sum()
 
 
@@ -400,13 +401,14 @@ class ManagerBot:
         def loader():
             self.logger.info("Fetching lineups for each team")
             lineups = []
+            all_projections = self.pred_bldr.predict(self.all_players)
             for tm in self.lg.teams():
                 tm = self.lg.to_team(tm['team_key'])
                 # tm_roster = tm.roster(self.league_week)
 
                 # lineup_predictions = self._get_predicted_stats(pd.DataFrame(tm_roster))
 
-                team_scores = BestRankedPlayerScorer(self.lg, tm, self.pred_bldr.predict(self.all_players), self.week).score()
+                team_scores = BestRankedPlayerScorer(self.lg, tm, all_projections, self.week).score()
                 lineups.append(team_scores)
             self.logger.info("All lineups fetched.")
             return lineups
