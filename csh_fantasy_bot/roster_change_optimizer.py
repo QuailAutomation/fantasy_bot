@@ -630,6 +630,7 @@ class RosterChangeSet:
         self._equality_value = None
 
     def can_drop_player(self, drop_player):
+        """Check if player already being dropped in another roster change."""
         return drop_player not in self.roster_changes.loc[:, 'player_out'].values
 
     def add(self, player_out, player_in, change_date):
