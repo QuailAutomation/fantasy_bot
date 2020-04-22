@@ -12,7 +12,7 @@ def a_change_date():
     """A convenient date to use for change_date."""
     return datetime(2020,4,4)
 
-def test_json_encoding(a_change_date):
+def est_json_encoding(a_change_date):
     """Ensure RosterChangeSet supports json encoding."""
     change_set = RosterChangeSet(max_allowed=2)
     change_set.add(3400, 3500, a_change_date)
@@ -36,3 +36,13 @@ def test_can_drop_player_check(a_change_date):
     change_set.add(player_out=34, player_in=44, change_date=a_change_date)
     assert(change_set.can_drop_player(34) == False )
     assert(change_set.can_drop_player(35) == True)
+
+
+def test_get_by_date(a_change_date):
+    change_set = RosterChangeSet()
+    change_set.add(34,22,a_change_date)
+    change_set.add(122,55,a_change_date)
+    change_set.add(234,1,a_change_date + timedelta(days=1))
+
+    assert (len(change_set) == 3)
+    assert (len(change_set.get(a_change_date)) == 2)
