@@ -4,6 +4,7 @@ from yahoo_oauth import OAuth2
 import yahoo_fantasy_api as yfa
 from nhl_scraper.nhl import Scraper
 from csh_fantasy_bot import roster, utils, builder,fantasysp_scrape
+from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 import logging
 import pickle
@@ -35,6 +36,8 @@ class ScoreComparer:
         self.player_projections = player_projections
         self.stdevs = self._compute_agg(lg_lineups, 'std')
         self.league_means = self._compute_agg(lg_lineups, 'mean')
+        self.log = logging.getLogger(__name__)
+
     def set_opponent(self, opp_sum):
         """
         Set the stat category totals for the opponent.
@@ -50,7 +53,10 @@ class ScoreComparer:
         :param lineup: Lineup to compute standard deviation from
         :return: Standard deviation score
         """
-        my_scores = score_sum.loc[:, self.stat_cats].sum()
+        try:
+            my_scores = score_sum.loc[:, self.stat_cats].sum()
+        except IndexError as e:
+            self.log.exception(e)
         assert(self.opp_sum is not None), "Must call set_opponent() first"
         assert(self.stdevs is not None)
         means = pd.DataFrame([my_scores,self.opp_sum]).mean()
@@ -105,12 +111,13 @@ class ScoreComparer:
 class ManagerBot:
     """A class that encapsulates an automated Yahoo! fantasy manager."""
 
-    def __init__(self, week = None, oauth_file = 'oauth2.json'):
+    def __init__(self, week = None, oauth_file = 'oauth2.json', simulation_mode=True):
         self.logger = logging.getLogger()
+        self.simulation_mode = simulation_mode
         if 'YAHOO_OAUTH_FILE' in os.environ:
             oauth_file = os.environ['YAHOO_OAUTH_FILE']
         self.sc = OAuth2(None, None, from_file=oauth_file)
-        self.lg = yfa.League(self.sc, '396.l.53432')
+        self.lg = FantasyLeague('396.l.53432')
         self.stat_categories = [stat['display_name'] for stat in self.lg.stat_categories() if stat['position_type'] == 'P']
         self.tm = self.lg.to_team(self.lg.team_key())
         self.league_week = week or self.lg.current_week()
@@ -270,7 +277,7 @@ class ManagerBot:
                 p['selected_position'] = np.nan
             assert(pct_own['player_id'] == p['player_id'])
             p['percent_owned'] = pct_own['percent_owned']
-            p['on_my_team'] = 1
+            p['fantasy_status'] = int(self.tm.team_key.split('.')[-1])
         return all_mine
 
     def _get_predicted_stats(self, my_roster):
@@ -341,27 +348,31 @@ class ManagerBot:
 
 
     def fetch_player_pool(self):
-        """Build the roster pool of players"""
+        """Build the roster pool of players."""
         if self.ppool is None:
-            current_lineup = self.fetch_cur_lineup()
-            plyr_pool = self.fetch_free_agents() + current_lineup + self.fetch_waivers()
-            # rcont = roster.Container(None, None)
-            # rcont.add_players(plyr_pool)
-            my_roster = pd.DataFrame(plyr_pool)
-            # my_roster = my_roster[my_roster.status != 'O']
-            self._fix_yahoo_team_abbr(my_roster)
-            self.nhl_scraper = Scraper()
+            my_team_id = int(self.tm.team_key.split('.')[-1])
+            if self.simulation_mode:
+                all_players = self.lg.as_of(self.week[0])
+                
+                my_roster = all_players[all_players.fantasy_status.isin([my_team_id, 'FA'])]
+                my_roster.reset_index(inplace=True)
+            else:
+                current_lineup = self.fetch_cur_lineup()
+                plyr_pool = self.fetch_free_agents() + current_lineup + self.fetch_waivers()
+                my_roster = pd.DataFrame(plyr_pool)
+                self._fix_yahoo_team_abbr(my_roster)
+                self.nhl_scraper = Scraper()
 
-            nhl_teams = self.nhl_scraper.teams()
-            nhl_teams.set_index("id")
-            nhl_teams.rename(columns={'name': 'team_name'}, inplace=True)
+                nhl_teams = self.nhl_scraper.teams()
+                nhl_teams.set_index("id")
+                nhl_teams.rename(columns={'name': 'team_name'}, inplace=True)
 
-            my_roster = my_roster.merge(nhl_teams, left_on='editorial_team_abbr', right_on='abbrev')
-            my_roster.rename(columns={'id': 'team_id'}, inplace=True)
-            self.nhl_players = self.nhl_scraper.players()
+                my_roster = my_roster.merge(nhl_teams, left_on='editorial_team_abbr', right_on='abbrev')
+                my_roster.rename(columns={'id': 'team_id'}, inplace=True)
+
             players = self.pred_bldr.predict(my_roster)
             # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
-            ids_no_stats = list(players.query('on_my_team == 1 & G != G & position_type == "P" & status != "IR" ').index.values)
+            ids_no_stats = list(players.query(f'fantasy_status == {my_team_id} & G != G & position_type == "P" & status != "IR" ').index.values)
             the_stats = self.lg.player_stats(ids_no_stats,'season')
             
             for player_w_stats in the_stats:
@@ -556,7 +567,7 @@ class ManagerBot:
 
     def optimize_lineup_from_free_agents(self):
         """
-        Optimize your lineup using all of your players plus free agents
+        Optimize your lineup using all of your players plus free agents.
         """
         optimizer_func = self._get_lineup_optimizer_function()
 
@@ -567,7 +578,7 @@ class ManagerBot:
                 locked_plyrs.append(plyr)
 
         best_lineup = optimizer_func(self.score_comparer,
-                                     self.ppool, locked_plyrs, self.lg, self.league_week)
+                                     self.ppool, locked_plyrs, self.lg, self.league_week, simulation_mode=True)
         if best_lineup:
             self.score_comparer.print_week_results(best_lineup.scoring_summary.loc[:,self.score_comparer.stat_cats].sum())
 
@@ -790,8 +801,10 @@ class ManagerBot:
         return position_types[settings['game_code']]
 
     def _get_orig_roster(self):
-        return self.tm.roster(
-            day=self.lg.edit_date())
+        if self.simulation_mode:
+            return self.tm.roster(day=self.week[0])
+        else:
+            return self.tm.roster(day=self.lg.edit_date())
 
     def _get_num_roster_changes_made(self):
         # if the game week is in the future then we couldn't have already made changes

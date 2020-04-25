@@ -5,7 +5,7 @@ from celery import Celery
 from celery.signals import after_setup_logger
 
 from csh_fantasy_bot.app import init_celery
-
+from csh_fantasy_bot.config import LOG_LEVEL
 
 log = logging.getLogger(__name__)
 
@@ -18,9 +18,10 @@ def setup_loggers(logger, *args, **kwargs):
     try:
         import graypy
         from csh_fantasy_bot.config import GELF_URL
-        handler = graypy.GELFUDPHandler(GELF_URL, 12201,
-                                        facility='fantasy_bot_worker')
-        logger.addHandler(handler)
+        if GELF_URL:
+            handler = graypy.GELFUDPHandler(GELF_URL, 12201,
+                                            facility='fantasy_bot_worker')
+            log.addHandler(handler)
     except ImportError:
         log.warn("Could not import graypy, using default logging")
     except KeyError:
@@ -31,6 +32,8 @@ def setup_loggers(logger, *args, **kwargs):
             if not isinstance(v, logging.PlaceHolder):
                 for h in v.handlers:
                     print('     +++',str(h.__class__)[8:-2] )
+
+log.setLevel(level=LOG_LEVEL)
 
 if __name__ == "__main__":
     print("main of celery app")

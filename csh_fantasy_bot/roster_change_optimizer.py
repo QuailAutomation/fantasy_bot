@@ -35,7 +35,7 @@ def profile(fnc):
 
 
 def optimize_with_genetic_algorithm(score_comparer,
-                                    avail_plyrs, locked_plyrs, league, week):
+                                    avail_plyrs, locked_plyrs, league, week, simulation_mode):
     """
     Loader for the GeneticAlgorithm class.
 
@@ -81,7 +81,7 @@ class GeneticAlgorithm:
     """
 
     def __init__(self, score_comparer, avail_plyrs,
-                 locked_plyrs, league, week):
+                 locked_plyrs, league, week, simulation_mode=True):
         # self.cfg = cfg
         self.log = logging.getLogger(__name__)
         self.score_comparer = score_comparer
@@ -101,8 +101,14 @@ class GeneticAlgorithm:
         self.my_team: Team = self.league.to_team(self.league.team_key())
         self.date_range_for_changes = pd.date_range(first_change_date, self.date_range[-1])
         self.waivers = self.league.waivers()
+        # this should be true if we never want to use actuals, always use projections
+        self.simulation_mode = simulation_mode
+        if self.simulation_mode:
+            self.team_full_roster = self.my_team.roster(day=self.date_range[0])
+        else:
+            self.team_full_roster = self.my_team.roster(day=self.league.edit_date())
+
         self.droppable_players = self._generate_droppable_players()
-        self.team_full_roster = self.league.to_team(self.league.team_key()).roster(day=self.league.edit_date())
 
         self.my_scorer: BestRankedPlayerScorer = BestRankedPlayerScorer(self.league, self.my_team,
                                                                         self.ppool, self.date_range)
@@ -184,7 +190,7 @@ class GeneticAlgorithm:
     def _generate_droppable_players(self):
         waivers_ids = [e["player_id"] for e in self.waivers] + self.locked_ids
         droppable_players = []
-        for plyer in self.my_team.roster():
+        for plyer in self.team_full_roster:
             if plyer['player_id'] not in waivers_ids and plyer['position_type'] != 'G':
                 droppable_players.append(plyer['player_id'])
         return droppable_players
@@ -268,8 +274,8 @@ class GeneticAlgorithm:
         team_roster = pd.DataFrame(self.team_full_roster)
         roster_change_sets = self.population
         # always start with no roster changes
-        roster_change_sets.append(RosterChangeSet(max_allowed=roster_changes_allowed))
-        last_roster_change_set: RosterChangeSet = RosterChangeSet(max_allowed=roster_changes_allowed)
+        roster_change_sets.append(RosterChangeSet(valid_dates=self.date_range_for_changes, max_allowed=roster_changes_allowed))
+        last_roster_change_set: RosterChangeSet = RosterChangeSet(valid_dates=self.date_range_for_changes, max_allowed=roster_changes_allowed)
         number_roster_changes_to_place = random.randint(1, roster_changes_allowed)
         for plyr in selector.select():
             fit = False
@@ -287,7 +293,7 @@ class GeneticAlgorithm:
             if len(last_roster_change_set.roster_changes) == number_roster_changes_to_place:
                 if last_roster_change_set not in self.population:
                     roster_change_sets.append(last_roster_change_set)
-                last_roster_change_set = RosterChangeSet(max_allowed=roster_changes_allowed)
+                last_roster_change_set = RosterChangeSet(valid_dates=self.date_range_for_changes, max_allowed=roster_changes_allowed)
                 number_roster_changes_to_place = random.randint(1, roster_changes_allowed)
 
             while len(last_roster_change_set.roster_changes) < number_roster_changes_to_place:
@@ -316,6 +322,8 @@ class GeneticAlgorithm:
                 self._set_scores([change_set])
                 if index % 19 == 0:
                     print("scored: {}, ({})".format(index, change_set.score))
+            else:
+                self.log.debug('unexpected roster change with score set')
             # opp_sum = my_scorer.score()
 
     def _remove_from_pop(self, lineup):
@@ -453,79 +461,18 @@ class GeneticAlgorithm:
 
     def _set_scores(self, roster_change_sets):
         for change_set in roster_change_sets:
-            the_score = self.my_scorer.score(change_set)
+            the_score = self.my_scorer.score(change_set, simulation_mode=self.simulation_mode)
             change_set.scoring_summary = the_score
             change_set.score = self.score_comparer.compute_score(the_score)
 
-    def _mutate_roster_change(self, roster_change_set, selector, team_roster):
-        rc_index = ['player_out', 'player_in', 'change_date']
-        try:
-            roster_change_to_mutate_index = random.randint(1, len(roster_change_set)) - 1
-
-            roster_change_to_mutate = roster_change_set[roster_change_to_mutate_index]
-            # lets mutate this change set
-            random_number = random.randint(1, 100)
-            if len(self.date_range_for_changes) > 1 and random_number < 30:
-                # lets mutate date
-                while True:
-                    drop_date = random.choice(self.date_range_for_changes).date()
-
-                    if drop_date != roster_change_to_mutate['change_date']:
-
-                        mutated_roster_change = roster_change_to_mutate.copy()
-                        mutated_roster_change['change_date'] = drop_date
-                        try:
-                            roster_change_set.replace(roster_change_to_mutate, mutated_roster_change)
-                        except RosterException as e:
-                            # this is ok, player must already exist in another change
-                            pass
-                        # print('mutated date')
-                        break
-            elif random_number < 40:
-                # lets mutate player out
-                for _ in range(50):
-                    player_to_remove = random.choice(self.droppable_players)
-                    if not any(rc['player_out'] == player_to_remove for rc in roster_change_set):
-                        mutated_roster_change = roster_change_to_mutate.copy()
-                        mutated_roster_change['player_out'] = player_to_remove
-                        try:
-                            roster_change_set.replace(roster_change_to_mutate, mutated_roster_change)
-                        except RosterException as e:
-                            pass
-
-                        break
-            elif random_number < 95:
-                # lets mutate player in
-                selector.shuffle()
-                for plyr in selector.select():
-                    if plyr['player_id'] in team_roster.player_id.values or plyr['position_type'] == 'G' or plyr[
-                        'player_id'] in [rc['player_in'] for rc in roster_change_set.roster_changes]:
-                        continue
-                    if not any(plyr.player_id == rc['player_in'] for rc in roster_change_set):
-                        mutated_roster_change = roster_change_to_mutate.copy()
-                        mutated_roster_change['player_in'] = plyr['player_id']
-                        try:
-                            roster_change_set.replace(roster_change_to_mutate, mutated_roster_change)
-                        except RosterException as e:
-                            self.log.exception(e)
-                        break
-            else:
-                # remove a roster change - don't have to worry about zero roster changes, eliminated 0 ones already
-                if len(roster_change_set) > 1:
-                    del (roster_change_set[roster_change_to_mutate_index])
-
-            #TODO might want to defer scoring, i think it would get done later, and could be batched
-            self._set_scores([roster_change_set])
-        except ValueError as e:
-            self.log.exception(e)
-            
-
+    
     def _mutate_elites(self, selector, team_roster):
         """Mutate each of the elites.  If score increases, swap mutated in."""
         for index, elite in enumerate(self.population[:ELITE_NUM]):
             if len(elite.roster_changes):
                 rc = deepcopy(elite)
-                self._mutate_roster_change(rc, selector, team_roster)
+                rc.mutate(selector, team_roster, self.droppable_players)
+                self._set_scores([rc])
                 try:
                     if rc.score > elite.score:
                         print('swap mutated')
@@ -548,36 +495,21 @@ class GeneticAlgorithm:
                                   int((len(self.population) - (ELITE_NUM + 1)) * mutate_pct / 100))
         for rc in to_mutate:
             if len(rc) > 0:
-                self._mutate_roster_change(rc, selector, team_roster)
-            if rc.score is None:
-                print('Scoring(mutate)')
-                self._set_scores([rc])
-        # for index, lineup in enumerate(self.population):
-        #
-        #     # lets not mutate the top 2, and only sets with atleast 1 roster change
-        #     if index < ELITE_NUM or len(lineup) == 0:
-        #         continue
-        #
-        #     if random.randint(1, 100) <= mutate_pct:
-        #         self._mutate_roster_change(lineup, selector, team_roster)
-        #     if lineup.score is None:
-        #         self._set_scores([lineup])
-        #         # TODO we should check if this roster set now equals another
-        #         # for i, pop in enumerate(self.population):
-        #         #     if pop == lineup and i != index:
-        #         #         # this change set is now a duplicate of another, so remove from population
-        #         #         del(self.population[index])
+                rc.mutate(selector, team_roster, self.droppable_players)
 
 
 class RosterChangeSet:
-    def __init__(self, changes=None, max_allowed=4):
+    def __init__(self, valid_dates, changes=None, max_allowed=4):
         self.max_allowed_changes = max_allowed
         self._equality_value = None
         self.score = None
+        self.valid_dates = valid_dates
         self.roster_changes = []
+        self.log = logging.getLogger(__name__)
         if changes is not None:
             for change in changes:
                 self.add(change['player_out'], change['player_in'], change['change_date'])
+        
 
     @property
     def equality_value(self):
@@ -586,7 +518,7 @@ class RosterChangeSet:
         return self._equality_value
 
     def __copy__(self):
-        newone = type(self)()
+        newone = type(self)(self.valid_dates)
         newone.__dict__.update(self.__dict__)
         return newone
 
@@ -644,7 +576,7 @@ class RosterChangeSet:
             
 
     def replace(self, old_roster_change, new_roster_change):
-
+        """Replace old roster change with new one."""
         if new_roster_change is not None:
             # if we are removing same player in these 2 changes, this will be valid
             try:
@@ -670,6 +602,68 @@ class RosterChangeSet:
 
     def get_changes(self):
         return self.roster_changes
+
+    def mutate(self, selector, team_roster, droppable_players):
+        rc_index = ['player_out', 'player_in', 'change_date']
+        if len(self.roster_changes) == 0:
+            return
+
+        try:
+            roster_change_to_mutate_index = random.randint(1, len(self.roster_changes)) - 1
+
+            roster_change_to_mutate = self.roster_changes[roster_change_to_mutate_index]
+            # lets mutate this change set
+            random_number = random.randint(1, 100)
+            if len(self.valid_dates) > 1 and random_number < 30:
+                # lets mutate date
+                while True:
+                    drop_date = random.choice(self.valid_dates).date()
+
+                    if drop_date != roster_change_to_mutate['change_date']:
+
+                        mutated_roster_change = roster_change_to_mutate.copy()
+                        mutated_roster_change['change_date'] = drop_date
+                        try:
+                            self.replace(roster_change_to_mutate, mutated_roster_change)
+                        except RosterException as e:
+                            # this is ok, player must already exist in another change
+                            pass
+                        break
+            elif random_number < 40:
+                # lets mutate player out
+                for _ in range(50):
+                    player_to_remove = random.choice(droppable_players)
+                    if not any(rc['player_out'] == player_to_remove for rc in self.roster_changes):
+                        mutated_roster_change = roster_change_to_mutate.copy()
+                        mutated_roster_change['player_out'] = player_to_remove
+                        try:
+                            self.replace(roster_change_to_mutate, mutated_roster_change)
+                        except RosterException as e:
+                            pass
+
+                        break
+            elif random_number < 95:
+                # lets mutate player in
+                selector.shuffle()
+                for plyr in selector.select():
+                    if plyr['player_id'] in team_roster.player_id.values or plyr['position_type'] == 'G' or plyr[
+                        'player_id'] in [rc['player_in'] for rc in self.roster_changes]:
+                        continue
+                    if not any(plyr.player_id == rc['player_in'] for rc in self.roster_changes):
+                        mutated_roster_change = roster_change_to_mutate.copy()
+                        mutated_roster_change['player_in'] = plyr['player_id']
+                        try:
+                            self.replace(roster_change_to_mutate, mutated_roster_change)
+                        except RosterException as e:
+                            self.log.exception(e)
+                        break
+            else:
+                # remove a roster change - don't have to worry about zero roster changes, eliminated 0 ones already
+                if len(self.roster_changes) > 1:
+                    del (self.roster_changes[roster_change_to_mutate_index])
+
+        except ValueError as e:
+            self.log.exception(e)
 
 from json import JSONEncoder
 

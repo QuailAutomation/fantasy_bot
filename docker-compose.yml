@@ -47,7 +47,7 @@ services:
   flower:
     image: mher/flower
     ports:
-      - "8887:8888"
+      - "8887:8887"
     environment:
       - CELERY_BROKER_URL=pyamqp://guest:guest@rabbitmq:5672
       - FLOWER_PORT=8887

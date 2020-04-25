@@ -26,7 +26,11 @@ def _get_last_processed_roster_change_id():
             max_id = response.hits[0].id
             return max_id
     except RequestError as e:
-        logging.error(e)
+        # would expect this if no transactions
+        if e.status_code != 400:
+            log.exception(e)
+        else:
+            log.debug("received request error, but likely because no transactions yet for the query with sort", e)
     return last_id
 
 
@@ -36,20 +40,27 @@ def check_for_new_changes(league, write_new=True):
     last_processed_id = _get_last_processed_roster_change_id()
 
     transactions = league.transactions()
-    transactions.reverse()
+    
+    # let's insert them 
+    # if last_processed_id == 0:
+    #     transactions.reverse()
 
     for trans in zip(transactions[1::2], transactions[0::2]):
-        dt_object = datetime.fromtimestamp(int(trans[0]['timestamp']))
-        trans[0]['timestamp'] = dt_object
-        id = int(trans[0]['transaction_id'])
+        # when we first load in json for timestamp it is str
+        # rewrite as datetime
+        if isinstance(trans[1]['timestamp'], str):
+            dt_object = datetime.fromtimestamp(int(trans[1]['timestamp']))
+            trans[1]['timestamp'] = dt_object
+            
+        id = int(trans[1]['transaction_id'])
         if id > last_processed_id:
             found_new_transactions = True
             if write_new:
-                esTrans = LeagueTransaction(_id=trans[0]['transaction_key'], id=id, timestamp=dt_object,
-                                            status=trans[0]['status'], type=trans[0]['type'])
-                if len(trans[1]) > 0:
-                    for move in trans[1]['players'].values():
-                        print("roster move: {}".format(move))
+                esTrans = LeagueTransaction(_id=trans[1]['transaction_key'], id=id, timestamp=dt_object,
+                                            status=trans[1]['status'], type=trans[1]['type'])
+                if len(trans[0]) > 0:
+                    for move in trans[0]['players'].values():
+                        log.debug(f"roster move: {move}")
                         if type(move) is dict:
                             try:
                                 try:

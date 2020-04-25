@@ -12,6 +12,7 @@ progressbar
 npyscreen
 openpyxl
 pytest==5.3.5
+pytest-mock==3.1.0
 elasticsearch>=6.0.0,<7.0.0
 celery==4.4.1
 get-docker-secret==1.0.1
