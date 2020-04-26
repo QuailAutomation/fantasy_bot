@@ -15,8 +15,8 @@ from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 
 import cProfile, pstats, io
 
-max_lineups = 100
-generations = 20
+max_lineups = 40
+generations = 10
 ELITE_NUM = int(5)
 
 
@@ -87,7 +87,7 @@ class GeneticAlgorithm:
         self.score_comparer = score_comparer
         self.ppool = avail_plyrs
         self.population = []
-        self.locked_ids = [e["player_id"] for e in locked_plyrs]
+        self.locked_ids = locked_plyrs
         self.oppenents_estimates = score_comparer.opp_sum
         self.league = league
         # TODO this should be loaded from league
@@ -144,21 +144,20 @@ class GeneticAlgorithm:
         for generation in range(generations):
             if generation % 2 == 0:
                 best = self.population[0]
-                print("Best as of: {}, pop len: {}".format(generation, len(self.population)))
-                print('player_out, player_in, change_date')
+                self.log.debug("Best as of: {}, pop len: {}".format(generation, len(self.population)))
+                self.log.debug('player_out, player_in, change_date')
                 self._print_roster_change_set(best)
-                print(self.my_scorer.score(best).sum().to_dict())
-                # print("Summary:\n{}".format(best.scoring_summary.head(20)))
+                self.log.debug(self.my_scorer.score(best).sum().to_dict())
             self._update_progress(generation)
             self._check_elite_hasnt_regressed(last_elite_score)
-            print('pop len pre mate: {}'.format(len(self.population)))
+            self.log.debug('pop len pre mate: {}'.format(len(self.population)))
             self._mate()
-            print('pop len post mate: {}'.format(len(self.population)))
+            self.log.debug('pop len post mate: {}'.format(len(self.population)))
             self._check_elite_hasnt_regressed(last_elite_score)
             self._mutate()
-            print('pop len post mutate: {}'.format(len(self.population)))
+            self.log.debug('pop len post mutate: {}'.format(len(self.population)))
             unscored = [rc for rc in self.population if rc.score is None]
-            print('Unscored: {}'.format(len(unscored)))
+            self.log.debug('Unscored: {}'.format(len(unscored)))
             self._set_scores(unscored)
 
             self.population = sorted(self.population, key=lambda e: e.score, reverse=True)
@@ -170,14 +169,14 @@ class GeneticAlgorithm:
         return self.population[0]
 
     def _print_roster_change_set(self, roster_changes):
-        print("Suggestions for roster changes")
-        print("Score: {}".format(roster_changes.score))
+        self.log.debug("Suggestions for roster changes")
+        self.log.debug("Score: {}".format(roster_changes.score))
         for row in roster_changes.roster_changes:
             try:
                 player_out_name = self.ppool.loc[row['player_out'], 'name']
                 player_in_name = self.ppool.loc[row['player_in'], 'name']
                 roster_move_date = row['change_date']
-                print("Date: {} - Drop: {} ({})- Add: {} ({})".format(roster_move_date, player_out_name,
+                self.log.debug("Date: {} - Drop: {} ({})- Add: {} ({})".format(roster_move_date, player_out_name,
                                                                       row['player_out'], player_in_name,
                                                                       row['player_in']))
                 # print("roster_changes.append([{}, {}, np.datetime64('{}')])".format(row['player_out'], row['player_in'],
@@ -321,7 +320,7 @@ class GeneticAlgorithm:
             if change_set.score is None:
                 self._set_scores([change_set])
                 if index % 19 == 0:
-                    print("scored: {}, ({})".format(index, change_set.score))
+                    self.log.debug("scored: {}, ({})".format(index, change_set.score))
             else:
                 self.log.debug('unexpected roster change with score set')
             # opp_sum = my_scorer.score()
@@ -357,7 +356,7 @@ class GeneticAlgorithm:
         """
         new_pop = self.population[:ELITE_NUM]
         attempt = 0
-        print("Start mating, population is: {}".format(len(self.population)))
+        self.log.debug("Start mating, population is: {}".format(len(self.population)))
         while len(new_pop) < len(self.population) and attempt < len(self.population) * 2:
             attempt += 1
             mates = self._pick_lineups()
@@ -369,7 +368,7 @@ class GeneticAlgorithm:
                     pass
                 new_pop = new_pop + offspring
         if len(new_pop) < max_lineups:
-            print("population has shrunk")
+            self.log.warn("population has shrunk")
 
         self.population = new_pop
 
@@ -408,7 +407,7 @@ class GeneticAlgorithm:
             participants = next_participants
         assert (len(participants) == 2)
         if participants[0] == participants[1]:
-            self.log.warning("_pick_lineups is returning the same participants")
+            self.log.debug("_pick_lineups is returning the same participants")
             return None
         return participants
 
@@ -475,7 +474,7 @@ class GeneticAlgorithm:
                 self._set_scores([rc])
                 try:
                     if rc.score > elite.score:
-                        print('swap mutated')
+                        self.log.debug('swap mutated')
                         self.population[index] = rc
                 except TypeError as e:
                     self.log.exception(e)

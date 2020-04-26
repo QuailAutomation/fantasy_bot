@@ -31,6 +31,7 @@ class BestRankedPlayerScorer:
         # cache rosters we load
         self.cached_roster_stats = dict()
         self.roster_builder =roster.RecursiveRosterBuilder()
+        
 
 
     def register_excel_writer(self,writer):
@@ -67,8 +68,9 @@ class BestRankedPlayerScorer:
             else:
                 if roster_df is None or single_date <= self.league_edit_date and not simulation_mode: 
                     if single_date not in self.cached_roster_stats:
-                        roster_df = pd.DataFrame(self.team.roster(day=single_date))
-                        roster_df.set_index('player_id', inplace=True)
+                        # roster_df = pd.DataFrame(self.team.roster(day=single_date))
+                        roster_df =self.player_projections[self.player_projections['fantasy_status'] == int(self.team.team_key.split('.')[-1])]
+                        # roster_df.set_index('player_id', inplace=True)
                         self.cached_roster_stats[single_date] = roster_df
 
                     roster_df = self.cached_roster_stats[single_date]
@@ -101,9 +103,7 @@ class BestRankedPlayerScorer:
                     if len(not_cached):
                         self.log.debug("loading {} player's info because projections missing({})".format(len(not_cached),not_cached))
                         the_stats = self.league.player_stats(not_cached, 'season')
-                    
-                    for player_w_stats in the_stats:
-                        if player_w_stats['player_id'] not in self.cached_player_stats:
+                        for player_w_stats in the_stats:
                             self.cached_player_stats[ player_w_stats['player_id']] = player_w_stats
 
                     for player_id in ids_no_stats:

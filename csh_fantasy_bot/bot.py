@@ -28,8 +28,7 @@ class ScoreComparer:
     :param lg_lineups: All of the lineups in the league.  This is used to
         compute a standard deviation of all of the stat categories.
     """
-    def __init__(self,  scorer, lg_lineups, player_projections, stat_categories):
-        self.scorer = scorer
+    def __init__(self, lg_lineups, player_projections, stat_categories):
         self.opp_sum = None
         self.stdev_cap = .2
         self.stat_cats = stat_categories
@@ -89,9 +88,9 @@ class ScoreComparer:
         return scores.agg([agg]).loc[agg,:]
 
     def print_week_results(self, my_scores_summary):
-        scoring_stats = my_scores_summary.loc[self.stat_cats]
+        scoring_stats = my_scores_summary.sum().loc[self.stat_cats]
         opp_scoring_stats = self.opp_sum.loc[self.stat_cats]
-        sc = self.compute_score(scoring_stats)
+        sc = self.compute_score(my_scores_summary)
         differences = scoring_stats - opp_scoring_stats
 
         means = pd.DataFrame([scoring_stats, opp_scoring_stats]).mean()
@@ -100,6 +99,7 @@ class ScoreComparer:
         cat_win_loss = score.mask(score < 0, -1)
         cat_win_loss = cat_win_loss.mask(cat_win_loss > 0, 1)
         # cat_win = 1 if my_scores.sum() > manager.score_comparer.opp_sum else -1
+        # TODO handle tie as within threshold, which would depend on the stat
         summary_df = pd.DataFrame(
             [scoring_stats, opp_scoring_stats, differences, means, self.league_means,
              self.stdevs, differences/self.stdevs, score,cat_win_loss],
@@ -111,12 +111,9 @@ class ScoreComparer:
 class ManagerBot:
     """A class that encapsulates an automated Yahoo! fantasy manager."""
 
-    def __init__(self, week = None, oauth_file = 'oauth2.json', simulation_mode=True):
+    def __init__(self, week = None, simulation_mode=True):
         self.logger = logging.getLogger()
         self.simulation_mode = simulation_mode
-        if 'YAHOO_OAUTH_FILE' in os.environ:
-            oauth_file = os.environ['YAHOO_OAUTH_FILE']
-        self.sc = OAuth2(None, None, from_file=oauth_file)
         self.lg = FantasyLeague('396.l.53432')
         self.stat_categories = [stat['display_name'] for stat in self.lg.stat_categories() if stat['position_type'] == 'P']
         self.tm = self.lg.to_team(self.lg.team_key())
@@ -128,9 +125,7 @@ class ManagerBot:
         self.pred_bldr = None
         self.my_team_bldr = self._construct_roster_builder()
         self.ppool = None
-        #Scorer = self._get_scorer_class()
         self.nhl_scraper = Scraper()
-        self.scorer = builder.Scorer(self.lg,self.nhl_scraper)
 #        Display = self._get_display_class()
         self.display = builder.PlayerPrinter()
         self.blacklist = self._load_blacklist()
@@ -141,15 +136,13 @@ class ManagerBot:
         self.opp_team_name = None
         self.opp_team_key = None
         self.init_prediction_builder()
+        self.all_players = self.lg.as_of(self.week[0])
         self.fetch_player_pool()
-        self.all_players = self.fetch_all_players()
-        
-        self.score_comparer: ScoreComparer = ScoreComparer(self.scorer, self.fetch_league_lineups(), self.pred_bldr.predict(self.all_players), self.stat_categories)
+        self.score_comparer: ScoreComparer = ScoreComparer(self.fetch_league_lineups(), self.pred_bldr.predict(self.all_players), self.stat_categories)
         self.logger.debug("Reading Free Agents")
         # self.fetch_player_pool()
         self.logger.debug("Loading Lineups")
         self.load_lineup()
-     #   self.load_bench()
      #    self.pick_injury_reserve()
         self.logger.debug("auto pick opponent")
         self.auto_pick_opponent()
@@ -165,27 +158,6 @@ class ManagerBot:
             blacklist = []
         return blacklist
 
-    def pick_bench(self):
-        """Pick the bench spots based on the current roster."""
-        self.bench = []
-        bench_spots = 6
-        if bench_spots == 0:
-            return
-
-        # We'll pick the bench spots by picking players not in your lineup or
-        # IR but have the highest ownership %.
-        lineup_names = [e['name'] for e in self.lineup] + \
-            [e['name'] for e in self.injury_reserve]
-        top_owners = self.ppool.sort_values(by=["percent_owned"],
-                                            ascending=False)
-        for plyr in top_owners.iterrows():
-            p = plyr[1]
-            if p['name'] not in lineup_names:
-                self.logger.info("Adding {} to bench ({}%)...".format(
-                    p['name'], p['percent_owned']))
-                self.bench.append(p)
-                if len(self.bench) == bench_spots:
-                    break
 
     def pick_injury_reserve(self):
         """Pick the injury reserve slots"""
@@ -329,30 +301,18 @@ class ManagerBot:
         df["editorial_team_abbr"].replace(nhl_team_mappings, inplace=True)
 
     def fetch_all_players(self):
-
         def all_loader():
-            all = pd.DataFrame(self.lg.all_players())
-            self._fix_yahoo_team_abbr(all)
-            self.nhl_scraper = Scraper()
-
-            nhl_teams = self.nhl_scraper.teams()
-            nhl_teams.set_index("id")
-            nhl_teams.rename(columns={'name': 'team_name'}, inplace=True)
-
-            all = all.merge(nhl_teams, left_on='editorial_team_abbr', right_on='abbrev')
-            all.rename(columns={'id': 'team_id'}, inplace=True)
-            return all
+            return self.lg.all_players()
 
         expiry = datetime.timedelta(minutes=6 * 60 * 20)
         return self.lg_cache.load_all_players(expiry,all_loader)
-
 
     def fetch_player_pool(self):
         """Build the roster pool of players."""
         if self.ppool is None:
             my_team_id = int(self.tm.team_key.split('.')[-1])
             if self.simulation_mode:
-                all_players = self.lg.as_of(self.week[0])
+                all_players = self.all_players
                 
                 my_roster = all_players[all_players.fantasy_status.isin([my_team_id, 'FA'])]
                 my_roster.reset_index(inplace=True)
@@ -409,23 +369,28 @@ class ManagerBot:
         return self.lg_cache.load_free_agents(expiry, loader)
 
     def fetch_league_lineups(self):
-        def loader():
-            self.logger.info("Fetching lineups for each team")
-            lineups = []
-            all_projections = self.pred_bldr.predict(self.all_players)
-            for tm in self.lg.teams():
-                tm = self.lg.to_team(tm['team_key'])
-                # tm_roster = tm.roster(self.league_week)
+        lineups = []
 
-                # lineup_predictions = self._get_predicted_stats(pd.DataFrame(tm_roster))
+        all_projections = self.pred_bldr.predict(self.all_players.reset_index())
+        for tm in self.lg.teams():
+            tm = self.lg.to_team(tm['team_key'])
+            team_scores = BestRankedPlayerScorer(self.lg, tm, all_projections, self.week).score(simulation_mode=self.simulation_mode)
+            lineups.append(team_scores)
+        return lineups
 
-                team_scores = BestRankedPlayerScorer(self.lg, tm, all_projections, self.week).score()
-                lineups.append(team_scores)
-            self.logger.info("All lineups fetched.")
-            return lineups
+        # def loader():
+        #     self.logger.info("Fetching lineups for each team")
+        #     lineups = []
+        #     all_projections = self.pred_bldr.predict(self.all_players)
+        #     for tm in self.lg.teams():
+        #         tm = self.lg.to_team(tm['team_key'])
+        #         team_scores = BestRankedPlayerScorer(self.lg, tm, all_projections, self.week).score(simulation_mode=self.simulation_mode)
+        #         lineups.append(team_scores)
+        #     self.logger.info("All lineups fetched.")
+        #     return lineups
 
-        return self.lg_cache.load_league_lineup(datetime.timedelta(hours=6),
-                                                loader)
+        # return self.lg_cache.load_league_lineup(datetime.timedelta(hours=6),
+        #                                         loader)
 
     def invalidate_free_agents(self, plyrs):
         if os.path.exists(self.lg_cache.free_agents_cache_file()):
@@ -456,7 +421,7 @@ class ManagerBot:
         # # opp_df = self.pred_bldr.predict(pd.DataFrame(opp_roster))
 
         # print(opp_roster.head(20))
-        my_scorer: BestRankedPlayerScorer = BestRankedPlayerScorer(self.lg, self.lg.to_team(opp_team_key),self.pred_bldr.predict(self.all_players),
+        my_scorer: BestRankedPlayerScorer = BestRankedPlayerScorer(self.lg, self.lg.to_team(opp_team_key),self.pred_bldr.predict(self.all_players.reset_index()),
                                                                     self.week)
         #opp_sum = self.scorer.summarize(opp_df, week)
         opp_sum = my_scorer.score()
@@ -470,11 +435,6 @@ class ManagerBot:
             return self.lineup
 
         self.lineup = self.tm_cache.load_lineup(None, loader)
-
-    def load_bench(self):
-        def loader():
-            return self.pick_bench()
-        self.bench = self.tm_cache.load_bench(None, loader)
 
     def _set_new_lineup_and_bench(self, new_lineup):
         new_bench = []
@@ -556,7 +516,7 @@ class ManagerBot:
 
     def _get_filtered_pool(self):
         """
-        Get a list of players from the pool filtered on common criteria
+        Get a list of players from the pool filtered on common crigeria
 
         :return: Player pool
         :rtype: DataFrame
@@ -570,55 +530,13 @@ class ManagerBot:
         Optimize your lineup using all of your players plus free agents.
         """
         optimizer_func = self._get_lineup_optimizer_function()
-
-        locked_plyrs = []
-        thres = 93
-        for plyr in self.fetch_cur_lineup():
-            if plyr['percent_owned'] >= thres or plyr['status'] == 'IR':
-                locked_plyrs.append(plyr)
-
+        locked_plyrs = self.all_players[(self.all_players['fantasy_status'] == 2) & (self.all_players['percent_owned'] > 93) ].index.tolist()
         best_lineup = optimizer_func(self.score_comparer,
                                      self.ppool, locked_plyrs, self.lg, self.league_week, simulation_mode=True)
+
         if best_lineup:
-            self.score_comparer.print_week_results(best_lineup.scoring_summary.loc[:,self.score_comparer.stat_cats].sum())
+            self.score_comparer.print_week_results(best_lineup.scoring_summary)
 
-    def show_score(self):
-        if self.opp_sum is None:
-            raise RuntimeError("No opponent selected")
-
-        self.score_comparer.print_stdev()
-
-        df = pd.DataFrame(data=self.lineup, columns=self.lineup[0].index)
-        start_week, end_week = self.lg.week_date_range(self.lg.current_week())
-        week = pd.date_range(start_week, end_week)
-        my_sum = self.scorer.summarize(df,week)
-        score = self.score_comparer.compute_score(self.lineup)
-        print("Against '{}' your roster has a score of: {}".
-              format(self.opp_team_name, score))
-        print("")
-        for stat in my_sum.index:
-            if stat in ["ERA", "WHIP"]:
-                if math.isclose(my_sum[stat], self.opp_sum[stat]):
-                    my_win = "="
-                    opp_win = "="
-                elif my_sum[stat] < self.opp_sum[stat]:
-                    my_win = "*"
-                    opp_win = ""
-                else:
-                    my_win = ""
-                    opp_win = "*"
-            else:
-                if math.isclose(my_sum[stat], self.opp_sum[stat]):
-                    my_win = "="
-                    opp_win = "="
-                elif my_sum[stat] > self.opp_sum[stat]:
-                    my_win = "*"
-                    opp_win = ""
-                else:
-                    my_win = ""
-                    opp_win = "*"
-            print("{:5} {:2.3f} {:1} v.s. {:2.3f} {:2}".format(
-                stat, my_sum[stat], my_win, self.opp_sum[stat], opp_win))
 
     def list_players(self, pos):
         self.display.printListPlayerHeading(pos)
