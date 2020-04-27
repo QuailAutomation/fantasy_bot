@@ -232,12 +232,12 @@ class ManagerBot:
             return fantasysp_scrape.Parser()
 
         expiry = datetime.timedelta(minutes=24 * 60)
-        self.pred_bldr = self.tm_cache.load_prediction_builder(expiry, loader)
+        self.pred_bldr = self.lg_cache.load_prediction_builder(expiry, loader)
 
     def save(self):
         self.tm_cache.refresh_lineup(self.lineup)
         self.tm_cache.refresh_bench(self.bench)
-        self.tm_cache.refresh_prediction_builder(self.pred_bldr)
+        self.lg_cache.refresh_prediction_builder(self.pred_bldr)
 
     def fetch_cur_lineup(self):
         """Fetch the current lineup as set in Yahoo!"""

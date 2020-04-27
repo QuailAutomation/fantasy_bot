@@ -116,7 +116,7 @@ class Parser:
         self.ppool = df
         self.ppool.rename(columns={'Name': 'name'}, inplace=True)
 
-    def predict(self, my_roster):
+    def predict(self, roster):
         """Build a dataset of hockey predictions for the week
 
         The pool of players is passed into this function through roster_const.
@@ -135,6 +135,11 @@ class Parser:
         # data frames.  This also has the affect of attaching eligible
         # positions and Yahoo! player ID from the input player pool.
         self.nhl_scraper = Scraper()
+        my_roster = None
+        if 'player_id' not in  roster.columns:
+            my_roster = roster.reset_index()
+        else:
+            my_roster = roster.copy()
 
         if 'team_id' not in my_roster.columns:
             # we must map in teams
@@ -145,6 +150,9 @@ class Parser:
 
             my_roster = my_roster.merge(nhl_teams, left_on='editorial_team_abbr', right_on='abbrev')
             my_roster.rename(columns={'id': 'team_id'}, inplace=True)
+
+        
+        
 
         df = pd.merge(my_roster, self.ppool[["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW",'name', 'Tm'] + Parser.goalie_headings], left_on=['name','abbrev'], right_on=['name', 'Tm'], how='left')
         df.rename(columns={'FOW': 'FW'}, inplace=True)

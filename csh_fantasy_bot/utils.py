@@ -93,19 +93,10 @@ class TeamCache(CacheBase):
     def blacklist_cache_file(self):
         return "{}/blacklist.pkl".format(self.cache_dir)
 
-    def prediction_builder_file(self):
-        return "{}/pred_builder.pkl".format(self.cache_dir)
-
-    def load_prediction_builder(self, expiry, loader):
-        return self.run_loader(self.prediction_builder_file(), expiry, loader)
-
-    def refresh_prediction_builder(self, pred_bldr):
-        self.refresh_cache_file(self.prediction_builder_file(), pred_bldr)
-
 
 class LeagueCache(CacheBase):
-    def __init__(self):
-        super(LeagueCache, self).__init__(".cache")
+    def __init__(self, league_key='396.l.53432'):
+        super(LeagueCache, self).__init__(f".cache/{league_key}")
 
     def free_agents_cache_file(self):
         return "{}/free_agents.pkl".format(self.cache_dir)
@@ -137,4 +128,12 @@ class LeagueCache(CacheBase):
     def load_transactions(self, expiry, loader):
         return self.run_loader(self.league_transaction_file(), expiry, loader)
 
-    
+    def prediction_builder_file(self):
+        return "{}/pred_builder.pkl".format(self.cache_dir)
+
+    def load_prediction_builder(self, expiry, loader):
+        return self.run_loader(self.prediction_builder_file(), expiry, loader)
+
+    def refresh_prediction_builder(self, pred_bldr):
+        self.refresh_cache_file(self.prediction_builder_file(), pred_bldr)
+

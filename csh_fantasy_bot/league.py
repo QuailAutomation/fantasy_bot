@@ -6,7 +6,7 @@ import logging
 from nhl_scraper.nhl import Scraper
 from yahoo_fantasy_api import League,Team
 from csh_fantasy_bot import utils
-
+from csh_fantasy_bot import utils, fantasysp_scrape
 from csh_fantasy_bot.yahoo_fantasy_tasks import oauth_token
 
 class FantasyLeague(League):
@@ -15,22 +15,22 @@ class FantasyLeague(League):
     def __init__(self, league_id):
         """Instantiate the league."""
         super().__init__(oauth_token, league_id)
-        self.lg_cache = utils.LeagueCache()
+        self.lg_cache = utils.LeagueCache(league_id)
         self.log = logging.getLogger(__name__)
         self.fantasy_status_code_translation = {'waivers':'W', 'freeagents': 'FA'}
 
     def all_players(self):
         """Return all players in league."""
         def all_loader():
-            all_players= pd.DataFrame(super.all_players())
-            self._fix_yahoo_team_abbr(all)
+            all_players= pd.DataFrame(League.all_players(self))
+            self._fix_yahoo_team_abbr(all_players)
             self.nhl_scraper = Scraper()
 
             nhl_teams = self.nhl_scraper.teams()
             nhl_teams.set_index("id")
             nhl_teams.rename(columns={'name': 'team_name'}, inplace=True)
 
-            all_players= all.merge(nhl_teams, left_on='editorial_team_abbr', right_on='abbrev')
+            all_players= all_players.merge(nhl_teams, left_on='editorial_team_abbr', right_on='abbrev')
             all_players.rename(columns={'id': 'team_id'}, inplace=True)
             return all_players
 
@@ -40,7 +40,7 @@ class FantasyLeague(League):
     def transactions(self):
         """Return all players in league."""
         def transaction_loader():
-            transactions= super.transactions()
+            return League.transactions(self)
             return transactions
 
         expiry = timedelta(minutes=6 * 60 * 20)
@@ -149,3 +149,11 @@ class FantasyLeague(League):
         destination = player_info['player'][1]['transaction_data']['destination_type']
         post_draft_player_list.at[player_id,'fantasy_status'] = self.fantasy_status_code_translation[destination]
         self.log.debug(f'dropping player: {player_name}, from: {source_team_name} to: {destination}')
+
+    def stat_predictor(self):
+        """Will load and return the prediction builder."""
+        def loader():
+            return fantasysp_scrape.Parser()
+
+        expiry = timedelta(days=7)
+        return self.lg_cache.load_prediction_builder(expiry, loader)

@@ -1,6 +1,8 @@
+"""Celery Tasks."""
 import time
 import random
 import logging
+import pandas as pd
 
 from yahoo_oauth import OAuth2
 from csh_fantasy_bot.league import FantasyLeague
@@ -94,10 +96,23 @@ def run_ga(self,league_id='396.l.53432', week=None):
     driver = automation.Driver(week)
     driver.run()
     
-@celery.task(bind=True, name='score_week')
-def score_week(self, my_scorer, roster_change_sets, score_comparer):
-    """Score some roster results."""
-    for change_set in roster_change_sets:
-        the_score = self.my_scorer.score(change_set)
-        change_set.scoring_summary = the_score
-        change_set.score = self.score_comparer.compute_score(the_score)
+@celery.task(bind=True, name='score_team')
+def score_team(self, team_key, start_date, end_date, roster_change_sets=None):
+    """Score a team by applying roster change sets."""
+    from csh_fantasy_bot.nhl import BestRankedPlayerScorer
+    # '396.l.53432.t.2' - league key is first 3 parts
+    league_key = ".".join(team_key.split('.')[:3])
+    league = FantasyLeague(league_key)
+    date_range = pd.date_range(start_date, end_date)
+    all_players = league.stat_predictor().predict(league.as_of(date_range[0]))
+    scorer = BestRankedPlayerScorer(league, league.team_by_key(team_key), all_players, date_range)
+    
+    if roster_change_sets:
+        for change_set in roster_change_sets:
+            the_score = scorer.score(change_set)
+            change_set.scoring_summary = the_score
+            change_set.score = self.score_comparer.compute_score(the_score)
+    else:
+        the_score = scorer.score()
+        pass
+    return "Done"
