@@ -10,6 +10,10 @@ DEBUG = ENV == "development"
 CELERY_TIMEZONE = 'US/Pacific'
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL",default='amqp://guest:guest@localhost:5672')
 # celery_result_backend = os.getenv("CELERY_RESULT_BACKEND_URL")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND",default='redis://127.0.0.1:6379/0')
+CELERY_RESULT_EXPIRES = 60
+
+
 CELERY_IMPORTS = ('csh_fantasy_bot.tasks')
 CELERYBEAT_SCHEDULE = {
         # 'refresh': {

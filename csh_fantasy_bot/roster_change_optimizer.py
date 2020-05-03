@@ -9,6 +9,9 @@ import pandas as pd
 from progressbar import ProgressBar, Percentage, Bar
 import math
 import random
+from celery import group
+from csh_fantasy_bot.tasks import score_team
+
 from csh_fantasy_bot import roster
 from yahoo_fantasy_api import Team
 from csh_fantasy_bot.nhl import BestRankedPlayerScorer
@@ -458,11 +461,18 @@ class GeneticAlgorithm:
             offspring = [mates[0], mates[1]]
         return offspring[0:2]
 
+    from csh_fantasy_bot.tasks import score
     def _set_scores(self, roster_change_sets):
-        for change_set in roster_change_sets:
-            the_score = self.my_scorer.score(change_set, simulation_mode=self.simulation_mode)
-            change_set.scoring_summary = the_score
-            change_set.score = self.score_comparer.compute_score(the_score)
+        # team_key, start_date, end_date, roster_change_sets, opponent=None):
+        results = score(self.league.league_id,self.date_range[0],self.date_range[-1], roster_change_sets)
+        # def score_team(self, team_key, start_date, end_date, roster_change_sets=None):
+        # res = group(score_team.s(self.my_team.team_key, self.date_range[0], self.date_range[-1], i) for i in roster_change_sets)()
+        # res.get(timeout=100)
+        # self.log.debug("received results from scoring")
+        # for change_set in roster_change_sets:
+        #     the_score = self.my_scorer.score(change_set, simulation_mode=self.simulation_mode)
+        #     change_set.scoring_summary = the_score
+        #     change_set.score = self.score_comparer.compute_score(the_score)
 
     
     def _mutate_elites(self, selector, team_roster):
@@ -502,6 +512,7 @@ class RosterChangeSet:
         self.max_allowed_changes = max_allowed
         self._equality_value = None
         self.score = None
+        self.scoring_summary = None
         self.valid_dates = valid_dates
         self.roster_changes = []
         self.log = logging.getLogger(__name__)
@@ -663,13 +674,16 @@ class RosterChangeSet:
 
         except ValueError as e:
             self.log.exception(e)
-
-from json import JSONEncoder
-
-class RosterChangeSetEncoder(JSONEncoder):
-        def default(self, o):
-            return o.__dict__
-
+    
+    def to_jsons(self):
+        """Convert to json string."""
+        return json.dumps(self.__dict__, default=lambda o: o.__dict__, 
+            sort_keys=True, indent=4)
+    
+    @classmethod
+    def from_json(cls, jsons):
+        """Create change set from json."""
+        pass
 
 
 class RosterException(Exception):

@@ -26,14 +26,20 @@ def makefile(fname, content):
     return f"Find your file @ <code>{fpath}</code>"
 
 @app.route('/run_ga/<string:week>')
-def load_draft(week):
+def run_ga(week):
     from csh_fantasy_bot.tasks import run_ga
     run_ga.delay(week)
     return 'Sucessfully started GA.'
 
+@app.route('/cube/<int:num>')
+def cube(num):
+    from csh_fantasy_bot.tasks import cube
+    result = cube.delay(num)
+
+    return str(result.get())
 
 if __name__ == "__main__":
-    if 'ipython' != sys.argv[1]:
+    if len(sys.argv) < 2 or 'ipython' != sys.argv[1]:
         try:
             app.run()
         except SystemExit as e:

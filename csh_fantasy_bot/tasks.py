@@ -1,25 +1,18 @@
 """Celery Tasks."""
 import time
 import random
+import json
 import logging
 import pandas as pd
+import jsonpickle
+import jsonpickle.ext.pandas as jsonpickle_pandas
 
-from yahoo_oauth import OAuth2
 from csh_fantasy_bot.league import FantasyLeague
-
 from csh_fantasy_bot.extensions import celery
 
+from celery import shared_task, group, chain
 
-oauth = OAuth2(None, None, from_file='oauth2.json')
-league = FantasyLeague('396.l.53432')
-# leagues = {'396.l.53432':league}
-
-
-@celery.task()
-def make_file(fname, content):
-    with open(fname, "w") as f:
-        f.write(content)
-
+jsonpickle_pandas.register_handlers()
 
 @celery.task(bind=True)
 def long_task(self):
@@ -45,6 +38,7 @@ def long_task(self):
 
 @celery.task(bind=True, name='check_roster_moves')
 def check_roster_moves(self):
+    """Check if there have been roster transactions since last check."""
     from csh_fantasy_bot.yahoo_fantasy import check_for_new_changes
     found_new_moves = check_for_new_changes(league, True)
     logging.debug("found new roster moves: {}".format(found_new_moves))
@@ -52,18 +46,11 @@ def check_roster_moves(self):
         flush_caches.delay(league.league_id)
     return True
 
-
 @celery.task(bind=True, name='flush_caches')
 def flush_caches(self, league_id):
+    """Flush caches, there roster moves detected."""
     logging.info('Flush Cache: {}'.format(league_id))
     return True
-
-
-@celery.task(bind=True, name='refresh')
-def refresh(self):
-    """Dummy task."""
-    print('refresh called')
-    return 'Success'
 
 @celery.task(bind=True, name='load_draft')
 def load_draft(self, league_id):
@@ -95,24 +82,54 @@ def run_ga(self,league_id='396.l.53432', week=None):
     from csh_fantasy_bot import automation
     driver = automation.Driver(week)
     driver.run()
-    
-@celery.task(bind=True, name='score_team')
-def score_team(self, team_key, start_date, end_date, roster_change_sets=None):
+
+league = None  
+NUMBER_OF_GROUPS = 10
+
+@shared_task
+def do_chunk(team_key, start_date, end_date, roster_change_sets_jp, opponent=None):
+    roster_change_sets = jsonpickle.decode(roster_change_sets_jp)
+    return team_key, start_date, end_date, jsonpickle.encode([roster_change_sets[i::NUMBER_OF_GROUPS] for i in range(NUMBER_OF_GROUPS)]), opponent
+
+# @celery.task(bind=True, name='score_team')
+@shared_task
+def score_team(params, offset):
     """Score a team by applying roster change sets."""
-    from csh_fantasy_bot.nhl import BestRankedPlayerScorer
-    # '396.l.53432.t.2' - league key is first 3 parts
-    league_key = ".".join(team_key.split('.')[:3])
-    league = FantasyLeague(league_key)
-    date_range = pd.date_range(start_date, end_date)
-    all_players = league.stat_predictor().predict(league.as_of(date_range[0]))
-    scorer = BestRankedPlayerScorer(league, league.team_by_key(team_key), all_players, date_range)
     
+    team_key, start_date, end_date, roster_change_sets_jp, opponent = params
+    # '396.l.53432.t.2' - league key is first 3 parts
+    roster_change_sets = jsonpickle.decode(roster_change_sets_jp)[offset]
     if roster_change_sets:
-        for change_set in roster_change_sets:
-            the_score = scorer.score(change_set)
-            change_set.scoring_summary = the_score
-            change_set.score = self.score_comparer.compute_score(the_score)
+        league_key = ".".join(team_key.split('.')[:3])
+        date_range = pd.date_range(start_date, end_date)
+
+        global league
+        if not league or not (league.league_id == league_key):
+            league = FantasyLeague(league_key)
+
+        if roster_change_sets:
+            return jsonpickle.encode(league.score(date_range,team_key,opponent,roster_change_sets))
     else:
-        the_score = scorer.score()
-        pass
-    return "Done"
+        return []
+    
+
+def score(team_key, start_date, end_date, roster_change_sets, opponent=None):
+    count_words = chain(do_chunk.s(),
+                    group([score_team.s(i) for i in range(NUMBER_OF_GROUPS)])
+                    )
+
+    return_val =  count_words(team_key, start_date, end_date, jsonpickle.encode(roster_change_sets), opponent).get()
+    final_results = []
+    for result in return_val:
+        if result:
+            rcs = jsonpickle.decode(result)
+            for rc in rcs:
+                final_results.append(rc)
+
+    return final_results
+    
+
+@celery.task(bind=True, name='cube')
+def cube(self, num):
+    return num ** 3
+        
