@@ -7,7 +7,7 @@ from celery.signals import after_setup_logger
 from csh_fantasy_bot.app import init_celery
 from csh_fantasy_bot.config import LOG_LEVEL
 
-log = logging.getLogger(__name__)
+log = logging.getLogger()
 
 app = init_celery()
 log.debug("Celery initialized")

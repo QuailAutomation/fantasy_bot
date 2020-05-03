@@ -14,7 +14,7 @@ openpyxl
 pytest==5.3.5
 pytest-mock==3.1.0
 elasticsearch>=6.0.0,<7.0.0
-celery==4.4.1
+celery==4.4.2
 get-docker-secret==1.0.1
 redis==3.4.1
 elasticsearch-dsl==6.4.0
@@ -22,3 +22,4 @@ flask==1.1.1
 pydocstyle==5.0.*
 jsons==1.1.2
 graypy==2.1.0
+jsonpickle==1.4.1

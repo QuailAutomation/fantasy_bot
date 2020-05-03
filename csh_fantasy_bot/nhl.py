@@ -13,32 +13,24 @@ import cProfile
 class BestRankedPlayerScorer:
     nhl_schedule = {}
 
-    def __init__(self, league, team, player_projections, date_range):
+    def __init__(self, league, team, player_projections):
         self.log = logging.getLogger(__name__)
-        self.tracked_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
         self.league = league
+        self.tracked_stats = league.scoring_categories()
         self.league_edit_date = league.edit_date()
         self.team = team
 
         self.player_projections = player_projections
         self.nhl_scraper: Scraper = Scraper()
-        self.date_range = date_range
         self.cached_actual_results = {}
         # self.starting_goalies_df = RWScraper().starting_goalies()
-        self.excel_writer = None
         # if there are no projections available, we will load from yahoo, and cache here
         self.cached_player_stats = {}
         # cache rosters we load
-        self.cached_roster_stats = dict()
-        self.roster_builder =roster.RecursiveRosterBuilder()
-        
+        self.cached_roster_stats = {}
+        self.roster_builder = roster.RecursiveRosterBuilder()
 
-
-    def register_excel_writer(self,writer):
-        self.excel_writer = writer
-
-
-    def score(self, roster_change_set=None, results_printer=None, simulation_mode=True):
+    def score(self, date_range, roster_change_set=None, results_printer=None, simulation_mode=True):
         """Score the roster for the week.
 
         simulation_mode=True will never use actuals, just use projections.
@@ -46,7 +38,7 @@ class BestRankedPlayerScorer:
         roster_df = None
         today = pd.Timestamp.today()
         projected_week_results = None
-        for single_date in self.date_range:
+        for single_date in date_range:
             daily_scoring_results = None
             the_roster = None
             if single_date < today.date() and not simulation_mode:

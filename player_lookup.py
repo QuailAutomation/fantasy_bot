@@ -7,8 +7,6 @@ import pandas as pd
 import numpy as np
 
 from yahoo_fantasy_api import Team
-from yahoo_oauth import OAuth2
-
 from csh_fantasy_bot import fantasysp_scrape, utils
 from csh_fantasy_bot.league import FantasyLeague
 
@@ -31,9 +29,8 @@ def do_lookup():
     all_players = league.all_players()
     
     tm_cache = utils.TeamCache(league.team_key())
-    fantasysp_p = tm_cache.load_prediction_builder(None, None)
 
-    fantasy_projections = fantasysp_p.predict(pd.DataFrame(all_players))
+    fantasy_projections = league.stat_predictor().predict(pd.DataFrame(all_players))
 
     print("This utility can look up league players by string(name contains) or id")
     while True:
