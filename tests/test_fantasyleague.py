@@ -5,35 +5,8 @@ Going to use saved datafiles for Yahoo endpoint, so can hardcode
 checks to make sure results don't change.
 """
 import pytest
-import json
 import datetime
-import pickle
 
-from csh_fantasy_bot.league import FantasyLeague
-
-@pytest.fixture
-def season_start():
-    """Hardcode season start date."""
-    return datetime.datetime(2019,10,2)
-
-@pytest.fixture
-def league(mocker):
-    """League object."""
-    league =  FantasyLeague('396.l.53432')
-    # mock the yahoo web endpoint by using files
-    yhandler_mock = mocker.MagicMock()
-    with open('tests/transactions.json') as json_file:
-        yhandler_mock.get_transactions.return_value = json.load(json_file)
-    with open('tests/draft.json') as json_file:
-        yhandler_mock.get_draft_results.return_value = json.load(json_file)
-    with open('tests/league_settings.json') as json_file:
-        yhandler_mock.get_settings_raw.return_value = json.load(json_file)  
-    with open('tests/all_players.pkl', "rb") as f:
-        league.all_players = mocker.MagicMock(return_value=pickle.load(f)['payload'])    
-    
-    league.yhandler = yhandler_mock
-
-    return league
 
 def test_load_transactions(league):
     """Load the transactions."""
@@ -51,11 +24,11 @@ def test_load_draft(league):
     # zadorov last
     assert(draft[-1]['player_key']  == '396.p.5995')
 
-def test_get_free_agents_season_start(league, season_start):
+def test_get_free_agents_season_start(league, season_start_date):
     """Return dataframe of all free agents."""
     # equals all players minus drafted players
     # make sure none of the draft players in list
-    free_agents = league.free_agents(asof_date=season_start)
+    free_agents = league.free_agents(asof_date=season_start_date)
     drafted = league.draft_results(format='Pandas')
     assert(len(free_agents.index.intersection(drafted.index)) == 0), "Should be no drafted players as free agents"
     # could make sure all 'all_players' that weren't drafted are here

@@ -190,3 +190,10 @@ class FantasyLeague(League):
         else:
             the_score = self.scorer.score(date_range)
             return the_score.reset_index()
+
+    def get_projections(self):
+        """Return projections dataframe."""
+        if not self.as_of_date:
+            raise RuntimeError("As of date not specified yet")
+        
+        return self.stat_predictor().predict(self._all_players_df)

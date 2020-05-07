@@ -437,6 +437,10 @@ class ManagerBot:
         avail_plyrs = avail_plyrs[avail_plyrs['percent_owned'] > 5]
         return avail_plyrs[avail_plyrs['status'] == '']
 
+    def optimize_with_pygenetic(self):
+        """Utilize pygenetic to run GA."""
+        
+
     def optimize_lineup_from_free_agents(self):
         """
         Optimize your lineup using all of your players plus free agents.

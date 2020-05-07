@@ -84,21 +84,24 @@ def run_ga(self,league_id='396.l.53432', week=None):
     driver.run()
 
 league = None  
-NUMBER_OF_GROUPS = 10
+CHUNK_SIZE = 10
 
 @shared_task
 def do_chunk(team_key, start_date, end_date, roster_change_sets_jp, opponent=None):
     roster_change_sets = jsonpickle.decode(roster_change_sets_jp)
-    return team_key, start_date, end_date, jsonpickle.encode([roster_change_sets[i::NUMBER_OF_GROUPS] for i in range(NUMBER_OF_GROUPS)]), opponent
+    def chunker(seq, size):
+        return (seq[pos:pos + size] for pos in range(0, len(seq), size))
+    return team_key, start_date, end_date, jsonpickle.encode([roster_change_chunk for roster_change_chunk in chunker(roster_change_sets,CHUNK_SIZE)]), opponent
+
 
 # @celery.task(bind=True, name='score_team')
 @shared_task
 def score_team(params, offset):
     """Score a team by applying roster change sets."""
-    
     team_key, start_date, end_date, roster_change_sets_jp, opponent = params
     # '396.l.53432.t.2' - league key is first 3 parts
     roster_change_sets = jsonpickle.decode(roster_change_sets_jp)[offset]
+    
     if roster_change_sets:
         league_key = ".".join(team_key.split('.')[:3])
         date_range = pd.date_range(start_date, end_date)
@@ -114,13 +117,16 @@ def score_team(params, offset):
     
 
 def score(team_key, start_date, end_date, roster_change_sets, opponent=None):
+    return jsonpickle.decode(score_team.delay((team_key, start_date, end_date, jsonpickle.encode(roster_change_sets), opponent)).get())
+
+def score_chunk(team_key, start_date, end_date, roster_change_sets, opponent=None):
     count_words = chain(do_chunk.s(),
-                    group([score_team.s(i) for i in range(NUMBER_OF_GROUPS)])
+                    group([score_team.s(i) for i in range(int(len(roster_change_sets)/CHUNK_SIZE))])
                     )
 
-    return_val =  count_words(team_key, start_date, end_date, jsonpickle.encode(roster_change_sets), opponent).get()
+    return_val =  count_words(team_key, start_date, end_date, jsonpickle.encode(roster_change_sets), opponent)
     final_results = []
-    for result in return_val:
+    for result in return_val.get():
         if result:
             rcs = jsonpickle.decode(result)
             for rc in rcs:

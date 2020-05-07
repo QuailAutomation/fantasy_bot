@@ -14,13 +14,13 @@ def a_change_date():
     return datetime(2020,4,4)
 
 
-def test_json_encoding(a_change_date):
-    """Ensure RosterChangeSet supports json encoding."""
-    change_set = RosterChangeSet(valid_dates=None, max_allowed=2)
-    change_set.add(3400, 3500, a_change_date)
-    # out = json.dumps(change_set.__dict__, indent=4, sort_keys=True, default=str)
-    out = change_set.to_jsons()
-    pass
+# def test_json_encoding(a_change_date):
+#     """Ensure RosterChangeSet supports json encoding."""
+#     change_set = RosterChangeSet(valid_dates=None, max_allowed=2)
+#     change_set.add(3400, 3500, a_change_date)
+#     # out = json.dumps(change_set.__dict__, indent=4, sort_keys=True, default=str)
+#     out = change_set.to_jsons()
+#     pass
 
 def test_cant_add_player_twice(a_change_date):
     """Make sure a player cannot be added twice as roster add."""
