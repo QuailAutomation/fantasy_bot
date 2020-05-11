@@ -1,4 +1,4 @@
-pandas==1.0.1
+pandas==1.0.3
 #-e git+git://github.com/QuailAutomation/nhl_scraper@master#egg=nhl_scraper
 -e library/nhl_scraper
 selenium
