@@ -13,6 +13,7 @@ from csh_fantasy_bot.extensions import celery
 from celery import shared_task, group, chain
 
 jsonpickle_pandas.register_handlers()
+log = logging.getLogger(__name__)
 
 @celery.task(bind=True)
 def long_task(self):
@@ -41,7 +42,7 @@ def check_roster_moves(self):
     """Check if there have been roster transactions since last check."""
     from csh_fantasy_bot.yahoo_fantasy import check_for_new_changes
     found_new_moves = check_for_new_changes(league, True)
-    logging.debug("found new roster moves: {}".format(found_new_moves))
+    log.debug("found new roster moves: {}".format(found_new_moves))
     if found_new_moves:
         flush_caches.delay(league.league_id)
     return True
@@ -49,7 +50,7 @@ def check_roster_moves(self):
 @celery.task(bind=True, name='flush_caches')
 def flush_caches(self, league_id):
     """Flush caches, there roster moves detected."""
-    logging.info('Flush Cache: {}'.format(league_id))
+    log.info('Flush Cache: {}'.format(league_id))
     return True
 
 @celery.task(bind=True, name='load_draft')
@@ -123,15 +124,16 @@ def score_chunk(team_key, start_date, end_date, roster_change_sets, opponent=Non
     count_words = chain(do_chunk.s(),
                     group([score_team.s(i) for i in range(int(len(roster_change_sets)/CHUNK_SIZE))])
                     )
-
+    log.debug(f"start score, # roster change sets: {len(roster_change_sets)}")
     return_val =  count_words(team_key, start_date, end_date, jsonpickle.encode(roster_change_sets), opponent)
     final_results = []
+
     for result in return_val.get():
         if result:
             rcs = jsonpickle.decode(result)
             for rc in rcs:
                 final_results.append(rc)
-
+    log.debug("done scoring")
     return final_results
     
 
