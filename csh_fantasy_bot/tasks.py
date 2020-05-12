@@ -86,6 +86,7 @@ def run_ga(self,league_id='396.l.53432', week=None):
 
 league = None  
 CHUNK_SIZE = 2
+log.debug(f'chunk size for scoring is{CHUNK_SIZE}')
 
 @shared_task
 def do_chunk(team_key, start_date, end_date, roster_change_sets_jp, opponent=None):
