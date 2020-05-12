@@ -85,7 +85,7 @@ def run_ga(self,league_id='396.l.53432', week=None):
     driver.run()
 
 league = None  
-CHUNK_SIZE = 10
+CHUNK_SIZE = 2
 
 @shared_task
 def do_chunk(team_key, start_date, end_date, roster_change_sets_jp, opponent=None):
