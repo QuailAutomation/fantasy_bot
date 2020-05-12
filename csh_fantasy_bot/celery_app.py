@@ -18,10 +18,11 @@ def setup_loggers(logger, *args, **kwargs):
     try:
         import graypy
         from csh_fantasy_bot.config import GELF_URL
+        log.info(f'Gelf url: {GELF_URL}')
         if GELF_URL:
             handler = graypy.GELFUDPHandler(GELF_URL, 12201,
                                             facility='fantasy_bot_worker')
-            log.addHandler(handler)
+            logger.addHandler(handler)
     except ImportError:
         log.warn("Could not import graypy, using default logging")
     except KeyError:
