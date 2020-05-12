@@ -133,7 +133,7 @@ def score_chunk(team_key, start_date, end_date, roster_change_sets, opponent=Non
             rcs = jsonpickle.decode(result)
             for rc in rcs:
                 final_results.append(rc)
-    log.debug("done scoring")
+    log.debug("done scoring")  
     return final_results
     
 
