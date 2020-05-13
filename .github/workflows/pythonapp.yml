@@ -37,6 +37,9 @@ jobs:
   buildx:
     runs-on: ubuntu-latest
     steps:
+      - 
+        name: Build number
+        run: echo  $GITHUB_RUN_NUMBER
       -
         name: Checkout
         uses: actions/checkout@v2
