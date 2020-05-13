@@ -69,8 +69,16 @@ jobs:
           docker buildx build \
             --platform linux/amd64,linux/arm/v7 \
             --output "type=image,push=true" \
-            -t craigham/fantasy-bot:latest .
-
+            -t craigham/fantasy-bot:$GITHUB_RUN_NUMBER .
+      
+      -
+        name: Tag as latest
+        run: |
+          docker tag craigham/fantasy-bot:$GITHUB_RUN_NUMBER craigham/fantasy-bot:latest
+      -
+        name: Push latest image
+        run: |
+          docker push craigham/fantasy-bot:latest      
       - 
         name: Clear
         if: always()
