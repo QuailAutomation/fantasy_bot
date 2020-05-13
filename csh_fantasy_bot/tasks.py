@@ -101,6 +101,7 @@ def do_chunk(team_key, start_date, end_date, roster_change_sets_jp, opponent=Non
 def score_team(params, offset):
     """Score a team by applying roster change sets."""
     team_key, start_date, end_date, roster_change_sets_jp, opponent = params
+    log.debug(f"Scoring team offset is{offset}")
     # '396.l.53432.t.2' - league key is first 3 parts
     roster_change_sets = jsonpickle.decode(roster_change_sets_jp)[offset]
     
@@ -113,7 +114,10 @@ def score_team(params, offset):
             league = FantasyLeague(league_key)
 
         if roster_change_sets:
-            return jsonpickle.encode(league.score(date_range,team_key,opponent,roster_change_sets))
+            log.debug(f"starting scoring for len change_sets {len(roster_change_sets)}")
+            the_scores = league.score(date_range,team_key,opponent,roster_change_sets)
+            log.debug("done scoring")
+            return jsonpickle.encode(the_scores)
     else:
         return []
     
