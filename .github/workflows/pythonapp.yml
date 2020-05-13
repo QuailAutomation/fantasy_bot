@@ -39,7 +39,7 @@ jobs:
     steps:
       - 
         name: Build number
-        run: echo  $GITHUB_RUN_NUMBER
+        run: echo "Build num - $GITHUB_RUN_NUMBER"
       -
         name: Checkout
         uses: actions/checkout@v2
