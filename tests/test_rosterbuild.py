@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 import pytest
 
+from csh_fantasy_bot.roster import RecursiveRosterBuilder, combination_roster_optimization
+
+
 # nice for when printing dataframes to console
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
@@ -14,14 +17,21 @@ pd.set_option('display.width', 1000)
 # roster_makeup = pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(","))
 # roster_position_counts = roster_makeup.value_counts()
 
+@pytest.fixture
+def roster_makeup():
+    """Typical scoring roster."""
+    return pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(","))
 
 @pytest.fixture
-def builder():
-    """Instance of the builder."""
-    from csh_fantasy_bot.roster import RecursiveRosterBuilder
+def stats_weights():
+    """Series of weights for evaluating player contributions."""
+    return pd.Series([2, 1.75, .5, .5, .5, .3, .5], index=["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"])
 
-    return RecursiveRosterBuilder(roster_makeup=pd.Index("C,C,LW,LW,RW,RW,D,D,D,D".split(",")),
-                                stats_weights=pd.Series([2, 1.75, .5, .5, .5, .3, .5], index=["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]))
+@pytest.fixture
+def builder(roster_makeup, stats_weights):
+    """Instance of the builder."""
+    return RecursiveRosterBuilder(roster_makeup=roster_makeup,
+                                stats_weights=stats_weights)
 
 @pytest.fixture
 def team():
@@ -90,3 +100,11 @@ def test_single_lw_rw(builder, team):
 
     best_roster = builder.find_best(day1_roster)
     assert(best_roster['LW.1'] == 5698)
+
+def test_combination(team, stats_weights, roster_makeup):
+    """Test combination function for creating optimimum roster."""
+    # avail_players = remove_ir(team)
+    # avail_players.loc[:,'fpts'] = team[list(stats_weights.index.values)].mul(stats_weights).sum(1)
+    # roster = tuple([RosterPlayer(id, p['name'], p['eligible_positions'],p['fpts']) for id, p in team.iterrows()])
+    day_roster = combination_roster_optimization(team, roster_makeup, stats_weights)
+    pass

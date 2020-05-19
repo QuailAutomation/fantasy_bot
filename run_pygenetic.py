@@ -39,7 +39,7 @@ def do_run():
     drop_selector = RandomWeightedSelector(projected_stats[(projected_stats.fantasy_status == 2) & (projected_stats.percent_owned < 93)], 'fpts', inverse=True)
 
     factory = RosterChangeSetFactory(projected_stats, 2,date_range,4)
-    gea = CeleryFitnessGAEngine(factory=factory,population_size=400,fitness_type=('equal',8),
+    gea = CeleryFitnessGAEngine(factory=factory,population_size=50,fitness_type=('equal',8),
                                 cross_prob=0.7,mut_prob = 0.05)
 
     def mutate(chromosome, league, add_selector, drop_selector):
@@ -96,7 +96,6 @@ def do_run():
                             print(e)
                         break
             else:
-                # remove a roster change - don't have to worry about zero roster changes, eliminated 0 ones already
                 if len(chromosome.roster_changes) > 1:
                     del (chromosome.roster_changes[roster_change_to_mutate_index])
 
@@ -152,7 +151,7 @@ def do_run():
     gea.setFitnessHandler(fitness, league, date_range, team_key, int(opponent_key.split('.')[-1]))
     gea.setSelectionHandler(Utils.SelectionHandlers.best)
     try:
-        gea.evolve(20)
+        gea.evolve(10)
     except TypeError as e:
         print(e)
     pass

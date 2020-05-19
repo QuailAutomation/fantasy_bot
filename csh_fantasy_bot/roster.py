@@ -1,8 +1,9 @@
 #!/usr/bin/python
-
 import copy
 import logging
 import numpy as np
+from collections import namedtuple, defaultdict
+
 from csh_fantasy_bot import utils
 
 
@@ -399,14 +400,18 @@ class RecursiveRosterBuilder:
                         pass
                         # TODO should remove IR players in find_best
 
-    def find_best(self, avail_players: pd.DataFrame):
+    def find_best(self, avail_players: pd.DataFrame, weights_series=None):
+        """Determine roster with highest projected output using weights."""
+        if not weights_series:
+            weights_series = self.weights_series
+        player_stats = list(weights_series.index.values)
         # drop irs
         avail_players = avail_players[['IR' not in l for l in avail_players.eligible_positions.values.tolist()]]
 
-        avail_players.loc[:,'fpts'] = avail_players[self.player_stats].mul(self.weights_series).sum(1)
+        avail_players.loc[:,'fpts'] = avail_players[player_stats].mul(weights_series).sum(1)
         sorted_players = avail_players.sort_values(by=['fpts'], ascending=False)
 
-        roster = {p: [] for p in self.roster_makeup.unique()}
+        roster = {posn: [] for posn in self.roster_makeup.unique()}
         for player in sorted_players.itertuples():
             self._place_player(player, roster)
 
@@ -417,3 +422,28 @@ class RecursiveRosterBuilder:
                 players.append(roster[posn][index].Index)
                 player_index.append("{}.{}".format(posn, index + 1))
         return pd.Series(players, index=player_index)
+
+
+RosterPlayer = namedtuple('RosterPlayer', [
+    'id',
+    'eligible_positions',
+    'fpts',
+    ])
+
+def combination_roster_optimization(team, roster_makeup, stats_weights):
+    """Determine best scoring roster for passed in roster makeup and weights."""
+    #TODO this goalie/IR could probably go somewhere else
+    avail_players = team[(team.position_type == 'P') & (['IR' not in l for l in team.eligible_positions.values.tolist()])]
+    avail_players.loc[:,'fpts'] = avail_players[list(stats_weights.index.values)].mul(stats_weights).sum(1)
+    roster = tuple([RosterPlayer(id, p['eligible_positions'],p['fpts']) for id, p in avail_players.iterrows()])
+    
+    defensemen = [p for p in roster if p.eligible_positions == ['D']]
+    
+    pass
+
+def remove_ir(team):
+    """Remove IR players from dataframe."""
+    return team[['IR' not in l for l in team.eligible_positions.values.tolist()]]
+
+def remove_goalies(team):
+    return team[team.position_type == 'P']
