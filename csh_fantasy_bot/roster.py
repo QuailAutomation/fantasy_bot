@@ -447,3 +447,15 @@ def remove_ir(team):
 
 def remove_goalies(team):
     return team[team.position_type == 'P']
+
+
+
+
+
+if __name__ == "__main__":
+
+    my_team = pd.read_csv('../tests/my-team.csv',
+                      converters={"eligible_positions": lambda x: x.strip("[]").replace("'", "").split(", ")})
+    my_team.set_index('player_id', inplace=True)
+
+    pass

@@ -19,10 +19,9 @@ def do_run():
     """Run the algorithm."""
     week = 21
     league_id = '396.l.53432'
-    team_key = '396.l.53432.t.2'
     league: FantasyLeague = FantasyLeague(league_id)
-    
-    my_team = league.team_by_key(league.team_key())
+    team_key = league.team_key()
+    my_team = league.team_by_key(team_key)
     # could allow override of opp here
     opponent_key = my_team.matchup(week)
 
@@ -44,64 +43,57 @@ def do_run():
 
     def mutate(chromosome, league, add_selector, drop_selector):
         if len(chromosome.roster_changes) == 0:
+            # nothing to mutate here
             return chromosome
+        # let's pick one of the roster changes to mutate
+        roster_change_to_mutate_index = random.randint(1, len(chromosome.roster_changes)) - 1
+        roster_change_to_mutate = chromosome.roster_changes[roster_change_to_mutate_index]
+        # won't try and mutate date if there is not more than 1 valid date
+        random_number = random.randint(1 if len(chromosome.valid_dates) else 30, 100)
+        if random_number < 30:
+            # lets mutate date
+            while True:
+                drop_date = random.choice(chromosome.valid_dates).date()
+                if drop_date != roster_change_to_mutate['change_date']:
+                    mutated_roster_change = roster_change_to_mutate.copy()
+                    mutated_roster_change['change_date'] = drop_date
+                    try:
+                        chromosome.replace(roster_change_to_mutate, mutated_roster_change)
+                    except RosterException as e:
+                        # this is ok, player must already exist in another change
+                        pass
+                    break
+        elif random_number < 55:
+            # lets mutate player out
+            for _ in range(50):
+                player_to_remove = drop_selector.select().index.values[0]
+                if not any(rc['player_out'] == player_to_remove for rc in chromosome.roster_changes):
+                    mutated_roster_change = roster_change_to_mutate.copy()
+                    mutated_roster_change['player_out'] = player_to_remove
+                    try:
+                        chromosome.replace(roster_change_to_mutate, mutated_roster_change)
+                    except RosterException as e:
+                        pass
+                    break
+        elif random_number < 90:
+            # lets mutate player in
+            for _ in range(50):
+                plyr = add_selector.select()
+                player_id = plyr.index.values[0]
+                if (plyr['position_type'] == 'G').values[0] or (player_id in [rc['player_in'] for rc in chromosome.roster_changes]):
+                    continue
+                if not any(player_id == rc['player_in'] for rc in chromosome.roster_changes):
+                    mutated_roster_change = roster_change_to_mutate.copy()
+                    mutated_roster_change['player_in'] = player_id
+                    try:
+                        chromosome.replace(roster_change_to_mutate, mutated_roster_change)
+                    except RosterException as e:
+                        pass
+                    break
+        else:
+            if len(chromosome.roster_changes) > 1:
+                del (chromosome.roster_changes[roster_change_to_mutate_index])
 
-        try:
-            roster_change_to_mutate_index = random.randint(1, len(chromosome.roster_changes)) - 1
-
-            roster_change_to_mutate = chromosome.roster_changes[roster_change_to_mutate_index]
-            # lets mutate this change set
-            random_number = random.randint(1, 100)
-            if len(chromosome.valid_dates) > 1 and random_number < 30:
-                # lets mutate date
-                while True:
-                    drop_date = random.choice(chromosome.valid_dates).date()
-
-                    if drop_date != roster_change_to_mutate['change_date']:
-
-                        mutated_roster_change = roster_change_to_mutate.copy()
-                        mutated_roster_change['change_date'] = drop_date
-                        try:
-                            chromosome.replace(roster_change_to_mutate, mutated_roster_change)
-                        except RosterException as e:
-                            # this is ok, player must already exist in another change
-                            pass
-                        break
-            elif random_number < 40:
-                # lets mutate player out
-                for _ in range(50):
-                    player_to_remove = drop_selector.select().index.values[0]
-                    if not any(rc['player_out'] == player_to_remove for rc in chromosome.roster_changes):
-                        mutated_roster_change = roster_change_to_mutate.copy()
-                        mutated_roster_change['player_out'] = player_to_remove
-                        try:
-                            chromosome.replace(roster_change_to_mutate, mutated_roster_change)
-                        except RosterException as e:
-                            pass
-
-                        break
-            elif random_number < 95:
-                # lets mutate player in
-                for _ in range(50):
-                    plyr = add_selector.select()
-                    player_id = plyr.index.values[0]
-                    if (plyr['position_type'] == 'G').values[0] or (player_id in [rc['player_in'] for rc in chromosome.roster_changes]):
-                        continue
-                    if not any(player_id == rc['player_in'] for rc in chromosome.roster_changes):
-                        mutated_roster_change = roster_change_to_mutate.copy()
-                        mutated_roster_change['player_in'] = player_id
-                        try:
-                            chromosome.replace(roster_change_to_mutate, mutated_roster_change)
-                        except RosterException as e:
-                            print(e)
-                        break
-            else:
-                if len(chromosome.roster_changes) > 1:
-                    del (chromosome.roster_changes[roster_change_to_mutate_index])
-
-        except ValueError as e:
-            print(e)
-        
         return chromosome
 
 
