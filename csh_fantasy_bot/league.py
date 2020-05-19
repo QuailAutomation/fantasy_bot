@@ -53,7 +53,6 @@ class FantasyLeague(League):
         """Return all players in league."""
         def transaction_loader():
             return League.transactions(self)
-            return transactions
 
         expiry = timedelta(minutes=6 * 60 * 20)
         return self.lg_cache.load_transactions(expiry, transaction_loader)
@@ -170,26 +169,26 @@ class FantasyLeague(League):
         expiry = timedelta(days=7)
         return self.lg_cache.load_prediction_builder(expiry, loader)
 
-    def score(self, date_range, team_key, opponent, roster_change_sets=None):
-        all_players = self.stat_predictor().predict(self.as_of(date_range[0]))
-        if not self.scorer:
-            league_scores = {tm['team_key']:BestRankedPlayerScorer(self, self.team_by_key(tm['team_key']), \
-                            all_players).score(date_range, simulation_mode=True) for tm in self.teams()}
-            scoring_list = [league_scores[x] for x in league_scores.keys()]
-            self.score_comparer = ScoreComparer(scoring_list,all_players,self.scoring_categories())
-            self.score_comparer.set_opponent(league_scores[f'{self.league_id}.t.{opponent}'].sum())
+    # def score(self, date_range, team_key, opponent, roster_change_sets=None):
+    #     all_players = self.stat_predictor().predict(self.as_of(date_range[0]))
+    #     if not self.scorer:
+    #         league_scores = {tm['team_key']:BestRankedPlayerScorer(self, self.team_by_key(tm['team_key']), \
+    #                         all_players).score(date_range, simulation_mode=True) for tm in self.teams()}
+    #         scoring_list = [league_scores[x] for x in league_scores.keys()]
+    #         self.score_comparer = ScoreComparer(scoring_list,all_players,self.scoring_categories())
+    #         self.score_comparer.set_opponent(league_scores[f'{self.league_id}.t.{opponent}'].sum())
 
-            self.scorer = BestRankedPlayerScorer(self, self.team_by_key(team_key), all_players)
+    #         self.scorer = BestRankedPlayerScorer(self, self.team_by_key(team_key), all_players)
 
-        if roster_change_sets:
-            for change_set in roster_change_sets:
-                the_score = self.scorer.score(date_range, change_set)
-                change_set.scoring_summary = the_score.reset_index()
-                change_set.score = self.score_comparer.compute_score(the_score)
-            return roster_change_sets
-        else:
-            the_score = self.scorer.score(date_range)
-            return the_score.reset_index()
+    #     if roster_change_sets:
+    #         for change_set in roster_change_sets:
+    #             the_score = self.scorer.score(date_range, change_set)
+    #             change_set.scoring_summary = the_score.reset_index()
+    #             change_set.score = self.score_comparer.compute_score(the_score)
+    #         return roster_change_sets
+    #     else:
+    #         the_score = self.scorer.score(date_range)
+    #         return the_score.reset_index()
 
     def get_projections(self):
         """Return projections dataframe."""

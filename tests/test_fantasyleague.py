@@ -11,7 +11,7 @@ import datetime
 def test_load_transactions(league):
     """Load the transactions."""
     txns = league.transactions()
-    assert(len(txns) == 768)
+    assert(len(txns) == 774)
 
 def test_load_draft(league):
     """Load the draft results."""

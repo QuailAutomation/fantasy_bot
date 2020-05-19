@@ -4,7 +4,6 @@ import logging
 import numpy as np
 from collections import namedtuple, defaultdict
 
-from csh_fantasy_bot import utils
 
 
 class Container:

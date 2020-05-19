@@ -58,7 +58,7 @@ class BestRankedPlayerScorer:
                     self.cached_actual_results[single_date] = daily_stats.loc[~daily_stats.G.isnull(),:]
                 daily_scoring_results = self.cached_actual_results[single_date]
             else:
-                if roster_df is None or single_date <= self.league_edit_date and not simulation_mode: 
+                if (roster_df is None or single_date <= self.league_edit_date) and not simulation_mode: 
                     if single_date not in self.cached_roster_stats:
                         # roster_df = pd.DataFrame(self.team.roster(day=single_date))
                         roster_df =self.player_projections[self.player_projections['fantasy_status'] == int(self.team.team_key.split('.')[-1])]

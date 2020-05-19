@@ -120,7 +120,7 @@ class LeagueCache(CacheBase):
         return "{}/lg_lineups.pkl".format(self.cache_dir)
     
     def league_transaction_file(self):
-        return "{}/tranactions.pkl".format(self.cache_dir)
+        return "{}/transactions.pkl".format(self.cache_dir)
 
     def load_league_lineup(self, expiry, loader):
         return self.run_loader(self.league_lineup_file(), expiry, loader)
