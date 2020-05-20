@@ -10,12 +10,11 @@ pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
 
-
-my_team = pd.read_csv('./tests/my-team.csv',
-                      converters={"eligible_positions": lambda x: x.strip("[]").replace("'", "").split(", ")})
-my_team.set_index('player_id', inplace=True)
-my_team.head()
-builder = RecursiveRosterBuilder()
+# my_team = pd.read_csv('./tests/my-team.csv',
+#                       converters={"eligible_positions": lambda x: x.strip("[]").replace("'", "").split(", ")})
+# my_team.set_index('player_id', inplace=True)
+# my_team.head()
+# builder = RecursiveRosterBuilder()
 # %timeit builder.find_best(my_team)
 
 
@@ -31,4 +30,9 @@ projected_stats = league.get_projections()
 projected_stats['fpts'] = 0
 projected_stats['fpts'] = projected_stats.loc[projected_stats.G == projected_stats.G,weights_series.index.tolist()].mul(weights_series).sum(1)
 scorer = BestRankedPlayerScorer(league, t, projected_stats)
-# scorer.score(date_range,simulation_mode=True)
+
+score = None
+for _ in range(20):
+    score = scorer.score(date_range,simulation_mode=True)
+
+print(f'Summary:\n{score.sum()}')

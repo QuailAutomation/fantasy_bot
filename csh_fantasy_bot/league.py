@@ -32,6 +32,13 @@ class FantasyLeague(League):
         return [stat['display_name'] for stat in League.stat_categories(self) if stat['position_type'] in position_type]
 
     def all_players(self):
+        """Return dataframe of entire league for as of date."""
+        if self.as_of_date:
+            return self._all_players_df
+        else:
+            raise  AsOfDateNotSetException
+
+    def _all_players(self):
         """Return all players in league."""
         def all_loader():
             all_players= pd.DataFrame(League.all_players(self))
@@ -107,7 +114,7 @@ class FantasyLeague(League):
     def as_of(self, asof_date):
         """Return the various buckets as of this date time."""
         if not self.as_of_date or asof_date != self.as_of_date:
-            all_players = self.all_players()
+            all_players = self._all_players()
             all_players = all_players.set_index(keys=['player_id'])
             draft_df = self.draft_results(format='Pandas')
             # create a column fantasy_status.  will be team id, or FA (Free Agent), W-{Date} (Waivers)
@@ -132,10 +139,9 @@ class FantasyLeague(League):
             self._all_players_df = all_players
             self.scorer = None
             self.score_comparer = None
-        return self._all_players_df
+        return self
 
     def _apply_adddrop(self, trans_info, post_draft_player_list):
-        print('Apply add/drop')
         self._add_player(trans_info['players']['0'], post_draft_player_list)
         self._drop_player(trans_info['players']['1'], post_draft_player_list)
 
@@ -196,3 +202,7 @@ class FantasyLeague(League):
             raise RuntimeError("As of date not specified yet")
         
         return self.stat_predictor().predict(self._all_players_df)
+
+
+class AsOfDateNotSetException(Exception):
+    """Denotes when trying to access state of league before setting asof."""
