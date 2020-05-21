@@ -47,7 +47,7 @@ class ManagerBot:
         self.opp_team_name = None
         self.opp_team_key = None
         self.init_prediction_builder()
-        self.all_players = self.lg.as_of(self.week[0])
+        self.all_players = self.lg.as_of(self.week[0]).all_players()
         self.fetch_player_pool()
         self.score_comparer: ScoreComparer = ScoreComparer(self.fetch_league_lineups(), self.pred_bldr.predict(self.all_players), self.stat_categories)
         self.logger.debug("Reading Free Agents")

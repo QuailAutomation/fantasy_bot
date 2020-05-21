@@ -7,7 +7,7 @@ from csh_fantasy_bot.ga import RosterChangeSetFactory
 def test_create_rcs(league, season_start_date, scoring_weights):
 
     date_range = pd.date_range(season_start_date, season_start_date + timedelta(days=6))
-    all_players = league.as_of(season_start_date)
+    all_players = league.as_of(season_start_date).all_players()
     projected_stats = league.get_projections()
     
     projected_stats['fpts'] = 0

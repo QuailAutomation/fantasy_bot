@@ -28,7 +28,7 @@ def test_get_free_agents_season_start(league, season_start_date):
     """Return dataframe of all free agents."""
     # equals all players minus drafted players
     # make sure none of the draft players in list
-    free_agents = league.free_agents(asof_date=season_start_date)
+    free_agents = league.as_of(season_start_date).free_agents()
     drafted = league.draft_results(format='Pandas')
     assert(len(free_agents.index.intersection(drafted.index)) == 0), "Should be no drafted players as free agents"
     # could make sure all 'all_players' that weren't drafted are here
@@ -36,14 +36,14 @@ def test_get_free_agents_season_start(league, season_start_date):
 def test_fantasy_status_nov_1(league):
     """Return dataframe of all free agents."""
     nov_1 = datetime.datetime(2019,11,1)
-    players = league.as_of(nov_1)
+    players = league.as_of(nov_1).all_players()
     # make sure sammy blais is not a free agent, he was picked up oct 31
     assert(players.loc[6544, 'fantasy_status'] != 'FA')
 
-def test_get_waivers_asof_date(league):
+def test_get_waivers(league):
     """Return player on waivers for given time."""
     pass
 
-def get_team_roster(league, date):
+def get_team_roster(league):
     """Return team roster at given date."""
     pass

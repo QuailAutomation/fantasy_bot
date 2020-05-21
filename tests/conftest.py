@@ -19,7 +19,7 @@ def all_players_df():
         return pickle.load(f)['payload']
 
 @pytest.fixture
-def league(mocker, all_players_df):
+def league(mocker, all_players_df, default_player_scoring_stats):
     """League object."""
     league =  FantasyLeague('396.l.53432')
     # mock the yahoo web endpoint by using files
@@ -31,8 +31,8 @@ def league(mocker, all_players_df):
     with open('tests/league_settings.json') as json_file:
         yhandler_mock.get_settings_raw.return_value = json.load(json_file)  
     
-    league.all_players = mocker.MagicMock(return_value=all_players_df)
-    league.scoring_categories = mocker.MagicMock(return_value=all_players_df)    
+    league._all_players = mocker.MagicMock(return_value=all_players_df)
+    league.scoring_categories = mocker.MagicMock(return_value=default_player_scoring_stats)    
     
     with open('tests/pred_builder.pkl', "rb") as f:
         league.stat_predictor = mocker.MagicMock(return_value=pickle.load(f)['payload'])    
@@ -48,10 +48,10 @@ def league(mocker, all_players_df):
 @pytest.fixture
 def league_post_draft(league, season_start_date):
     """Return league post-draft."""
-    return league.as_of(season_start_date)
+    return league.as_of(season_start_date).all_players()
 
 @pytest.fixture
-def default_player_scoring_stats(league):
+def default_player_scoring_stats():
     """Fantasy default player scoring stats."""
     return ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
 

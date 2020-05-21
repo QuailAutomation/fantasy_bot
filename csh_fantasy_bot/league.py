@@ -11,7 +11,6 @@ from csh_fantasy_bot.yahoo_fantasy_tasks import oauth_token
 from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 from csh_fantasy_bot.scoring import ScoreComparer
 
-
 class FantasyLeague(League):
     """Represents a league in yahoo."""
 
@@ -95,13 +94,9 @@ class FantasyLeague(League):
             draft_df.set_index(['player_id'], inplace=True)
             return draft_df
 
-    def free_agents(self, position=None, asof_date=None):
+    def free_agents(self, position=None):
         """Return the free agents at give datetime."""
-        if asof_date:
-            players_df = self.as_of(asof_date)
-            return players_df[players_df.fantasy_status == 'FA']
-        else:
-            return super().free_agents(position)
+        return self._all_players_df[self._all_players_df.fantasy_status == 'FA']
 
     def waivers(self, asof_date=None):
         """Return players on waivers on date."""
@@ -175,34 +170,35 @@ class FantasyLeague(League):
         expiry = timedelta(days=7)
         return self.lg_cache.load_prediction_builder(expiry, loader)
 
-    # def score(self, date_range, team_key, opponent, roster_change_sets=None):
-    #     all_players = self.stat_predictor().predict(self.as_of(date_range[0]))
-    #     if not self.scorer:
-    #         league_scores = {tm['team_key']:BestRankedPlayerScorer(self, self.team_by_key(tm['team_key']), \
-    #                         all_players).score(date_range, simulation_mode=True) for tm in self.teams()}
-    #         scoring_list = [league_scores[x] for x in league_scores.keys()]
-    #         self.score_comparer = ScoreComparer(scoring_list,all_players,self.scoring_categories())
-    #         self.score_comparer.set_opponent(league_scores[f'{self.league_id}.t.{opponent}'].sum())
-
-    #         self.scorer = BestRankedPlayerScorer(self, self.team_by_key(team_key), all_players)
-
-    #     if roster_change_sets:
-    #         for change_set in roster_change_sets:
-    #             the_score = self.scorer.score(date_range, change_set)
-    #             change_set.scoring_summary = the_score.reset_index()
-    #             change_set.score = self.score_comparer.compute_score(the_score)
-    #         return roster_change_sets
-    #     else:
-    #         the_score = self.scorer.score(date_range)
-    #         return the_score.reset_index()
 
     def get_projections(self):
         """Return projections dataframe."""
         if not self.as_of_date:
-            raise RuntimeError("As of date not specified yet")
+            raise NoAsOfDateException("As of date not specified yet")
         
         return self.stat_predictor().predict(self._all_players_df)
 
+    def score(self, date_range, team_key, opponent, roster_change_sets=None, simulation_mode=True):
+        all_players = self.stat_predictor().predict(self.as_of(date_range[0]).all_players())
+        if not self.scorer:
+            league_scores = {tm['team_key']:BestRankedPlayerScorer(self, self.team_by_key(tm['team_key']), \
+                            all_players).score(date_range, simulation_mode=simulation_mode) for tm in self.teams()}
+            scoring_list = [league_scores[x] for x in league_scores.keys()]
+            self.score_comparer = ScoreComparer(scoring_list,all_players,self.scoring_categories())
+            self.score_comparer.set_opponent(league_scores[f'{self.league_id}.t.{opponent}'].sum())
 
-class AsOfDateNotSetException(Exception):
-    """Denotes when trying to access state of league before setting asof."""
+            self.scorer = BestRankedPlayerScorer(self, self.team_by_key(team_key), all_players)
+
+        if roster_change_sets:
+            for change_set in roster_change_sets:
+                the_score = self.scorer.score(date_range, change_set, simulation_mode=True)
+                change_set.scoring_summary = the_score.reset_index()
+                change_set.score = self.score_comparer.compute_score(the_score)
+            return roster_change_sets
+        else:
+            the_score = self.scorer.score(date_range)
+            return the_score.reset_index()
+
+class NoAsOfDateException(Exception):
+    """Denote when trying to access state of league before setting asof."""
+    

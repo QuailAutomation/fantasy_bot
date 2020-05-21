@@ -9,7 +9,7 @@ def test_scoring_no_roster_changes(league: FantasyLeague, scoring_weights):
     """Test scoring against known dataset."""
     t = league.to_team('396.l.53432.t.2')
     a_start_date = datetime(2020,2,26)
-    all_players = league.as_of(a_start_date)
+    league = league.as_of(a_start_date)
     date_range = pd.date_range(a_start_date.date(), a_start_date.date() + timedelta(days=7))
     projected_stats = league.get_projections()
     projected_stats['fpts'] = 0

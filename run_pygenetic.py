@@ -2,6 +2,7 @@
 import pandas as pd
 import random
 import copy
+from contextlib import suppress
 
 from pygenetic import GAEngine
 from pygenetic import Utils
@@ -26,7 +27,7 @@ def do_run():
     opponent_key = my_team.matchup(week)
 
     date_range = pd.date_range(*league.week_date_range(week))
-    all_players = league.as_of(date_range[0])
+    league = league.as_of(date_range[0])
     
     # set up projections and create weighted score (fpts)
     weights_series =  pd.Series([1, .75, 1, .5, 1, .1, 1], index=league.scoring_categories())
@@ -57,11 +58,8 @@ def do_run():
                 if drop_date != roster_change_to_mutate['change_date']:
                     mutated_roster_change = roster_change_to_mutate.copy()
                     mutated_roster_change['change_date'] = drop_date
-                    try:
+                    with suppress(RosterException):
                         chromosome.replace(roster_change_to_mutate, mutated_roster_change)
-                    except RosterException as e:
-                        # this is ok, player must already exist in another change
-                        pass
                     break
         elif random_number < 55:
             # lets mutate player out
@@ -70,10 +68,8 @@ def do_run():
                 if not any(rc['player_out'] == player_to_remove for rc in chromosome.roster_changes):
                     mutated_roster_change = roster_change_to_mutate.copy()
                     mutated_roster_change['player_out'] = player_to_remove
-                    try:
+                    with suppress(RosterException):
                         chromosome.replace(roster_change_to_mutate, mutated_roster_change)
-                    except RosterException as e:
-                        pass
                     break
         elif random_number < 90:
             # lets mutate player in
@@ -85,10 +81,8 @@ def do_run():
                 if not any(player_id == rc['player_in'] for rc in chromosome.roster_changes):
                     mutated_roster_change = roster_change_to_mutate.copy()
                     mutated_roster_change['player_in'] = player_id
-                    try:
+                    with suppress(RosterException):
                         chromosome.replace(roster_change_to_mutate, mutated_roster_change)
-                    except RosterException as e:
-                        pass
                     break
         else:
             if len(chromosome.roster_changes) > 1:
@@ -140,7 +134,7 @@ def do_run():
 
     gea.addCrossoverHandler(crossover,1,league)
     gea.addMutationHandler(mutate,2, league, add_selector, drop_selector)
-    gea.setFitnessHandler(fitness, league, date_range, team_key, int(opponent_key.split('.')[-1]))
+    gea.setFitnessHandler(fitness, date_range, team_key, int(opponent_key.split('.')[-1]))
     gea.setSelectionHandler(Utils.SelectionHandlers.best)
     try:
         gea.evolve(10)

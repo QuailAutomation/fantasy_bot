@@ -1,6 +1,8 @@
 """Custom code for GA."""
 import random
 import logging 
+from contextlib import suppress
+
 from pygenetic import ChromosomeFactory, GAEngine
 
 from csh_fantasy_bot.league import FantasyLeague
@@ -32,11 +34,8 @@ class RosterChangeSetFactory(ChromosomeFactory.ChromosomeFactory):
 
             player_to_add = self.add_selector.select()
             player_to_drop = self.drop_selector.select()
-            try:
+            with suppress(RosterException):
                 rcs.add(player_to_drop.index.values[0], player_to_add.index.values[0], drop_date)
-            except RosterException as e:
-                self.log.debug(e)
-                pass
 
         return rcs
 
@@ -63,7 +62,7 @@ class RandomWeightedSelector:
 
 from csh_fantasy_bot.tasks import score
 
-def fitness(roster_change_sets, league:FantasyLeague, date_range, team_key, opponent_id):
+def fitness(roster_change_sets, date_range, team_key, opponent_id):
     """Score the roster change set."""
     # store the id so we can match back up after serialization
     for rcs in roster_change_sets:

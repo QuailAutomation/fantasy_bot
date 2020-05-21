@@ -12,6 +12,7 @@ import cProfile
 
 class BestRankedPlayerScorer:
     nhl_schedule = {}
+    nhl_scraper: Scraper = Scraper()
 
     def __init__(self, league, team, player_projections):
         self.log = logging.getLogger(__name__)
@@ -20,8 +21,7 @@ class BestRankedPlayerScorer:
         self.league_edit_date = league.edit_date()
         self.team = team
 
-        self.player_projections = player_projections
-        self.nhl_scraper: Scraper = Scraper()
+        self.player_projections = player_projections.loc[:, self.tracked_stats + ['eligible_positions', 'team_id','fantasy_status']]
         self.cached_actual_results = {}
         # self.starting_goalies_df = RWScraper().starting_goalies()
         # if there are no projections available, we will load from yahoo, and cache here
@@ -29,11 +29,59 @@ class BestRankedPlayerScorer:
         # cache rosters we load
         self.cached_roster_stats = {}
         self.roster_builder = roster.RecursiveRosterBuilder()
+        self.my_team_id = int(self.team.team_key.split('.')[-1])
 
-    def score(self, date_range):
+    @classmethod
+    def _teams_with_game(cls, game_day):
+        if game_day.strftime("%Y-%m-%d") not in BestRankedPlayerScorer.nhl_schedule:
+                    BestRankedPlayerScorer.nhl_schedule[
+                        game_day.strftime("%Y-%m-%d")] = BestRankedPlayerScorer.nhl_scraper.games_count(
+                        game_day.to_pydatetime().date(), game_day.to_pydatetime().date())
+        return BestRankedPlayerScorer.nhl_schedule[game_day.strftime("%Y-%m-%d")]
+    
+    def _apply_roster_changes(self, roster_change_set ,single_date, all_projections):
+        roster_changes = roster_change_set.get(single_date)
+        if roster_changes is not None and len(roster_changes) > 0:
+            for row in roster_changes:
+                all_projections = all_projections.append(
+                    self.player_projections.loc[row['player_in'], :])
+                try:
+                    all_projections.drop(row['player_out'], inplace=True)
+                except KeyError as e:
+                    self.log.exception(e)
+        return all_projections
+
+    def score(self, date_range, roster_change_set=None, simulation_mode=True):
+        """Score the team with."""
+        # let's only work in simulation mode for now
+        assert(simulation_mode == True)
+        projected_week_results = None
+        today = pd.Timestamp.today()
+        all_projections = self.player_projections.loc[:, self.tracked_stats + ['eligible_positions', 'team_id']]
         for single_date in date_range:
-            # project for single_date
-            
+            if roster_change_set is not None and len(roster_change_set) > 0:
+                all_projections = self._apply_roster_changes(roster_change_set, single_date, all_projections)
+                                
+            if simulation_mode or single_date >= today:
+                roster_with_projections = all_projections[self.player_projections['fantasy_status'] == self.my_team_id]
+                teams_with_games = BestRankedPlayerScorer._teams_with_game(single_date)
+                best_roster = self.roster_builder.find_best(roster_with_projections.loc[roster_with_projections.team_id.isin(teams_with_games),:])
+                if best_roster is not None and len(best_roster) > 0:
+                    daily_scoring_results = roster_with_projections.loc[best_roster.values.astype(int).tolist(), self.tracked_stats]
+                    daily_scoring_results.loc[:, 'score_type'] = 'p'
+                    #swap values, index so we can set roster position for players
+                    swapped_roster = pd.Series([p.split('.')[0] for p in best_roster.index.values], index=best_roster )
+                    daily_scoring_results['selected_position'] = swapped_roster
+            else:
+                raise NotImplementedError()
+
+            if daily_scoring_results is not None and len(daily_scoring_results) > 0:
+                    daily_scoring_results.loc[:,'play_date'] = single_date.date()
+                    if projected_week_results is None:
+                        projected_week_results = daily_scoring_results
+                    else:
+                        projected_week_results = projected_week_results.append(daily_scoring_results)
+        return projected_week_results
     def score1(self, date_range, roster_change_set=None, results_printer=None, simulation_mode=True):
         """Score the roster for the week.
 

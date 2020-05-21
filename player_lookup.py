@@ -26,7 +26,7 @@ def lookup_player_id(player_id, fantasy_projections):
 def do_lookup():
     league = FantasyLeague('396.l.53432')
     # my_team: Team= league.to_team(league.team_key())
-    all_players = league.all_players()
+    all_players = league._all_players()
     
     tm_cache = utils.TeamCache(league.team_key())
 

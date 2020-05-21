@@ -13,7 +13,7 @@ from csh_fantasy_bot.ga import RandomWeightedSelector
 
 def test_weighted_sampling(league, season_start_date):
     """Do weighted random sample of fpts."""
-    all_players = league.as_of(season_start_date)
+    league = league.as_of(season_start_date)
     stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
     weights_series =  pd.Series([1, .75, 1, .5, 1, .1, 1], index=stats)
     projected_stats = league.get_projections()
