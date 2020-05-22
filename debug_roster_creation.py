@@ -1,38 +1,57 @@
 import pandas as pd
 import logging
+import timeit
 
 from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.roster import RecursiveRosterBuilder
 
-logging.basicConfig(level=logging.DEBUG)
+import cProfile, pstats, io
+
+def do_cprofile(func):
+    def profiled_func(*args, **kwargs):
+        profile = cProfile.Profile()
+        try:
+            profile.enable()
+            result = func(*args, **kwargs)
+            profile.disable()
+            return result
+        finally:
+            s = io.StringIO()
+            sortby = 'cumulative'
+            ps = pstats.Stats(profile).sort_stats(sortby)
+            ps.print_stats()
+    return profiled_func
+
+logging.basicConfig(level=logging.INFO)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
-
 my_team = pd.read_csv('./tests/my-team.csv',
-                      converters={"eligible_positions": lambda x: x.strip("[]").replace("'", "").split(", ")})
+            converters={"eligible_positions": lambda x: x.strip("[]").replace("'", "").split(", ")})
 my_team.set_index('player_id', inplace=True)
-my_team.head()
+my_team = my_team.query('position_type != "G" & status != "IR"')
+player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
+weights_series = pd.Series([1, .75, .5, .5, 1, .1, 1], index=player_stats)
+player_stats = list(weights_series.index.values)
+# drop irs
+# avail_players = avail_players[['IR' not in l for l in avail_players.eligible_positions.values.tolist()]]
+
+my_team.loc[:,'fpts'] = my_team[player_stats].mul(weights_series).sum(1)
+sorted_players = my_team.sort_values(by=['fpts'], ascending=False)
 builder = RecursiveRosterBuilder()
-# %timeit builder.find_best(my_team)
+builder.find_best(sorted_players)
+
+# @do_cprofile
+def do_run():
+   
+    
+    # builder.find_best(sorted_players)
+
+    print(timeit.timeit('builder.find_best(sorted_players)', number=1000, globals=globals())/1000)
 
 
 
-
-league = FantasyLeague('396.l.53432')
-t = league.team_by_key('396.l.53432.t.2')
-date_range = pd.date_range(*league.week_date_range(21))
-
-league = league.as_of(date_range[0])
-weights_series =  pd.Series([1, .75, 1, .5, 1, .1, 1], index=league.scoring_categories())
-projected_stats = league.get_projections()
-projected_stats['fpts'] = 0
-projected_stats['fpts'] = projected_stats.loc[projected_stats.G == projected_stats.G,weights_series.index.tolist()].mul(weights_series).sum(1)
-scorer = BestRankedPlayerScorer(league, t, projected_stats)
-
-score = None
-# for _ in range(20):
-#     score = scorer.score(date_range,simulation_mode=True)
-
-print(f'Summary:\n{score.sum()}')
+if __name__ == "__main__":
+    do_run()
+# print(f'Summary:\n{score.sum()}')

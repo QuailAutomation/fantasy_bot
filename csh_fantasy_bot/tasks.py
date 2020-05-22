@@ -85,7 +85,7 @@ def run_ga(self,league_id='396.l.53432', week=None):
     driver.run()
 
 league = None  
-CHUNK_SIZE = 2
+CHUNK_SIZE = 10
 log.debug(f'chunk size for scoring is{CHUNK_SIZE}')
 
 @shared_task

@@ -39,7 +39,7 @@ def do_run():
     drop_selector = RandomWeightedSelector(projected_stats[(projected_stats.fantasy_status == 2) & (projected_stats.percent_owned < 93)], 'fpts', inverse=True)
 
     factory = RosterChangeSetFactory(projected_stats, 2,date_range,4)
-    gea = CeleryFitnessGAEngine(factory=factory,population_size=50,fitness_type=('equal',8),
+    gea = CeleryFitnessGAEngine(factory=factory,population_size=200,fitness_type=('equal',8),
                                 cross_prob=0.7,mut_prob = 0.05)
 
     def mutate(chromosome, league, add_selector, drop_selector):

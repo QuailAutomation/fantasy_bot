@@ -364,10 +364,13 @@ class RecursiveRosterBuilder:
             self.weights_series = pd.Series([1, .75, .5, .5, 1, .1, 1], index=self.player_stats)
             
         self.roster_position_counts = roster_makeup.value_counts()
+        self.num_loops = 0
+        self.full_positions = set()
 
     def _place_player(self, player, roster):
         for position in player.eligible_positions:
-            if 'G' != position and 'IR' != position:
+            if position not in self.full_positions:
+                self.num_loops += 1
                 players_in_position = roster[position]
                 if len(players_in_position) < self.roster_position_counts[position]:
                     roster[position].append(player)
@@ -379,48 +382,38 @@ class RecursiveRosterBuilder:
                         roster[position].append(player)
                         return
                     else:
+                        self.full_positions.add(position)
                         # print('Position full: {}'.format(position))
                         pass
 
 
     def _make_room(self, position, roster, full_positions=None):
         for position_to_look_for_room in self.roster_makeup.unique():
+            self.num_loops += 1
             # is there a player in this position that can move
             for players in roster[position_to_look_for_room]:
+                self.num_loops += 1
                 for index, other_possible_positions in enumerate(players.eligible_positions):
-                    if other_possible_positions != 'IR':
-                        if len(
-                                roster[other_possible_positions]) < self.roster_position_counts[
-                            other_possible_positions] and other_possible_positions != position_to_look_for_room:
-                            roster[other_possible_positions].append(players)
-                            roster[position_to_look_for_room].remove(players)
-                            return True
-                    else:
-                        pass
-                        # TODO should remove IR players in find_best
+                    self.num_loops += 1
+                    if len(
+                            roster[other_possible_positions]) < self.roster_position_counts[
+                        other_possible_positions] and other_possible_positions != position_to_look_for_room:
+                        roster[other_possible_positions].append(players)
+                        roster[position_to_look_for_room].remove(players)
+                        return True
 
-    def find_best(self, avail_players: pd.DataFrame, weights_series=None):
+    def find_best(self, sorted_players: pd.DataFrame, weights_series=None):
         """Determine roster with highest projected output using weights."""
-        if not weights_series:
-            weights_series = self.weights_series
-        player_stats = list(weights_series.index.values)
-        # drop irs
-        avail_players = avail_players[['IR' not in l for l in avail_players.eligible_positions.values.tolist()]]
-
-        avail_players.loc[:,'fpts'] = avail_players[player_stats].mul(weights_series).sum(1)
-        sorted_players = avail_players.sort_values(by=['fpts'], ascending=False)
+        self.num_loops = 0
 
         roster = {posn: [] for posn in self.roster_makeup.unique()}
         for player in sorted_players.itertuples():
+            self.num_loops += 1
             self._place_player(player, roster)
 
-        players = []
-        player_index = []
-        for posn in self.roster_makeup.unique():
-            for index in range(min(self.roster_position_counts[posn], len(roster[posn]))):
-                players.append(roster[posn][index].Index)
-                player_index.append("{}.{}".format(posn, index + 1))
-        return pd.Series(players, index=player_index)
+        return pd.Series({".".join([k ,str(k2)]) :v2.Index \
+                        for k,v in roster.items() \
+                        for k2,v2 in zip(range(1, max(self.roster_position_counts)+1), v)})
 
 
 RosterPlayer = namedtuple('RosterPlayer', [

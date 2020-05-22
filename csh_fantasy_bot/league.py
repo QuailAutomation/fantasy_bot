@@ -25,6 +25,8 @@ class FantasyLeague(League):
         self._all_players_df = None
         self.scorer = None
         self.score_comparer = None
+        # TODO unsure if we should load this, or hardcode for performance
+        self.weights_series = pd.Series([1, .75, .5, .5, 1, .1, 1], index=["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"])
 
     def scoring_categories(self, position_type=['P']):
         """Return list of categories that count for scoring."""
@@ -35,7 +37,7 @@ class FantasyLeague(League):
         if self.as_of_date:
             return self._all_players_df
         else:
-            raise  AsOfDateNotSetException
+            raise AsOfDateNotSetException
 
     def _all_players(self):
         """Return all players in league."""
@@ -179,26 +181,32 @@ class FantasyLeague(League):
         return self.stat_predictor().predict(self._all_players_df)
 
     def score(self, date_range, team_key, opponent, roster_change_sets=None, simulation_mode=True):
-        all_players = self.stat_predictor().predict(self.as_of(date_range[0]).all_players())
-        if not self.scorer:
-            league_scores = {tm['team_key']:BestRankedPlayerScorer(self, self.team_by_key(tm['team_key']), \
-                            all_players).score(date_range, simulation_mode=simulation_mode) for tm in self.teams()}
-            scoring_list = [league_scores[x] for x in league_scores.keys()]
-            self.score_comparer = ScoreComparer(scoring_list,all_players,self.scoring_categories())
-            self.score_comparer.set_opponent(league_scores[f'{self.league_id}.t.{opponent}'].sum())
+        try:
+            # TODO this is now assuming that all predictions are known now(sorting), can't be lazily loaded when scoring
+            if not self.scorer:
+                all_players = self.stat_predictor().predict(self.as_of(date_range[0]).all_players())
+                all_players = all_players.query('position_type == "P" & status != "IR"')
+                all_players.loc[:,'fpts'] = all_players[self.scoring_categories()].mul(self.weights_series).sum(1)
+                sorted_players = all_players.sort_values(by='fpts', ascending=False)
+                league_scores = {tm['team_key']:BestRankedPlayerScorer(self, self.team_by_key(tm['team_key']), \
+                                all_players).score(date_range, simulation_mode=simulation_mode) for tm in self.teams()}
+                scoring_list = [league_scores[x] for x in league_scores.keys()]
+                self.score_comparer = ScoreComparer(scoring_list,all_players,self.scoring_categories())
+                self.score_comparer.set_opponent(league_scores[f'{self.league_id}.t.{opponent}'].sum())
 
-            self.scorer = BestRankedPlayerScorer(self, self.team_by_key(team_key), all_players)
+                self.scorer = BestRankedPlayerScorer(self, self.team_by_key(team_key), all_players)
 
-        if roster_change_sets:
-            for change_set in roster_change_sets:
-                the_score = self.scorer.score(date_range, change_set, simulation_mode=True)
-                change_set.scoring_summary = the_score.reset_index()
-                change_set.score = self.score_comparer.compute_score(the_score)
-            return roster_change_sets
-        else:
-            the_score = self.scorer.score(date_range)
-            return the_score.reset_index()
-
+            if roster_change_sets:
+                for change_set in roster_change_sets:
+                    the_score = self.scorer.score(date_range, change_set, simulation_mode=True)
+                    change_set.scoring_summary = the_score.reset_index()
+                    change_set.score = self.score_comparer.compute_score(the_score)
+                return roster_change_sets
+            else:
+                the_score = self.scorer.score(date_range)
+                return the_score.reset_index()
+        except UnboundLocalError as e:
+            print(e)
 class NoAsOfDateException(Exception):
     """Denote when trying to access state of league before setting asof."""
     
