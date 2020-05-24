@@ -8,7 +8,7 @@ from yahoo_fantasy_api import League,Team
 from csh_fantasy_bot import utils
 from csh_fantasy_bot import utils, fantasysp_scrape
 from csh_fantasy_bot.yahoo_fantasy_tasks import oauth_token
-from csh_fantasy_bot.nhl import BestRankedPlayerScorer
+from csh_fantasy_bot.nhl import BestRankedPlayerScorer, score_team
 from csh_fantasy_bot.scoring import ScoreComparer
 
 class FantasyLeague(League):
@@ -182,12 +182,13 @@ class FantasyLeague(League):
 
     def score(self, date_range, team_key, opponent, roster_change_sets=None, simulation_mode=True):
         try:
+            all_players = self.stat_predictor().predict(self.as_of(date_range[0]).all_players())
+            all_players = all_players.query('position_type == "P" & status != "IR"')
+            all_players.loc[:,'fpts'] = all_players[self.scoring_categories()].mul(self.weights_series).sum(1)
+            sorted_players = all_players.sort_values(by='fpts', ascending=False)
+
             # TODO this is now assuming that all predictions are known now(sorting), can't be lazily loaded when scoring
             if not self.scorer:
-                all_players = self.stat_predictor().predict(self.as_of(date_range[0]).all_players())
-                all_players = all_players.query('position_type == "P" & status != "IR"')
-                all_players.loc[:,'fpts'] = all_players[self.scoring_categories()].mul(self.weights_series).sum(1)
-                sorted_players = all_players.sort_values(by='fpts', ascending=False)
                 league_scores = {tm['team_key']:BestRankedPlayerScorer(self, self.team_by_key(tm['team_key']), \
                                 all_players).score(date_range, simulation_mode=simulation_mode) for tm in self.teams()}
                 scoring_list = [league_scores[x] for x in league_scores.keys()]
@@ -198,7 +199,9 @@ class FantasyLeague(League):
 
             if roster_change_sets:
                 for change_set in roster_change_sets:
-                    the_score = self.scorer.score(date_range, change_set, simulation_mode=True)
+                    # the_score = self.scorer.score(date_range, change_set, simulation_mode=True)
+                    player_projections = all_players[all_players.fantasy_status == int(team_key.split('.')[-1])]
+                    the_score = score_team(player_projections, date_range, self.scoring_categories(), change_set)
                     change_set.scoring_summary = the_score.reset_index()
                     change_set.score = self.score_comparer.compute_score(the_score)
                 return roster_change_sets
@@ -207,6 +210,8 @@ class FantasyLeague(League):
                 return the_score.reset_index()
         except UnboundLocalError as e:
             print(e)
+
+            
 class NoAsOfDateException(Exception):
     """Denote when trying to access state of league before setting asof."""
     

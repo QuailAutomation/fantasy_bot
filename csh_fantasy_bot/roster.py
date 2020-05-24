@@ -3,8 +3,7 @@ import copy
 import logging
 import numpy as np
 from collections import namedtuple, defaultdict
-
-
+from functools import partial
 
 class Container:
     """Class that holds a roster of players
@@ -367,7 +366,7 @@ class RecursiveRosterBuilder:
         self.num_loops = 0
         self.full_positions = set()
 
-    def _place_player(self, player, roster):
+    def _place_player(self, roster, player):
         for position in player.eligible_positions:
             if position not in self.full_positions:
                 self.num_loops += 1
@@ -393,11 +392,11 @@ class RecursiveRosterBuilder:
             # is there a player in this position that can move
             for players in roster[position_to_look_for_room]:
                 self.num_loops += 1
-                for index, other_possible_positions in enumerate(players.eligible_positions):
+                for other_possible_positions in players.eligible_positions:
                     self.num_loops += 1
-                    if len(
-                            roster[other_possible_positions]) < self.roster_position_counts[
-                        other_possible_positions] and other_possible_positions != position_to_look_for_room:
+                    if len(roster[other_possible_positions]) < \
+                                    self.roster_position_counts[other_possible_positions] and \
+                                    other_possible_positions != position_to_look_for_room:
                         roster[other_possible_positions].append(players)
                         roster[position_to_look_for_room].remove(players)
                         return True
@@ -405,16 +404,31 @@ class RecursiveRosterBuilder:
     def find_best(self, sorted_players: pd.DataFrame, weights_series=None):
         """Determine roster with highest projected output using weights."""
         self.num_loops = 0
-
-        roster = {posn: [] for posn in self.roster_makeup.unique()}
+        roster = defaultdict(list)
         for player in sorted_players.itertuples():
             self.num_loops += 1
-            self._place_player(player, roster)
-
+            self._place_player(roster, player)
+        
         return pd.Series({".".join([k ,str(k2)]) :v2.Index \
                         for k,v in roster.items() \
                         for k2,v2 in zip(range(1, max(self.roster_position_counts)+1), v)})
 
+    def find_best1(self, sorted_players, weights_series=None):
+        """Determine roster with highest projected output using weights."""
+        self.num_loops = 0
+
+        daily_roster = defaultdict(list)
+        
+        for p in sorted_players:
+            self.num_loops += 1
+            self._place_player(daily_roster, p)
+        
+        return [RosteredPlayer(position=k, ordinal=k2, player_id=v2.Index) \
+                        for k,v in daily_roster.items() \
+                        for k2,v2 in zip(range(1, 10), v)]
+
+
+RosteredPlayer = namedtuple('RosteredPlayer', 'position ordinal player_id')
 
 RosterPlayer = namedtuple('RosterPlayer', [
     'id',

@@ -2,6 +2,9 @@ import datetime
 import pandas as pd
 import numpy as np
 import logging
+
+from collections import defaultdict
+
 from nhl_scraper.nhl import Scraper
 from nhl_scraper.rotowire import Scraper as RWScraper
 from yahoo_fantasy_api import League, Team
@@ -54,10 +57,12 @@ class BestRankedPlayerScorer:
     def score(self, date_range, roster_change_set=None, simulation_mode=True):
         """Score the team with."""
         # let's only work in simulation mode for now
+        # add elements of tuple - tuple(x+y for x, y in zip(a,b))
         assert(simulation_mode == True)
         projected_week_results = None
         today = pd.Timestamp.today()
         all_projections = self.player_projections.loc[:, self.tracked_stats + ['eligible_positions', 'team_id']]
+        daily_scoring_results = None
         for single_date in date_range:
             if roster_change_set is not None and len(roster_change_set) > 0:
                 all_projections = self._apply_roster_changes(roster_change_set, single_date, all_projections)
@@ -76,11 +81,14 @@ class BestRankedPlayerScorer:
                 raise NotImplementedError()
 
             if daily_scoring_results is not None and len(daily_scoring_results) > 0:
-                    daily_scoring_results.loc[:,'play_date'] = single_date.date()
-                    if projected_week_results is None:
-                        projected_week_results = daily_scoring_results
-                    else:
-                        projected_week_results = projected_week_results.append(daily_scoring_results)
+                daily_scoring_results.loc[:,'play_date'] = single_date.date()
+                projected_week_results = daily_scoring_results if projected_week_results is None \
+                                    else projected_week_results.append(daily_scoring_results)
+                
+                # if projected_week_results is None:
+                #     projected_week_results = daily_scoring_results
+                # else:
+                #     projected_week_results = projected_week_results.append(daily_scoring_results)
         return projected_week_results
     def score1(self, date_range, roster_change_set=None, results_printer=None, simulation_mode=True):
         """Score the roster for the week.
@@ -219,3 +227,37 @@ class BestRankedPlayerScorer:
                     projected_week_results = projected_week_results.append(daily_scoring_results)
         return projected_week_results
 
+
+
+nhl_schedule = {}
+nhl_scraper: Scraper = Scraper()
+
+def find_teams_playing(game_day):
+    """Get list of teams playing on game_day."""
+    global nhl_schedule
+    global nhl_scraper
+    if game_day.strftime("%Y-%m-%d") not in nhl_schedule:
+                nhl_schedule[
+                    game_day.strftime("%Y-%m-%d")] = nhl_scraper.games_count(
+                    game_day.to_pydatetime().date(), game_day.to_pydatetime().date())
+    return nhl_schedule[game_day.strftime("%Y-%m-%d")]
+
+# add elements of tuple - tuple(x+y for x, y in zip(a,b))
+
+
+roster_builder = roster.RecursiveRosterBuilder()
+def score_team(player_projections, date_range, scoring_categories, roster_change_set=None, simulation_mode=True):
+        """Score the team."""
+        # let's only work in simulation mode for now
+        assert(simulation_mode == True)
+        global roster_builder
+        games_played = pd.Series([0] * len(player_projections.index), player_projections.index)
+        for game_day in date_range:
+            # who is eligble to play on this day?
+            todays_players = player_projections[player_projections.team_id.isin(find_teams_playing(game_day))]
+            # determine roster
+            best_roster = roster_builder.find_best1(todays_players.loc[:,['eligible_positions']].itertuples())
+            for player in best_roster:
+                games_played[player.player_id] += 1
+
+        return player_projections.loc[:,scoring_categories].multiply(games_played, axis=0)

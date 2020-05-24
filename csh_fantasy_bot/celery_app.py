@@ -35,6 +35,8 @@ def setup_loggers(logger, *args, **kwargs):
                     print('     +++',str(h.__class__)[8:-2] )
 
 log.setLevel(level=LOG_LEVEL)
+# this lib doesn't connect to root
+logging.getLogger('yahoo_oauth').setLevel(level=LOG_LEVEL)
 
 if __name__ == "__main__":
     print("main of celery app")
