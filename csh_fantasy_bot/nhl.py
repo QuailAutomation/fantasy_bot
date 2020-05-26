@@ -247,17 +247,17 @@ def find_teams_playing(game_day):
 
 roster_builder = roster.RecursiveRosterBuilder()
 def score_team(player_projections, date_range, scoring_categories, roster_change_set=None, simulation_mode=True):
-        """Score the team."""
-        # let's only work in simulation mode for now
-        assert(simulation_mode == True)
-        global roster_builder
-        games_played = pd.Series([0] * len(player_projections.index), player_projections.index)
-        for game_day in date_range:
-            # who is eligble to play on this day?
-            todays_players = player_projections[player_projections.team_id.isin(find_teams_playing(game_day))]
-            # determine roster
-            best_roster = roster_builder.find_best1(todays_players.loc[:,['eligible_positions']].itertuples())
-            for player in best_roster:
-                games_played[player.player_id] += 1
+    """Score the team."""
+    # let's only work in simulation mode for now
+    assert(simulation_mode == True)
+    global roster_builder
+    games_played = pd.Series([0] * len(player_projections.index), player_projections.index)
+    for game_day in date_range:
+        # who is eligble to play on this day?
+        todays_players = player_projections[player_projections.team_id.isin(find_teams_playing(game_day))]
+        # determine roster
+        best_roster = roster_builder.find_best1(todays_players.loc[:,['eligible_positions']].itertuples())
+        for player in best_roster:
+            games_played[player.player_id] += 1
 
-        return player_projections.loc[:,scoring_categories].multiply(games_played, axis=0)
+    return player_projections.loc[:,scoring_categories].multiply(games_played, axis=0)
