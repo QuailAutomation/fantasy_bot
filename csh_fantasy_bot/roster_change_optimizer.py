@@ -14,7 +14,7 @@ from csh_fantasy_bot.tasks import score_team
 
 from csh_fantasy_bot import roster
 from yahoo_fantasy_api import Team
-from csh_fantasy_bot.nhl import BestRankedPlayerScorer
+# from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 
 import cProfile, pstats, io
 
