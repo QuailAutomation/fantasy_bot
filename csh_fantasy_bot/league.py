@@ -8,8 +8,11 @@ from yahoo_fantasy_api import League,Team
 from csh_fantasy_bot import utils
 from csh_fantasy_bot import utils, fantasysp_scrape
 from csh_fantasy_bot.yahoo_fantasy_tasks import oauth_token
-from csh_fantasy_bot.nhl import BestRankedPlayerScorer, score_team
+from csh_fantasy_bot.nhl import score_team
 from csh_fantasy_bot.scoring import ScoreComparer
+
+class NoAsOfDateException(Exception):
+    """Denote when trying to access state of league before setting asof."""
 
 class FantasyLeague(League):
     """Represents a league in yahoo."""
@@ -37,7 +40,7 @@ class FantasyLeague(League):
         if self.as_of_date:
             return self._all_players_df
         else:
-            raise AsOfDateNotSetException
+            raise AsOfDateNotSetException()
 
     def _all_players(self):
         """Return all players in league."""
@@ -188,18 +191,19 @@ class FantasyLeague(League):
             sorted_players = all_players.sort_values(by='fpts', ascending=False)
 
             # TODO this is now assuming that all predictions are known now(sorting), can't be lazily loaded when scoring
-            if not self.scorer:
-                league_scores = {tm['team_key']:BestRankedPlayerScorer(self, self.team_by_key(tm['team_key']), \
-                                all_players).score(date_range, simulation_mode=simulation_mode) for tm in self.teams()}
+            if not self.score_comparer:
+                league_scores = {tm['team_key']:score_team(all_players[all_players.fantasy_status == int(tm['team_key'].split('.')[-1])], \
+                                                date_range, \
+                                                self.scoring_categories()) 
+                                            for tm in self.teams()}
+
                 scoring_list = [league_scores[x] for x in league_scores.keys()]
                 self.score_comparer = ScoreComparer(scoring_list,all_players,self.scoring_categories())
                 self.score_comparer.set_opponent(league_scores[f'{self.league_id}.t.{opponent}'].sum())
 
-                self.scorer = BestRankedPlayerScorer(self, self.team_by_key(team_key), all_players)
 
             if roster_change_sets:
                 for change_set in roster_change_sets:
-                    # the_score = self.scorer.score(date_range, change_set, simulation_mode=True)
                     player_projections = all_players[all_players.fantasy_status == int(team_key.split('.')[-1])]
                     the_score = score_team(player_projections, date_range, self.scoring_categories(), change_set)
                     change_set.scoring_summary = the_score.reset_index()
@@ -212,6 +216,5 @@ class FantasyLeague(League):
             print(e)
 
             
-class NoAsOfDateException(Exception):
-    """Denote when trying to access state of league before setting asof."""
+
     

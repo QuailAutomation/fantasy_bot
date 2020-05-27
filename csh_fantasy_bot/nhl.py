@@ -8,7 +8,7 @@ from collections import defaultdict
 from nhl_scraper.nhl import Scraper
 from nhl_scraper.rotowire import Scraper as RWScraper
 from yahoo_fantasy_api import League, Team
-from csh_fantasy_bot import roster
+from csh_fantasy_bot.roster import best_roster
 
 import cProfile
 
@@ -245,19 +245,17 @@ def find_teams_playing(game_day):
 # add elements of tuple - tuple(x+y for x, y in zip(a,b))
 
 
-roster_builder = roster.RecursiveRosterBuilder()
+
 def score_team(player_projections, date_range, scoring_categories, roster_change_set=None, simulation_mode=True):
     """Score the team."""
     # let's only work in simulation mode for now
     assert(simulation_mode == True)
-    global roster_builder
-    games_played = pd.Series([0] * len(player_projections.index), player_projections.index)
+    # dict to keep track of how many games players play using projected stats
+    games_played_projected = pd.Series([0] * len(player_projections), player_projections.index)
     for game_day in date_range:
-        # who is eligble to play on this day?
-        todays_players = player_projections[player_projections.team_id.isin(find_teams_playing(game_day))]
-        # determine roster
-        best_roster = roster_builder.find_best1(todays_players.loc[:,['eligible_positions']].itertuples())
-        for player in best_roster:
-            games_played[player.player_id] += 1
+        game_day_players = player_projections[player_projections.team_id.isin(find_teams_playing(game_day))]
+        roster = best_roster(game_day_players.loc[:,['eligible_positions']].itertuples())
+        for player in roster:
+            games_played_projected[player.player_id] += 1
 
-    return player_projections.loc[:,scoring_categories].multiply(games_played, axis=0)
+    return player_projections.loc[:,scoring_categories].multiply(games_played_projected, axis=0)

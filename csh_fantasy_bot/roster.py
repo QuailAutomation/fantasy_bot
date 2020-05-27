@@ -363,13 +363,12 @@ class RecursiveRosterBuilder:
             self.weights_series = pd.Series([1, .75, .5, .5, 1, .1, 1], index=self.player_stats)
             
         self.roster_position_counts = roster_makeup.value_counts()
-        self.num_loops = 0
         self.full_positions = set()
+
 
     def _place_player(self, roster, player):
         for position in player.eligible_positions:
             if position not in self.full_positions:
-                self.num_loops += 1
                 players_in_position = roster[position]
                 if len(players_in_position) < self.roster_position_counts[position]:
                     roster[position].append(player)
@@ -388,12 +387,9 @@ class RecursiveRosterBuilder:
 
     def _make_room(self, position, roster, full_positions=None):
         for position_to_look_for_room in self.roster_makeup.unique():
-            self.num_loops += 1
             # is there a player in this position that can move
             for players in roster[position_to_look_for_room]:
-                self.num_loops += 1
                 for other_possible_positions in players.eligible_positions:
-                    self.num_loops += 1
                     if len(roster[other_possible_positions]) < \
                                     self.roster_position_counts[other_possible_positions] and \
                                     other_possible_positions != position_to_look_for_room:
@@ -403,10 +399,8 @@ class RecursiveRosterBuilder:
 
     def find_best(self, sorted_players: pd.DataFrame, weights_series=None):
         """Determine roster with highest projected output using weights."""
-        self.num_loops = 0
         roster = defaultdict(list)
         for player in sorted_players.itertuples():
-            self.num_loops += 1
             self._place_player(roster, player)
         
         return pd.Series({".".join([k ,str(k2)]) :v2.Index \
@@ -415,12 +409,9 @@ class RecursiveRosterBuilder:
 
     def find_best1(self, sorted_players, weights_series=None):
         """Determine roster with highest projected output using weights."""
-        self.num_loops = 0
-
+        self.full_positions = set()
         daily_roster = defaultdict(list)
-        
         for p in sorted_players:
-            self.num_loops += 1
             self._place_player(daily_roster, p)
         
         return [RosteredPlayer(position=k, ordinal=k2, player_id=v2.Index) \
@@ -455,7 +446,11 @@ def remove_goalies(team):
     return team[team.position_type == 'P']
 
 
+"""default roster builder."""
+roster_builder = RecursiveRosterBuilder()
 
+"""This should be used to build rosters."""
+best_roster = roster_builder.find_best1
 
 
 if __name__ == "__main__":
@@ -465,3 +460,5 @@ if __name__ == "__main__":
     my_team.set_index('player_id', inplace=True)
 
     pass
+
+

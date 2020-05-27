@@ -16,7 +16,7 @@ pd.set_option('display.width', 1000)
 logger = logging.getLogger(__name__)
 
 def lookup_player(player_name, fantasy_projections):
-    return "craig: {}".format(fantasy_projections[fantasy_projections.name.str.contains(player_name)])
+    return "craig: {}".format(fantasy_projections[fantasy_projections.name.str.contains(player_name)].T)
 
 
 def lookup_player_id(player_id, fantasy_projections):
