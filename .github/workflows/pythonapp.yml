@@ -10,77 +10,22 @@ on:
     branches: [ master ]
 
 jobs:
-  # build:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - uses: actions/checkout@v2
-  #   - name: Set up Python 3.8
-  #     uses: actions/setup-python@v1
-  #     with:
-  #       python-version: 3.8
-  #   - name: Install dependencies
-  #     run: |
-  #       python -m pip install --upgrade pip
-  #       pip install -r requirements.txt
-  #   - name: Lint with flake8
-  #     run: |
-  #       pip install flake8
-  #       # stop the build if there are Python syntax errors or undefined names
-  #       flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-  #       # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-  #       flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-  #   - name: Test with pytest
-  #     run: |
-  #       pip install pytest
-  #       pytest
-  
-  buildx:
+  build:
     runs-on: ubuntu-latest
+    name: Build image job
     steps:
-      - 
-        name: Build number
-        run: echo "Build num - $GITHUB_RUN_NUMBER"
-      -
-        name: Checkout
-        uses: actions/checkout@v2
+      - name: Checkout master
+        uses: actions/checkout@master
+      - name: Build and publish image
+        uses: ilteoood/docker_buildx@master
         with:
-          submodules: 'recursive'
-      -
-        name: Set up Docker Buildx
-        id: buildx
-        uses: crazy-max/ghaction-docker-buildx@v1
-        with:
-          version: latest
-      -
-        name: Available platforms
-        run: echo ${{ steps.buildx.outputs.platforms }}
-      
-      - 
-        name: Docker Login
-        if: success()
-        env:
-          DOCKER_PASSWORD: ${{ secrets.docker_hub_password }}
-        run: |
-          echo "${DOCKER_PASSWORD}" | docker login --username "${{ secrets.docker_hub_username }}" --password-stdin
-      #,linux/arm/v7
-      -
-        name: Run Buildx
-        run: |
-          docker buildx build \
-            --platform linux/amd64,linux/arm/v7 \
-            --output "type=image,push=true" \
-            -t craigham/fantasy-bot:$GITHUB_RUN_NUMBER .
-      
-      -
-        name: Tag as latest
-        run: |
-          docker tag craigham/fantasy-bot:$GITHUB_RUN_NUMBER craigham/fantasy-bot:latest
-      -
-        name: Push latest image
-        run: |
-          docker push craigham/fantasy-bot:latest      
-      - 
-        name: Clear
+          publish: true
+          imageName: craigham/fantasy-bot
+          platform: linux/amd64,linux/arm/v7
+          dockerHubUser: ${{ secrets.docker_hub_username }}
+          dockerHubPassword: ${{ secrets.docker_hub_password }}
+          tag: latest, $GITHUB_RUN_NUMBER
+      - name: Clear
         if: always()
         run: |
           rm -f ${HOME}/.docker/config.json
