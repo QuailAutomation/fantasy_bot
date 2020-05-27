@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout master
         uses: actions/checkout@master
+        with:
+           submodules: 'recursive'
       - name: Build and publish image
         uses: ilteoood/docker_buildx@master
         with:
@@ -25,7 +27,7 @@ jobs:
           dockerHubUser: ${{ secrets.docker_hub_username }}
           dockerHubPassword: ${{ secrets.docker_hub_password }}
           tag: latest
-          
+
       - name: Clear
         if: always()
         run: |
