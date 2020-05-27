@@ -18,6 +18,7 @@ jobs:
         uses: actions/checkout@master
         with:
            submodules: 'recursive'
+
       - name: Build and publish image
         uses: ilteoood/docker_buildx@master
         with:
@@ -26,8 +27,7 @@ jobs:
           platform: linux/amd64,linux/arm/v7
           dockerHubUser: ${{ secrets.docker_hub_username }}
           dockerHubPassword: ${{ secrets.docker_hub_password }}
-          tag: latest
-
+          tag: latest, 0.1.$GITHUB_RUN_NUMBER
       - name: Clear
         if: always()
         run: |
