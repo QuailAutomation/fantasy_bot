@@ -27,7 +27,7 @@ jobs:
           platform: linux/amd64,linux/arm/v7
           dockerHubUser: ${{ secrets.docker_hub_username }}
           dockerHubPassword: ${{ secrets.docker_hub_password }}
-          tag: 0.1.54,latest
+          tag: 0.1.$GITHUB_RUN_NUMBER
       - name: Clear
         if: always()
         run: |
