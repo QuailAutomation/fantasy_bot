@@ -104,7 +104,7 @@ def score_team(params, offset):
     log.debug(f"Scoring team offset is{offset}")
     # '396.l.53432.t.2' - league key is first 3 parts
     roster_change_sets = jsonpickle.decode(roster_change_sets_jp)[offset]
-    
+    log.debug(f"Scoring, num roster change sets: {len(roster_change_sets)}")
     if roster_change_sets:
         league_key = ".".join(team_key.split('.')[:3])
         date_range = pd.date_range(start_date, end_date)
