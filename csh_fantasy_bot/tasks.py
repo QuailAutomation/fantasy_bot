@@ -10,6 +10,9 @@ import jsonpickle.ext.pandas as jsonpickle_pandas
 from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.extensions import celery
 
+from functools import partial
+from csh_fantasy_bot.nhl import score_team as nhl_score_team
+
 from celery import shared_task, group, chain
 
 jsonpickle_pandas.register_handlers()
@@ -113,9 +116,13 @@ def score_team(params, offset):
         if not league or not (league.league_id == league_key):
             league = FantasyLeague(league_key)
 
+        # TODO figure out player projections....players on team and players getting added via roster change
+        score = partial(nhl_score_team, player_projections, date_range, league.scoring_categories())
         if roster_change_sets:
             log.debug(f"starting scoring for len change_sets {len(roster_change_sets)}")
-            the_scores = league.score(date_range,team_key,opponent,roster_change_sets)
+            # the_scores = league.score(date_range,team_key,opponent,roster_change_sets)
+            the_scores = map(score,roster_change_sets)
+            # the_scores = nhl_score_team(player_projections, date_range, scoring_categories, roster_change_set=None, simulation_mode=True)
             log.debug("done scoring")
             return jsonpickle.encode(the_scores)
     else:
@@ -140,9 +147,3 @@ def score_chunk(team_key, start_date, end_date, roster_change_sets, opponent=Non
                 final_results.append(rc)
     log.debug("done scoring")  
     return final_results
-    
-
-@celery.task(bind=True, name='cube')
-def cube(self, num):
-    return num ** 3
-        
