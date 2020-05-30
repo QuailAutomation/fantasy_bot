@@ -11,9 +11,10 @@ from yahoo_fantasy_api.team import Team
 
 from csh_fantasy_bot.ga import RosterChangeSetFactory, fitness, RandomWeightedSelector, CeleryFitnessGAEngine
 from csh_fantasy_bot.league import FantasyLeague
+from csh_fantasy_bot.nhl import score_team
 from csh_fantasy_bot.roster_change_optimizer import RosterChangeSet, RosterException
 from csh_fantasy_bot.celery_app import init_celery
-
+from csh_fantasy_bot.scoring import ScoreComparer
 
 def do_run():
     celery = init_celery()
@@ -37,6 +38,16 @@ def do_run():
     addable_players = projected_stats[(projected_stats.position_type == 'P') & (projected_stats.fantasy_status == 'FA')]
     add_selector = RandomWeightedSelector(addable_players,'fpts')
     drop_selector = RandomWeightedSelector(projected_stats[(projected_stats.fantasy_status == 2) & (projected_stats.percent_owned < 93)], 'fpts', inverse=True)
+    # create score comparer
+    valid_players = projected_stats[(projected_stats.position_type == 'P') & (projected_stats.status != 'IR')]
+    league_scores = {tm['team_key']:score_team(valid_players[valid_players.fantasy_status == int(tm['team_key'].split('.')[-1])], \
+                                    date_range, \
+                                    league.scoring_categories())[1] 
+                                for tm in league.teams()}
+
+    scoring_list = [league_scores[x] for x in league_scores.keys()]
+    score_comparer = ScoreComparer(scoring_list,league.scoring_categories())
+    score_comparer.set_opponent(league_scores[opponent_key].sum())
 
     factory = RosterChangeSetFactory(projected_stats, 2,date_range,4)
     gea = CeleryFitnessGAEngine(factory=factory,population_size=200,fitness_type=('equal',8),
@@ -134,7 +145,8 @@ def do_run():
 
     gea.addCrossoverHandler(crossover,1,league)
     gea.addMutationHandler(mutate,2, league, add_selector, drop_selector)
-    gea.setFitnessHandler(fitness, date_range, team_key, int(opponent_key.split('.')[-1]))
+    roster = projected_stats[(projected_stats.fantasy_status == 2)  & (projected_stats.position_type == "P") & (projected_stats.status != "IR")].loc[:,['eligible_positions', 'team_id'] + league.scoring_categories()]
+    gea.setFitnessHandler(fitness, roster, date_range, league.scoring_categories(), score_comparer)
     gea.setSelectionHandler(Utils.SelectionHandlers.best)
     try:
         gea.evolve(10)

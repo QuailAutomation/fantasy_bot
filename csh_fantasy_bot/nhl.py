@@ -50,11 +50,11 @@ def score_team(player_projections, date_range, scoring_categories, roster_change
     # let's only work in simulation mode for now
     assert(simulation_mode == True)
     # dict to keep track of how many games players play using projected stats
-    games_played_projected = pd.Series([0] * len(player_projections), player_projections.index)
+    projected_games_played = pd.Series([0] * len(player_projections), player_projections.index)
     for game_day in date_range:
         game_day_players = player_projections[player_projections.team_id.isin(find_teams_playing(game_day))]
         roster = best_roster(game_day_players.loc[:,['eligible_positions']].itertuples())
         for player in roster:
-            games_played_projected[player.player_id] += 1
+            projected_games_played[player.player_id] += 1
 
-    return player_projections.loc[:,scoring_categories].multiply(games_played_projected, axis=0)
+    return roster_change_set, player_projections.loc[:,scoring_categories].multiply(projected_games_played, axis=0)

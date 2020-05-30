@@ -12,11 +12,10 @@ class ScoreComparer:
     :param lg_lineups: All of the lineups in the league.  This is used to
         compute a standard deviation of all of the stat categories.
     """
-    def __init__(self, lg_lineups, player_projections, stat_categories):
+    def __init__(self, lg_lineups, stat_categories):
         self.opp_sum = None
         self.stdev_cap = .2
         self.stat_cats = stat_categories
-        self.player_projections = player_projections
         self.stdevs = self._compute_agg(lg_lineups, 'std')
         self.league_means = self._compute_agg(lg_lineups, 'mean')
         self.log = logging.getLogger(__name__)
