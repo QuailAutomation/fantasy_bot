@@ -9,6 +9,8 @@ from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.roster_change_optimizer import RosterChangeSet, RosterException
 from csh_fantasy_bot.tasks import score_chunk
 
+log = logging.getLogger(__name__)
+
 class RosterChangeSetFactory(ChromosomeFactory.ChromosomeFactory):
     """Factory to create roster change sets."""
 
@@ -62,22 +64,23 @@ class RandomWeightedSelector:
 
 from csh_fantasy_bot.tasks import score
 
-def fitness(roster_change_sets, date_range, team_key, opponent_id):
+
+def fitness(roster_change_sets, team_roster, date_range, scoring_categories, score_comparer):
     """Score the roster change set."""
     # store the id so we can match back up after serialization
     for rcs in roster_change_sets:
         rcs._id = id(rcs) 
-
-    results = score_chunk(team_key, date_range[0], date_range[-1], roster_change_sets, opponent_id)
-    # don't use parallel
-    # score = league.score(date_range,team_key, opponent_id,[chromosome])
-    # assert(len(results) == 1)
-    # we do some serializing of the chromosome, so remap score back to orig using equality value
-    scores_dict = {rcs._id:rcs.score for rcs in results}
-    return [(change_set, scores_dict[change_set._id]) for change_set in roster_change_sets]
-    # chromosome.score = results[0].score
-    # chromosome.scoring_summary = results[0].scoring_summary
-    # return results[0].score
+    log.debug("starting chunk scoring")
+    results = score_chunk(team_roster, date_range[0], date_range[-1], roster_change_sets, scoring_categories)
+    log.debug("Done chunk scoring")
+    scores_dict = {_id:score for _id,score in results}
+    log.debug("computing roster change scores")
+    for change_set in roster_change_sets:
+        scoring_result = scores_dict[change_set._id]
+        change_set.scoring_summary = scoring_result.reset_index()
+        change_set.score = score_comparer.compute_score(scoring_result)
+    log.debug('Done computing roster scores')
+    return [(change_set, change_set.score) for change_set in roster_change_sets]
 
 
 class CeleryFitnessGAEngine(GAEngine.GAEngine):
