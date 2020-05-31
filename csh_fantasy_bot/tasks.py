@@ -7,7 +7,6 @@ import pandas as pd
 import jsonpickle
 import jsonpickle.ext.pandas as jsonpickle_pandas
 
-from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.extensions import celery
 
 from functools import partial
