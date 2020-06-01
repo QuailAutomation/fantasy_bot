@@ -21,6 +21,7 @@ def do_run():
     """Run the algorithm."""
     week = 21
     league_id = '396.l.53432'
+    my_team_id = 2
     league: FantasyLeague = FantasyLeague(league_id)
     team_key = league.team_key()
     my_team = league.team_by_key(team_key)
@@ -37,7 +38,7 @@ def do_run():
     projected_stats['fpts'] = projected_stats.loc[projected_stats.G == projected_stats.G,weights_series.index.tolist()].mul(weights_series).sum(1)
     addable_players = projected_stats[(projected_stats.position_type == 'P') & (projected_stats.fantasy_status == 'FA')]
     add_selector = RandomWeightedSelector(addable_players,'fpts')
-    drop_selector = RandomWeightedSelector(projected_stats[(projected_stats.fantasy_status == 2) & (projected_stats.percent_owned < 93)], 'fpts', inverse=True)
+    drop_selector = RandomWeightedSelector(projected_stats[(projected_stats.fantasy_status == my_team_id) & (projected_stats.percent_owned < 93)], 'fpts', inverse=True)
     # create score comparer
     valid_players = projected_stats[(projected_stats.position_type == 'P') & (projected_stats.status != 'IR')]
     league_scores = {tm['team_key']:score_team(valid_players[valid_players.fantasy_status == int(tm['team_key'].split('.')[-1])], \
@@ -49,11 +50,11 @@ def do_run():
     score_comparer = ScoreComparer(scoring_list,league.scoring_categories())
     score_comparer.set_opponent(league_scores[opponent_key].sum())
 
-    factory = RosterChangeSetFactory(projected_stats, 2,date_range,4)
+    factory = RosterChangeSetFactory(projected_stats, date_range, league.scoring_categories(), team_id=my_team_id, num_moves=4)
     gea = CeleryFitnessGAEngine(factory=factory,population_size=200,fitness_type=('equal',8),
                                 cross_prob=0.7,mut_prob = 0.05)
 
-    def mutate(chromosome, league, add_selector, drop_selector):
+    def mutate(chromosome, league, add_selector, drop_selector, valid_dates):
         if len(chromosome.roster_changes) == 0:
             # nothing to mutate here
             return chromosome
@@ -61,39 +62,33 @@ def do_run():
         roster_change_to_mutate_index = random.randint(1, len(chromosome.roster_changes)) - 1
         roster_change_to_mutate = chromosome.roster_changes[roster_change_to_mutate_index]
         # won't try and mutate date if there is not more than 1 valid date
-        random_number = random.randint(1 if len(chromosome.valid_dates) else 30, 100)
+        random_number = random.randint(1 if len(valid_dates) else 30, 100)
         if random_number < 30:
             # lets mutate date
             while True:
-                drop_date = random.choice(chromosome.valid_dates).date()
-                if drop_date != roster_change_to_mutate['change_date']:
-                    mutated_roster_change = roster_change_to_mutate.copy()
-                    mutated_roster_change['change_date'] = drop_date
+                drop_date = random.choice(valid_dates).date()
+                if drop_date != roster_change_to_mutate.change_date:
                     with suppress(RosterException):
-                        chromosome.replace(roster_change_to_mutate, mutated_roster_change)
+                        chromosome.replace(roster_change_to_mutate, roster_change_to_mutate._replace(change_date=drop_date))
                     break
         elif random_number < 55:
             # lets mutate player out
             for _ in range(50):
                 player_to_remove = drop_selector.select().index.values[0]
-                if not any(rc['player_out'] == player_to_remove for rc in chromosome.roster_changes):
-                    mutated_roster_change = roster_change_to_mutate.copy()
-                    mutated_roster_change['player_out'] = player_to_remove
+                if not any(rc.out_player_id == player_to_remove for rc in chromosome.roster_changes):
                     with suppress(RosterException):
-                        chromosome.replace(roster_change_to_mutate, mutated_roster_change)
+                        chromosome.replace(roster_change_to_mutate, roster_change_to_mutate._replace(out_player_id=player_to_remove))
                     break
         elif random_number < 90:
             # lets mutate player in
             for _ in range(50):
                 plyr = add_selector.select()
                 player_id = plyr.index.values[0]
-                if (plyr['position_type'] == 'G').values[0] or (player_id in [rc['player_in'] for rc in chromosome.roster_changes]):
+                if (plyr['position_type'] == 'G').values[0] or (player_id in [rc.in_player_id for rc in chromosome.roster_changes]):
                     continue
-                if not any(player_id == rc['player_in'] for rc in chromosome.roster_changes):
-                    mutated_roster_change = roster_change_to_mutate.copy()
-                    mutated_roster_change['player_in'] = player_id
+                if not any(player_id == rc.in_player_id for rc in chromosome.roster_changes):
                     with suppress(RosterException):
-                        chromosome.replace(roster_change_to_mutate, mutated_roster_change)
+                        chromosome.replace(roster_change_to_mutate, roster_change_to_mutate._replace(in_player_id=player_id))
                     break
         else:
             if len(chromosome.roster_changes) > 1:
@@ -144,9 +139,9 @@ def do_run():
 
 
     gea.addCrossoverHandler(crossover,1,league)
-    gea.addMutationHandler(mutate,2, league, add_selector, drop_selector)
-    roster = projected_stats[(projected_stats.fantasy_status == 2)  & (projected_stats.position_type == "P") & (projected_stats.status != "IR")].loc[:,['eligible_positions', 'team_id'] + league.scoring_categories()]
-    gea.setFitnessHandler(fitness, roster, date_range, league.scoring_categories(), score_comparer)
+    gea.addMutationHandler(mutate,2, league, add_selector, drop_selector, date_range)
+    all_players = projected_stats[(projected_stats.position_type == "P") & (projected_stats.status != "IR")].loc[:,['eligible_positions', 'team_id', 'fantasy_status'] + league.scoring_categories()]
+    gea.setFitnessHandler(fitness, all_players, date_range, league.scoring_categories(), score_comparer, my_team_id)
     gea.setSelectionHandler(Utils.SelectionHandlers.best)
     try:
         gea.evolve(10)

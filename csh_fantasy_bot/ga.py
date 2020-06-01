@@ -6,7 +6,7 @@ from contextlib import suppress
 from pygenetic import ChromosomeFactory, GAEngine
 
 from csh_fantasy_bot.league import FantasyLeague
-from csh_fantasy_bot.roster_change_optimizer import RosterChangeSet, RosterException
+from csh_fantasy_bot.roster_change_optimizer import RosterChangeSet, RosterException, RosterChange
 from csh_fantasy_bot.tasks import score_chunk
 
 log = logging.getLogger(__name__)
@@ -14,11 +14,12 @@ log = logging.getLogger(__name__)
 class RosterChangeSetFactory(ChromosomeFactory.ChromosomeFactory):
     """Factory to create roster change sets."""
 
-    def __init__(self, all_players, team_id, valid_dates, num_moves):
+    def __init__(self, all_players, valid_dates, scoring_categories, team_id, num_moves):
         self.all_players = all_players
         self.team_id = team_id
         self.num_moves = num_moves
         self.valid_dates = valid_dates
+        self.scoring_categories = scoring_categories
         fantasy_players = all_players[all_players.position_type == 'P']
         self.add_selector = RandomWeightedSelector(fantasy_players[fantasy_players.fantasy_status == 'FA'],'fpts')
         self.drop_selector = RandomWeightedSelector(all_players[(all_players.fantasy_status == team_id) & (all_players.percent_owned < 93)], 'fpts', inverse=True)
@@ -27,7 +28,7 @@ class RosterChangeSetFactory(ChromosomeFactory.ChromosomeFactory):
     def createChromosome(self):
         """Create a roster change set."""
         roster_changes = random.randint(0, self.num_moves)
-        rcs = RosterChangeSet(self.valid_dates)
+        rcs = RosterChangeSet()
         while len(rcs) < roster_changes:
             try:
                 drop_date = random.choice(self.valid_dates).date()
@@ -37,7 +38,7 @@ class RosterChangeSetFactory(ChromosomeFactory.ChromosomeFactory):
             player_to_add = self.add_selector.select()
             player_to_drop = self.drop_selector.select()
             with suppress(RosterException):
-                rcs.add(player_to_drop.index.values[0], player_to_add.index.values[0], drop_date)
+                rcs.add(RosterChange(player_to_drop.index.values[0], player_to_add.index.values[0], drop_date, player_to_add[self.scoring_categories]))
 
         return rcs
 
@@ -65,13 +66,13 @@ class RandomWeightedSelector:
 from csh_fantasy_bot.tasks import score
 
 
-def fitness(roster_change_sets, team_roster, date_range, scoring_categories, score_comparer):
+def fitness(roster_change_sets, all_players, date_range, scoring_categories, score_comparer, team_id):
     """Score the roster change set."""
     # store the id so we can match back up after serialization
     for rcs in roster_change_sets:
         rcs._id = id(rcs) 
     log.debug("starting chunk scoring")
-    results = score_chunk(team_roster, date_range[0], date_range[-1], roster_change_sets, scoring_categories)
+    results = score_chunk(all_players[(all_players.fantasy_status == team_id)], date_range[0], date_range[-1], roster_change_sets, scoring_categories)
     log.debug("Done chunk scoring")
     scores_dict = {_id:score for _id,score in results}
     log.debug("computing roster change scores")
