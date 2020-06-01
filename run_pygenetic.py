@@ -13,11 +13,11 @@ from csh_fantasy_bot.ga import RosterChangeSetFactory, fitness, RandomWeightedSe
 from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.nhl import score_team
 from csh_fantasy_bot.roster_change_optimizer import RosterChangeSet, RosterException
-from csh_fantasy_bot.celery_app import init_celery
+from csh_fantasy_bot.celery_app import app
 from csh_fantasy_bot.scoring import ScoreComparer
 
 def do_run():
-    celery = init_celery()
+    # celery = init_celery()
     """Run the algorithm."""
     week = 21
     league_id = '396.l.53432'

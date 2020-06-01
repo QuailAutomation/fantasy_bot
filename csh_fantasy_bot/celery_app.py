@@ -23,6 +23,7 @@ def setup_loggers(logger, *args, **kwargs):
             handler = graypy.GELFUDPHandler(GELF_URL, 12201,
                                             facility='fantasy_bot_worker')
             logger.addHandler(handler)
+            logger.setLevel(level=LOG_LEVEL)
     except ImportError:
         log.warn("Could not import graypy, using default logging")
     except KeyError:
@@ -34,7 +35,7 @@ def setup_loggers(logger, *args, **kwargs):
                 for h in v.handlers:
                     print('     +++',str(h.__class__)[8:-2] )
 
-log.setLevel(level=LOG_LEVEL)
+logging.getLogger().setLevel(level=LOG_LEVEL)
 # this lib doesn't connect to root
 logging.getLogger('yahoo_oauth').setLevel(level=LOG_LEVEL)
 

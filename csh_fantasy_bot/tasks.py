@@ -131,7 +131,6 @@ def score(team_key, start_date, end_date, roster_change_sets, opponent=None):
 def chunks(lst, n): 
         """Yield successive n-sized chunks from lst.""" 
         for i in range(0, len(lst), n): 
-            log.debug(f'chunks yielding: {i}:{i+n}')
             yield lst[i:i + n ]
 
 def score_chunk(team_roster, start_date, end_date, roster_change_sets, scoring_categories):
