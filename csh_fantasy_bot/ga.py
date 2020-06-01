@@ -76,7 +76,10 @@ def fitness(roster_change_sets, team_roster, date_range, scoring_categories, sco
     scores_dict = {_id:score for _id,score in results}
     log.debug("computing roster change scores")
     for change_set in roster_change_sets:
-        scoring_result = scores_dict[change_set._id]
+        try:
+            scoring_result = scores_dict[change_set._id]
+        except KeyError as e:
+            log.exception(e)
         change_set.scoring_summary = scoring_result.reset_index()
         change_set.score = score_comparer.compute_score(scoring_result)
     log.debug('Done computing roster scores')

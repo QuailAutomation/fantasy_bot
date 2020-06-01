@@ -87,7 +87,7 @@ def run_ga(self,league_id='396.l.53432', week=None):
     driver.run()
 
 league = None  
-CHUNK_SIZE = 5
+CHUNK_SIZE = 15
 log.debug(f'chunk size for scoring is{CHUNK_SIZE}')
 
 @shared_task
@@ -131,7 +131,8 @@ def score(team_key, start_date, end_date, roster_change_sets, opponent=None):
 def chunks(lst, n): 
         """Yield successive n-sized chunks from lst.""" 
         for i in range(0, len(lst), n): 
-            yield lst[i:i + 10 ]
+            log.debug(f'chunks yielding: {i}:{i+n}')
+            yield lst[i:i + n ]
 
 def score_chunk(team_roster, start_date, end_date, roster_change_sets, scoring_categories):
     count_words = group([score_team.s(jsonpickle.encode(i)) for i in chunks(roster_change_sets,CHUNK_SIZE)])
