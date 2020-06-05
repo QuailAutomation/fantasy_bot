@@ -12,6 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     name: Build image job
     steps:
+      - name: Notify slack success
+        if: always()
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.slack_bot_token }}
+        uses: voxmedia/github-action-slack-notify-build@v1
+        with:
+          channel: app-alerts
+          status: SUCCESS
+          color: good
       - name: Checkout master
         uses: actions/checkout@master
         with:
@@ -30,12 +39,4 @@ jobs:
         if: always()
         run: |
           rm -f ${HOME}/.docker/config.json
-      - name: Notify slack success
-        if: success()
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: voxmedia/github-action-slack-notify-build@v1
-        with:
-          channel: app-alerts
-          status: SUCCESS
-          color: good
+      
