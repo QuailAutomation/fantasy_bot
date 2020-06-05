@@ -21,12 +21,12 @@ jobs:
         with:
           status: ${{ job.status }}
           fields: repo,message,commit,author,action,eventName,ref,workflow # selectable (default: repo,message)
-          text: 'Produced craigham/fantasy-bot:' ${{ 0.1.$GITHUB_RUN_NUMBER }}
+          text: ${{ 0.1.$GITHUB_RUN_NUMBER }}
         env:
           #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # optional
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} 
         if: always() 
-        
+
       - name: Build and publish image
         uses: ilteoood/docker_buildx@master
         with:
