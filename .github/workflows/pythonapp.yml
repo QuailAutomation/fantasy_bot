@@ -21,7 +21,7 @@ jobs:
         with:
           status: ${{ job.status }}
           fields: repo,message,commit,author,ref,workflow, run_id # selectable (default: repo,message)
-          text: $MY_TEXT
+          text: '{{$MY_TEXT}} {MY_TEXT} {{MY_TEXT}} $MY_TEXT'
         env:
           #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # optional
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} 
