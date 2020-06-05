@@ -22,7 +22,7 @@ jobs:
         with:
           status: ${{ job.status }}
           fields: repo,message,commit,author,ref,workflow, run_id # selectable (default: repo,message)
-          text: 'Pushed: craigh/fantasy-bot:0.1.${{ github.run_number}}'
+          text: 'Pushed: craigham/fantasy-bot:0.1.${{ github.run_number}}'
         env:
           #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # optional
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} 
