@@ -12,6 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     name: Build image job
     steps:
+      - name: Checkout master
+        uses: actions/checkout@master
+        with:
+           submodules: 'recursive'
       - name: Slack Notification
         uses: 8398a7/action-slack@v3
         with:
@@ -22,12 +26,7 @@ jobs:
           #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # optional
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} 
         if: always() 
-
-      - name: Checkout master
-        uses: actions/checkout@master
-        with:
-           submodules: 'recursive'
-
+        
       - name: Build and publish image
         uses: ilteoood/docker_buildx@master
         with:
