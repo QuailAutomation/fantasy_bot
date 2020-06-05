@@ -20,7 +20,7 @@ jobs:
           text: 'Produced craigham/fantasy-bot:${{ 0.1.$GITHUB_RUN_NUMBER }}'
         env:
           #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # optional
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} 
         if: always() 
 
       - name: Checkout master
