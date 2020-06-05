@@ -22,11 +22,10 @@ jobs:
         with:
           status: ${{ job.status }}
           fields: repo,message,commit,author,ref,workflow, run_id # selectable (default: repo,message)
-          text: '${{ env.MY_TEXT }}'
+          text: '0.1.${{ github.run_number}}'
         env:
           #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # optional
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} 
-          MY_TEXT: ${{github.run_number}}
         if: always() 
 
       - name: Build and publish image
