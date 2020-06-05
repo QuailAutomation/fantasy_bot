@@ -12,15 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     name: Build image job
     steps:
-      - name: Notify slack success
-        if: always()
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.slack_bot_token }}
-        uses: voxmedia/github-action-slack-notify-build@v1
+      - uses: 8398a7/action-slack@v3
         with:
-          channel: app-alerts
-          status: SUCCESS
-          color: good
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow # selectable (default: repo,message)
+        env:
+          #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # optional
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+        if: always()
+
       - name: Checkout master
         uses: actions/checkout@master
         with:
