@@ -30,15 +30,11 @@ class RosterChangeSetFactory(ChromosomeFactory.ChromosomeFactory):
         roster_changes = random.randint(0, self.num_moves)
         rcs = RosterChangeSet()
         while len(rcs) < roster_changes:
-            try:
-                drop_date = random.choice(self.valid_dates).date()
-            except IndexError as e:
-                self.log.exception(e)
-
+            drop_date = random.choice(self.valid_dates).date()
             player_to_add = self.add_selector.select()
             player_to_drop = self.drop_selector.select()
             with suppress(RosterException):
-                rcs.add(RosterChange(player_to_drop.index.values[0], player_to_add.index.values[0], drop_date, player_to_add[self.scoring_categories]))
+                rcs.add(RosterChange(player_to_drop.index.values[0], player_to_add.index.values[0], drop_date, player_to_add[self.scoring_categories + ['eligible_positions', 'team_id', 'fpts']]))
 
         return rcs
 
@@ -72,11 +68,13 @@ def fitness(roster_change_sets, all_players, date_range, scoring_categories, sco
     for rcs in roster_change_sets:
         rcs._id = id(rcs) 
     log.debug("starting chunk scoring")
-    results = score_chunk(all_players[(all_players.fantasy_status == team_id)], date_range[0], date_range[-1], roster_change_sets, scoring_categories)
+    unscored_change_sets = [rc for rc in roster_change_sets if rc.score is None]
+    results = score_chunk(all_players[(all_players.fantasy_status == team_id)], date_range[0], date_range[-1], unscored_change_sets, scoring_categories)
     log.debug("Done chunk scoring")
+
     scores_dict = {_id:score for _id,score in results}
     log.debug("computing roster change scores")
-    for change_set in roster_change_sets:
+    for change_set in unscored_change_sets:
         try:
             scoring_result = scores_dict[change_set._id]
         except KeyError as e:

@@ -414,9 +414,9 @@ class RecursiveRosterBuilder:
         for p in sorted_players:
             self._place_player(daily_roster, p)
         
-        return [RosteredPlayer(position=k, ordinal=k2, player_id=v2.Index) \
+        return (RosteredPlayer(position=k, ordinal=k2, player_id=v2.Index) \
                         for k,v in daily_roster.items() \
-                        for k2,v2 in zip(range(1, 10), v)]
+                        for k2,v2 in zip(range(1, 10), v))
 
 
 RosteredPlayer = namedtuple('RosteredPlayer', 'position ordinal player_id')

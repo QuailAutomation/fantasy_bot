@@ -16,10 +16,15 @@ from csh_fantasy_bot.roster_change_optimizer import RosterChangeSet, RosterExcep
 from csh_fantasy_bot.celery_app import app
 from csh_fantasy_bot.scoring import ScoreComparer
 
+def print_rcs(roster_change_set, score, projected_stats):
+    for rc in roster_change_set.roster_changes:
+        print(f"Date: {rc.change_date}, in: {projected_stats.at[rc.in_player_id,'name']}({rc.in_player_id}), out: {projected_stats.at[rc.out_player_id,'name']}({rc.out_player_id})")
+    print(f"Score: {score}\n")
+
 def do_run():
     # celery = init_celery()
     """Run the algorithm."""
-    week = 21
+    week = 20
     league_id = '396.l.53432'
     my_team_id = 2
     league: FantasyLeague = FantasyLeague(league_id)
@@ -30,31 +35,34 @@ def do_run():
 
     date_range = pd.date_range(*league.week_date_range(week))
     league = league.as_of(date_range[0])
-    
+    league_scoring_categories = league.scoring_categories()
     # set up projections and create weighted score (fpts)
-    weights_series =  pd.Series([1, .75, 1, .5, 1, .1, 1], index=league.scoring_categories())
+    weights_series =  pd.Series([1, .75, 1, .5, 1, .1, 1], index=league_scoring_categories)
     projected_stats = league.get_projections()
+    # no goalies for now
+    projected_stats = projected_stats[projected_stats.position_type == 'P']
     projected_stats['fpts'] = 0
     projected_stats['fpts'] = projected_stats.loc[projected_stats.G == projected_stats.G,weights_series.index.tolist()].mul(weights_series).sum(1)
-    addable_players = projected_stats[(projected_stats.position_type == 'P') & (projected_stats.fantasy_status == 'FA')]
+    addable_players = projected_stats[ (projected_stats.fantasy_status == 'FA') & (projected_stats.fantasy_status != my_team_id)]
     add_selector = RandomWeightedSelector(addable_players,'fpts')
-    drop_selector = RandomWeightedSelector(projected_stats[(projected_stats.fantasy_status == my_team_id) & (projected_stats.percent_owned < 93)], 'fpts', inverse=True)
+    droppable_players = projected_stats[(projected_stats.fantasy_status == my_team_id) & (projected_stats.percent_owned < 93)]
+    drop_selector = RandomWeightedSelector(droppable_players, 'fpts', inverse=True)
     # create score comparer
-    valid_players = projected_stats[(projected_stats.position_type == 'P') & (projected_stats.status != 'IR')]
+    valid_players = projected_stats[projected_stats.status != 'IR']
     league_scores = {tm['team_key']:score_team(valid_players[valid_players.fantasy_status == int(tm['team_key'].split('.')[-1])], \
                                     date_range, \
-                                    league.scoring_categories())[1] 
+                                    league_scoring_categories)[1] 
                                 for tm in league.teams()}
 
     scoring_list = [league_scores[x] for x in league_scores.keys()]
     score_comparer = ScoreComparer(scoring_list,league.scoring_categories())
     score_comparer.set_opponent(league_scores[opponent_key].sum())
 
-    factory = RosterChangeSetFactory(projected_stats, date_range, league.scoring_categories(), team_id=my_team_id, num_moves=4)
-    gea = CeleryFitnessGAEngine(factory=factory,population_size=200,fitness_type=('equal',8),
-                                cross_prob=0.7,mut_prob = 0.05)
+    factory = RosterChangeSetFactory(projected_stats, date_range, league_scoring_categories, team_id=my_team_id, num_moves=4)
+    gea = CeleryFitnessGAEngine(factory=factory,population_size=300,fitness_type=('equal',2),
+                                cross_prob=0.3,mut_prob = 0.1)
 
-    def mutate(chromosome, league, add_selector, drop_selector, valid_dates):
+    def mutate(chromosome, add_selector, drop_selector, valid_dates, projected_stats, scoring_categories):
         if len(chromosome.roster_changes) == 0:
             # nothing to mutate here
             return chromosome
@@ -71,7 +79,7 @@ def do_run():
                     with suppress(RosterException):
                         chromosome.replace(roster_change_to_mutate, roster_change_to_mutate._replace(change_date=drop_date))
                     break
-        elif random_number < 55:
+        elif random_number < 35:
             # lets mutate player out
             for _ in range(50):
                 player_to_remove = drop_selector.select().index.values[0]
@@ -79,7 +87,7 @@ def do_run():
                     with suppress(RosterException):
                         chromosome.replace(roster_change_to_mutate, roster_change_to_mutate._replace(out_player_id=player_to_remove))
                     break
-        elif random_number < 90:
+        elif random_number < 95:
             # lets mutate player in
             for _ in range(50):
                 plyr = add_selector.select()
@@ -88,7 +96,7 @@ def do_run():
                     continue
                 if not any(player_id == rc.in_player_id for rc in chromosome.roster_changes):
                     with suppress(RosterException):
-                        chromosome.replace(roster_change_to_mutate, roster_change_to_mutate._replace(in_player_id=player_id))
+                        chromosome.replace(roster_change_to_mutate, roster_change_to_mutate._replace(in_player_id=player_id, in_projections=plyr[scoring_categories + ['eligible_positions', 'team_id', 'fpts']]))
                     break
         else:
             if len(chromosome.roster_changes) > 1:
@@ -99,6 +107,8 @@ def do_run():
 
     def crossover(changeset_1, changeset_2, league):
         mates = [changeset_1, changeset_2]
+        if any(len(change.roster_changes) < 2 for change in mates):
+            return (changeset_1, changeset_2)
         changes_to_remove = None
         num_roster_changes_to_remove = 0
         # let's remove second 1/2 of roster changes in first parent.  will add those to other parent.
@@ -139,15 +149,23 @@ def do_run():
 
 
     gea.addCrossoverHandler(crossover,1,league)
-    gea.addMutationHandler(mutate,2, league, add_selector, drop_selector, date_range)
-    all_players = projected_stats[(projected_stats.position_type == "P") & (projected_stats.status != "IR")].loc[:,['eligible_positions', 'team_id', 'fantasy_status'] + league.scoring_categories()]
-    gea.setFitnessHandler(fitness, all_players, date_range, league.scoring_categories(), score_comparer, my_team_id)
+    gea.addMutationHandler(mutate, 2, add_selector, drop_selector, date_range, projected_stats, league_scoring_categories)
+    all_players = projected_stats[(projected_stats.position_type == "P") & (projected_stats.status != "IR")].loc[:,['eligible_positions', 'team_id', 'fantasy_status', 'fpts'] + league_scoring_categories]
+    gea.setFitnessHandler(fitness, all_players, date_range, league_scoring_categories, score_comparer, my_team_id)
     gea.setSelectionHandler(Utils.SelectionHandlers.best)
-    try:
-        gea.evolve(10)
-    except TypeError as e:
-        print(e)
-    pass
 
+
+    gea.evolve(5)
+    print_rcs(*gea.best_fitness, projected_stats)
+    for _ in range(20):
+        try:
+            gea.continue_evolve(1)
+            
+            print("hall of fame:")
+            print_rcs(*gea.hall_of_fame, projected_stats)
+        except TypeError as e:
+            print(e)
+    pass
+    
 if __name__ == "__main__":
     do_run()

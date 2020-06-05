@@ -4,6 +4,8 @@ import numpy as np
 import logging
 
 from collections import defaultdict
+from contextlib import suppress
+
 
 from nhl_scraper.nhl import Scraper
 from nhl_scraper.rotowire import Scraper as RWScraper
@@ -12,21 +14,6 @@ from csh_fantasy_bot.roster import best_roster
 
 import cProfile
 
-
-    
-# def _apply_roster_changes(self, roster_change_set ,single_date, all_projections):
-#     roster_changes = roster_change_set.get(single_date)
-#     if roster_changes is not None and len(roster_changes) > 0:
-#         for row in roster_changes:
-#             all_projections = all_projections.append(
-#                 self.player_projections.loc[row['player_in'], :])
-#             try:
-#                 all_projections.drop(row['player_out'], inplace=True)
-#             except KeyError as e:
-#                 self.log.exception(e)
-#     return all_projections
-
-    
 
 nhl_schedule = {}
 nhl_scraper: Scraper = Scraper()
@@ -52,23 +39,29 @@ def score_team(player_projections, date_range, scoring_categories, roster_change
     # let's only work in simulation mode for now
     assert(simulation_mode == True)
     # dict to keep track of how many games players play using projected stats
-    projected_games_played = pd.Series([0] * len(player_projections) , player_projections.index)
+    projected_games_played = defaultdict(int)
     # we need to look up roster changes by date so let's make a dict ourselves
     rc_dict = defaultdict(list)
     if roster_change_set:
-        rc_in_ids = pd.Series([0] * len(roster_change_set.roster_changes), [rc.in_player_id for rc in roster_change_set.roster_changes] )
-        projected_games_played = projected_games_played.append(rc_in_ids)
         for rc in roster_change_set.roster_changes:
             rc_dict[rc.change_date].append(rc)
 
     for game_day in date_range:
+        needs_sort = False
         for rc in rc_dict[game_day.date()]:
+            # TODO should really figure out how to deal with this.  sometimes it is string, sometimes list. 
+            # i think has to do with serializing via jsonpickle
+            with suppress(Exception):
+                rc.in_projections['eligible_positions'] = pd.eval(rc.in_projections['eligible_positions'])
             current_projections = current_projections.append(rc.in_projections)
             current_projections.drop(rc.out_player_id, inplace=True)
-            # remove out
+            needs_sort = True
+        if needs_sort:
+            current_projections.sort_values(by='fpts', ascending=False, inplace=True)
+
         game_day_players = current_projections[current_projections.team_id.isin(find_teams_playing(game_day))]
         roster = best_roster(game_day_players.loc[:,['eligible_positions']].itertuples())
         for player in roster:
             projected_games_played[player.player_id] += 1
 
-    return roster_change_set, player_projections.loc[:,scoring_categories].multiply(projected_games_played, axis=0)
+    return roster_change_set, player_projections.loc[:,scoring_categories].multiply(pd.Series(projected_games_played), axis=0)

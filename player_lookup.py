@@ -30,7 +30,13 @@ def do_lookup():
     
     tm_cache = utils.TeamCache(league.team_key())
 
-    fantasy_projections = league.stat_predictor().predict(pd.DataFrame(all_players))
+    league_scoring_categories = league.scoring_categories()
+    # set up projections and create weighted score (fpts)
+    weights_series =  pd.Series([1, .75, 1, .5, 1, .1, 1], index=league_scoring_categories)
+    league.as_of(datetime.datetime.now())
+    fantasy_projections = league.get_projections()
+    fantasy_projections['fpts'] = 0
+    fantasy_projections['fpts'] = fantasy_projections.loc[fantasy_projections.G == fantasy_projections.G,weights_series.index.tolist()].mul(weights_series).sum(1)
 
     print("This utility can look up league players by string(name contains) or id")
     while True:

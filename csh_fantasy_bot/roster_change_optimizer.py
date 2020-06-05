@@ -35,7 +35,6 @@ class RosterChangeSet:
         if changes is not None:
             for change in changes:
                 self.add(change)
-        
 
     @property
     def equality_value(self):
