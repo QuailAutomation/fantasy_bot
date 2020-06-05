@@ -114,11 +114,11 @@ def score_team(player_projections, start_date, end_date, scoring_categories, ros
         # json pickle seems to be decoding eligble_positions back into str...should be list
         roster['eligible_positions'] = pd.eval(roster['eligible_positions'])
         
-        score = partial(nhl_score_team, roster, date_range, scoring_categories)
+        # score = partial(nhl_score_team, roster, date_range, scoring_categories)
         
         if roster_change_sets:
             log.debug(f"starting scoring for len change_sets {len(roster_change_sets)}")
-            the_scores = map(score, roster_change_sets)
+            the_scores = (nhl_score_team(roster, date_range, scoring_categories, rc) for rc in roster_change_sets)
             log.debug("done scoring")
             # just serialize the id of the roster change
             return jsonpickle.encode([(rc._id,score) for rc,score in the_scores])
