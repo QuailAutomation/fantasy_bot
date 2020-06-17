@@ -363,7 +363,7 @@ class RecursiveRosterBuilder:
             self.weights_series = pd.Series([1, .75, .5, .5, 1, .1, 1], index=self.player_stats)
             
         self.roster_position_counts = roster_makeup.value_counts()
-        self.full_positions = set()
+
 
 
     def _place_player(self, roster, player):
@@ -409,11 +409,26 @@ class RecursiveRosterBuilder:
 
     def find_best1(self, sorted_players, weights_series=None):
         """Determine roster with highest projected output using weights."""
-        self.full_positions = set()
+        full_positions = set()
         daily_roster = defaultdict(list)
         for p in sorted_players:
-            self._place_player(daily_roster, p)
-        
+            for position in p.eligible_positions:
+                if position not in full_positions:
+                    players_in_position = daily_roster[position]
+                    if len(players_in_position) < self.roster_position_counts[position]:
+                        daily_roster[position].append(p)
+                        break
+                    else:
+                        # position is full, should see if earlier placed player can move
+                        did_make_room = self._make_room(position, daily_roster)
+                        if did_make_room:
+                            daily_roster[position].append(p)
+                            break
+                        else:
+                            full_positions.add(position)
+                            # print('Position full: {}'.format(position))
+                            pass
+            
         return (RosteredPlayer(position=k, ordinal=k2, player_id=v2.Index) \
                         for k,v in daily_roster.items() \
                         for k2,v2 in zip(range(1, 10), v))

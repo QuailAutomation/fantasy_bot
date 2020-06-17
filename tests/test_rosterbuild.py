@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import pytest
 
-from csh_fantasy_bot.roster import RecursiveRosterBuilder, combination_roster_optimization
+from csh_fantasy_bot.roster import RosteredPlayer
 
 
 # nice for when printing dataframes to console
@@ -28,10 +28,11 @@ def stats_weights():
     return pd.Series([2, 1.75, .5, .5, .5, .3, .5], index=["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"])
 
 @pytest.fixture
-def builder(roster_makeup, stats_weights):
+def build_roster():
     """Instance of the builder."""
-    return RecursiveRosterBuilder(roster_makeup=roster_makeup,
-                                stats_weights=stats_weights)
+    from csh_fantasy_bot.roster import best_roster
+
+    return best_roster
 
 @pytest.fixture
 def team():
@@ -49,13 +50,15 @@ def team():
 #     print(x.dropna())
 
 
-def test_another(builder, team):
+def test_another(build_roster, team):
     player_ids = [4471, 7498, 5698]
     day1_roster = team.loc[player_ids, :]
 
     # builder = roster.DailyRosterBuilder()
-    best_roster = builder.find_best(day1_roster)
-    assert(player_ids in best_roster.values)
+    best_roster = list(build_roster(day1_roster.itertuples()))
+    assert len(best_roster) == len(player_ids)
+    
+
     # assert 7498 in best_roster.values
     # assert best_roster['C1'] == 5462
 
@@ -72,39 +75,37 @@ def test_another(builder, team):
 # first iteration would probably place him in C, thus blocking out the 3rd player
 # who can only play cent
 # re.
-def test_daily_results1(builder, team):
+def test_daily_results1(build_roster, team):
     # this test will work on a subset of 3 players
     day1 = [5462, 5984, 3982]
     day1_roster = team.loc[day1, :]
-    best_roster = builder.find_best(day1_roster)
-    print(best_roster.head(20))
-    assert(best_roster['RW.1'] == 5984)
-    assert(best_roster['C.1'] == 5462)
-    assert(best_roster['C.2'] == 3982)
+    best_roster = list(build_roster(day1_roster.itertuples()))
+    # assert(best_roster['RW.1'] == 5984)
+    assert(best_roster[0] == RosteredPlayer("C" ,1 ,5462))
+    assert(best_roster[1] == RosteredPlayer("C" ,2 ,3982))
+    assert(best_roster[2] == RosteredPlayer("RW" ,1 ,5984))
+    # assert(best_roster['C.1'] == 5462)
+    # assert(best_roster['C.2'] == 3982)
 
 
-def test_daily_results2(builder, team):
+def test_daily_results2(build_roster, team):
     # this test has 5 dmen, which is more than allowed by roster
     player_ids = [5462, 5984, 3982, 4683, 4471, 5363, 5698, 4351, 4491, 4472, 8614, 6614, 7498]
     day1_roster = team.loc[player_ids, :]
 
-    best_roster = builder.find_best(day1_roster)
-    assert(best_roster['RW.1'] == 5984)
-    assert(best_roster['C.1'] == 5462)
-    assert(best_roster['C.2'] == 3982)
+    best_roster = list(build_roster(day1_roster.itertuples()))
+    # assert(best_roster['RW.1'] == 5984)
+    # assert(best_roster['C.1'] == 5462)
+    # assert(best_roster['C.2'] == 3982)
+    
+    assert(best_roster[0] == RosteredPlayer("C" ,1 ,5462))
+    assert(best_roster[1] == RosteredPlayer("C" ,2 ,3982))
+    assert(best_roster[2] == RosteredPlayer("RW" ,1 ,5984))
 
 
-def test_single_lw_rw(builder, team):
+def test_single_lw_rw(build_roster, team):
     player_ids = [5698]
     day1_roster = team.loc[player_ids, :]
 
-    best_roster = builder.find_best(day1_roster)
-    assert(best_roster['LW.1'] == 5698)
-
-def test_combination(team, stats_weights, roster_makeup):
-    """Test combination function for creating optimimum roster."""
-    # avail_players = remove_ir(team)
-    # avail_players.loc[:,'fpts'] = team[list(stats_weights.index.values)].mul(stats_weights).sum(1)
-    # roster = tuple([RosterPlayer(id, p['name'], p['eligible_positions'],p['fpts']) for id, p in team.iterrows()])
-    day_roster = combination_roster_optimization(team, roster_makeup, stats_weights)
-    pass
+    best_roster = list(build_roster(day1_roster.itertuples()))
+    assert(best_roster[0] == RosteredPlayer("LW" ,1 ,5698))
