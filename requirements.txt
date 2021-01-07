@@ -3,7 +3,7 @@ pandas==1.0.3
 -e library/nhl_scraper
 selenium
 beautifulsoup4==4.8.2
-lxml==4.5.0
+lxml==4.6.2
 #-e git+git://github.com/QuailAutomation/yahoo_fantasy_api@master#egg=yahoo_fantasy_api
 -e library/yahoo_fantasy_api
 yahoo_oauth==0.1.9
