@@ -390,9 +390,9 @@ class RecursiveRosterBuilder:
             # is there a player in this position that can move
             for players in roster[position_to_look_for_room]:
                 for other_possible_positions in players.eligible_positions:
-                    if len(roster[other_possible_positions]) < \
+                    if not 'IR' == other_possible_positions and (len(roster[other_possible_positions]) < \
                                     self.roster_position_counts[other_possible_positions] and \
-                                    other_possible_positions != position_to_look_for_room:
+                                    other_possible_positions != position_to_look_for_room):
                         roster[other_possible_positions].append(players)
                         roster[position_to_look_for_room].remove(players)
                         return True
@@ -413,7 +413,7 @@ class RecursiveRosterBuilder:
         daily_roster = defaultdict(list)
         for p in sorted_players:
             for position in p.eligible_positions:
-                if position not in full_positions:
+                if position != 'IR' and position not in full_positions:
                     players_in_position = daily_roster[position]
                     if len(players_in_position) < self.roster_position_counts[position]:
                         daily_roster[position].append(p)

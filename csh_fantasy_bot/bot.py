@@ -15,24 +15,38 @@ import yahoo_fantasy_api as yfa
 from nhl_scraper.nhl import Scraper
 from csh_fantasy_bot import roster, utils, builder,fantasysp_scrape
 from csh_fantasy_bot.league import FantasyLeague
-from csh_fantasy_bot.nhl import BestRankedPlayerScorer
+from csh_fantasy_bot.nhl import score_team
+# from csh_fantasy_bot.nhl import BestRankedPlayerScorer
 from csh_fantasy_bot.scoring import ScoreComparer
 
+def produce_csh_ranking(predictions, scoring_categories, selector, ranking_column_name='fantasy_score'):
+        """Create ranking by summing standard deviation of each stat, summing, then dividing by num stats."""
+        f_mean = predictions.loc[selector,scoring_categories].mean()
+        f_std =predictions.loc[selector,scoring_categories].std()
+        f_std_performance = (predictions.loc[selector,scoring_categories] - f_mean)/f_std
+        for stat in scoring_categories:
+            predictions.loc[selector, stat + '_std'] = (predictions[stat] - f_mean[stat])/f_std[stat]
+        predictions.loc[selector, ranking_column_name] = f_std_performance.sum(axis=1)/len(scoring_categories)
+        return predictions
 
 class ManagerBot:
     """A class that encapsulates an automated Yahoo! fantasy manager."""
 
-    def __init__(self, week = None, simulation_mode=True):
+    def __init__(self, week = None, simulation_mode=True, league_id="396.l.53432"):
         self.logger = logging.getLogger()
         self.simulation_mode = simulation_mode
-        self.lg = FantasyLeague('396.l.53432')
+        self.lg = FantasyLeague(league_id)
         self.stat_categories = [stat['display_name'] for stat in self.lg.stat_categories() if stat['position_type'] == 'P']
+        self.stat_categories_goalies = [stat['display_name'] for stat in self.lg.stat_categories() if stat['position_type'] == 'G']
         self.tm = self.lg.to_team(self.lg.team_key())
         self.league_week = week or self.lg.current_week()
-        (start_week, end_week) = self.lg.week_date_range(self.league_week)
-        self.week = pd.date_range(start_week, end_week)
+        try:
+            (start_week, end_week) = self.lg.week_date_range(self.league_week)
+            self.week = pd.date_range(start_week, end_week)
+        except Exception:
+            self.week = pd.date_range('2021-1-13', '2021-1-24')
         self.tm_cache = utils.TeamCache(self.tm.team_key)
-        self.lg_cache = utils.LeagueCache()
+        self.lg_cache = utils.LeagueCache(league_key=league_id)
         self.pred_bldr = None
         self.my_team_bldr = self._construct_roster_builder()
         self.ppool = None
@@ -46,11 +60,14 @@ class ManagerBot:
         self.opp_sum = None
         self.opp_team_name = None
         self.opp_team_key = None
+
         self.init_prediction_builder()
         self.all_players = self.lg.as_of(self.week[0]).all_players()
         self.fetch_player_pool()
-        self.score_comparer: ScoreComparer = ScoreComparer(self.fetch_league_lineups(), self.pred_bldr.predict(self.all_players), self.stat_categories)
-        self.logger.debug("Reading Free Agents")
+        self.all_player_predictions = self.produce_all_player_predictions()
+        self.projected_league_scores = self.fetch_league_lineups()
+        self.score_comparer: ScoreComparer = ScoreComparer(self.projected_league_scores.values(), self.stat_categories)
+        # self.logger.debug("Reading Free Agents")
         # self.fetch_player_pool()
         self.logger.debug("Loading Lineups")
         self.load_lineup()
@@ -140,7 +157,7 @@ class ManagerBot:
             # module = self._get_prediction_module()
             # func = getattr('csh_fantasy_bot',
             #                self.cfg['Prediction']['builderClassLoader'])
-            return fantasysp_scrape.Parser()
+            return fantasysp_scrape.Parser(scoring_categories=self.stat_categories)
 
         expiry = datetime.timedelta(minutes=24 * 60)
         self.pred_bldr = self.lg_cache.load_prediction_builder(expiry, loader)
@@ -185,16 +202,8 @@ class ManagerBot:
         the_stats = self.lg.player_stats(ids_no_stats, 'season')
         
         for player_w_stats in the_stats:
-            # a_player = players[players.player_id == player_w_stats['player_id']]
             for stat in self.stat_categories:
                 if player_w_stats['GP'] > 0:
-                    #  hack for now because yahoo returns FW but rest of code uses FOW
-                    # if stat != 'FOW':
-                    #     # a_player[stat] = player_w_stats[stat] / player_w_stats['GP']
-                    #     players.loc[players['player_id'] == player_w_stats['player_id'], [stat]] = player_w_stats[
-                    #                                                                                    stat] / \
-                    #                                                                                player_w_stats['GP']
-                    # else:
                     players.loc[player_w_stats['player_id'], [stat]] = player_w_stats[
                                                                                                        stat] / \
                                                                                                    player_w_stats['GP']
@@ -249,7 +258,7 @@ class ManagerBot:
             for player_w_stats in the_stats:
                 # a_player = players[players.player_id == player_w_stats['player_id']]
                 for stat in self.stat_categories:
-                    if player_w_stats['GP'] > 0:
+                    if player_w_stats['GP'] != '-' and player_w_stats['GP'] > 0:
                         players.loc[player_w_stats['player_id'], [stat]] = player_w_stats[stat] / player_w_stats['GP']
 
             self.ppool = players.query('~(G != G & position_type == "P" )')
@@ -279,29 +288,34 @@ class ManagerBot:
         expiry = datetime.timedelta(minutes= 360 * 50)
         return self.lg_cache.load_free_agents(expiry, loader)
 
-    def fetch_league_lineups(self):
-        lineups = []
-
+    def produce_all_player_predictions(self):
         all_projections = self.pred_bldr.predict(self.all_players.reset_index())
-        for tm in self.lg.teams():
-            tm = self.lg.to_team(tm['team_key'])
-            team_scores = BestRankedPlayerScorer(self.lg, tm, all_projections, self.week).score(simulation_mode=self.simulation_mode)
-            lineups.append(team_scores)
-        return lineups
+       
+        produce_csh_ranking(all_projections, self.stat_categories, 
+                    all_projections.index, ranking_column_name='fpts')
+        #TODO this can be removed with support for goalies
+        return all_projections[(all_projections.position_type == 'P') & (all_projections.status != 'IR')]
 
-        # def loader():
-        #     self.logger.info("Fetching lineups for each team")
-        #     lineups = []
-        #     all_projections = self.pred_bldr.predict(self.all_players)
-        #     for tm in self.lg.teams():
-        #         tm = self.lg.to_team(tm['team_key'])
-        #         team_scores = BestRankedPlayerScorer(self.lg, tm, all_projections, self.week).score(simulation_mode=self.simulation_mode)
-        #         lineups.append(team_scores)
-        #     self.logger.info("All lineups fetched.")
-        #     return lineups
+    def fetch_league_lineups(self):
+        scoring_results = {tm['team_key'].split('.')[-1]:self.score_team(self.all_player_predictions[self.all_player_predictions.fantasy_status == int(tm['team_key'].split('.')[-1])], \
+                                    self.week, \
+                                    self.stat_categories)[1] 
+                                for tm in self.lg.teams()}
+        return scoring_results
 
-        # return self.lg_cache.load_league_lineup(datetime.timedelta(hours=6),
-        #                                         loader)
+    def team_roster(self, team_id):
+        all_projections = self.pred_bldr.predict(self.all_players.reset_index())
+        projections_no_goalies = all_projections[all_projections.position_type == 'P']
+        return projections_no_goalies[projections_no_goalies.fantasy_status == int(team_id.split('.')[-1])]
+
+    def score_team(self, player_projections, date_range=None, scoring_categories=None, roster_change_set=None, simulation_mode=True):
+        if date_range is None:
+            date_range = self.week
+        if scoring_categories is None:
+            scoring_categories = self.stat_categories
+
+        return score_team(player_projections, date_range, scoring_categories, roster_change_set, simulation_mode)
+
 
     def invalidate_free_agents(self, plyrs):
         if os.path.exists(self.lg_cache.free_agents_cache_file()):
@@ -332,13 +346,13 @@ class ManagerBot:
         # # opp_df = self.pred_bldr.predict(pd.DataFrame(opp_roster))
 
         # print(opp_roster.head(20))
-        my_scorer: BestRankedPlayerScorer = BestRankedPlayerScorer(self.lg, self.lg.to_team(opp_team_key),self.pred_bldr.predict(
-            players.reset_index()),
-                                                                    self.week)
+        # my_scorer: BestRankedPlayerScorer = BestRankedPlayerScorer(self.lg, self.lg.to_team(opp_team_key),self.pred_bldr.predict(
+        #     players.reset_index()),
+                                                                    # self.week)
         #opp_sum = self.scorer.summarize(opp_df, week)
-        opp_sum = my_scorer.score()
+        # opp_sum = my_scorer.score()
        # print(opp_sum.head(20))
-        return (team_name, opp_sum)
+        return (team_name, self.projected_league_scores[opp_team_key.split('.')[-1]])
 
     def load_lineup(self):
         def loader():
@@ -517,13 +531,14 @@ class ManagerBot:
 
     def pick_opponent(self, opp_team_key):
         (self.opp_team_name, self.opp_sum) = self.sum_opponent(opp_team_key)
-        self.score_comparer.set_opponent(self.opp_sum.sum())
+        if self.opp_sum is not None:
+            self.score_comparer.set_opponent(self.opp_sum.sum())
 
     def auto_pick_opponent(self):
 
         edit_wk = self.league_week
         print("Picking opponent for week: {}".format(edit_wk))
-        (wk_start, wk_end) = self.lg.week_date_range(edit_wk)
+        # (wk_start, wk_end) = self.lg.week_date_range(edit_wk)
         # edit_date = self.lg.edit_date()
         # if edit_date > wk_end:
         #     edit_wk += 1

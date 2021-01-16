@@ -1,8 +1,10 @@
 import pandas as pd
 import numpy as np
-from datetime import datetime, timezone
+import datetime
 
 from csh_fantasy_bot import bot, nhl, roster_change_optimizer
+from csh_fantasy_bot.nhl import score_team
+
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -13,15 +15,25 @@ pd.set_option('display.width', 1000)
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 
-from csh_fantasy_bot import celery
+# from csh_fantasy_bot import celery
 
 import os
 
-week_number = 21
+week_number = 1
 
 
-stats = ['G','A','SOG','+/-','HIT','PIM','FW']
-weights_series = pd.Series([1, .75, 1, .5, 1, .1, 1], index=stats)
+def produce_csh_ranking(predictions, scoring_categories, selector, ranking_column_name='fantasy_score'):
+        """Create ranking by summing standard deviation of each stat, summing, then dividing by num stats."""
+        f_mean = predictions.loc[selector,scoring_categories].mean()
+        f_std =predictions.loc[selector,scoring_categories].std()
+        f_std_performance = (predictions.loc[selector,scoring_categories] - f_mean)/f_std
+        for stat in scoring_categories:
+            predictions.loc[selector, stat + '_std'] = (predictions[stat] - f_mean[stat])/f_std[stat]
+        predictions.loc[selector, ranking_column_name] = f_std_performance.sum(axis=1)/len(scoring_categories)
+        return predictions
+
+# stats = ['G','A','SOG','+/-','HIT','PIM','FW']
+# weights_series = pd.Series([1, .75, 1, .5, 1, .1, 1], index=stats)
 
 
 # es = Elasticsearch(hosts='http://192.168.1.20:9200', http_compress=True)
@@ -55,27 +67,33 @@ def write_team_results_es(scoring_data, team_id):
 
     helpers.bulk(es, doc_generator_team_results(data))
 
+# league_id = '396.l.53432'
+league_id = '403.l.41177'
+league_id = "403.l.18782"
 
 manager: bot.ManagerBot = None
 if 'YAHOO_OAUTH_FILE' in os.environ:
     auth_file = os.environ['YAHOO_OAUTH_FILE']
-    manager = bot.ManagerBot(week_number,oauth_file=auth_file)
+    manager = bot.ManagerBot(week_number,oauth_file=auth_file, league_id=league_id)
 else:
-    manager = bot.ManagerBot(week_number)
+    manager = bot.ManagerBot(week_number, league_id=league_id)
 
 
-manager.ppool.loc[:,'fpts'] = manager.ppool[stats].mul(weights_series).sum(1)
+my_team_id = manager.tm.team_key.split('.')[-1]
+my_opponent_id = manager.opp_team_key
+my_scores = manager.projected_league_scores[my_team_id]
 
-# celery.refresh.delay('craig')
-
-sorted = manager.ppool.sort_values(by=['fpts'], ascending=False)
 print("My team has {} roster changes available.".format(manager.roster_changes_allowed))
-scorer = nhl.BestRankedPlayerScorer(manager.lg, manager.tm, manager.ppool, manager.week)
-my_scores = scorer.score()
-manager.score_comparer.print_week_results(my_scores.sum())
+print("Scoring no roster changes:")
+print(my_scores.sum())
 
 roster_changes = list()
-# roster_changes.append([6041,3357, np.datetime64('2020-03-03')])
+# roster_changes.append([4248,5710, np.datetime64('2021-01-15')])
+# coleman 5441
+# foligno 4008
+# couture 4248
+# in arvidson 6480
+# roster_changes.append(roster_change_optimizer.RosterChange(4248, 4020, datetime.date(2021, 1, 13), manager.all_player_predictions.loc[4020, manager.stat_categories + ['eligible_positions', 'team_id', 'fpts']]))
 # roster_changes.append([5698,6381, np.datetime64('2020-03-02')])
 # roster_changes.append([4792,5405, np.datetime64('2020-02-13')])
 # roster_changes.append([4792,5380, np.datetime64('2020-02-15')])
@@ -83,8 +101,15 @@ roster_changes = list()
 # roster_changes.append(roster_change_optimizer.RosterChange(5984,7267, np.datetime64('2020-02-03')))
 # roster_changes.append(roster_change_optimizer.RosterChange(4792,5569, np.datetime64('2020-02-09')))
 # roster_changes.append(roster_change_optimizer.RosterChange(5698,5380, np.datetime64('2020-02-04')))
-roster_change_set = roster_change_optimizer.RosterChangeSet(
-    pd.DataFrame(roster_changes, columns=['player_out', 'player_in', 'change_date']),max_allowed=len(roster_changes))
+roster_change_set = roster_change_optimizer.RosterChangeSet(roster_changes)
+# my_scores = manager.projected_league_scores[my_team_id]
+my_scores_with_rc = manager.score_team(manager.all_player_predictions[manager.all_player_predictions.fantasy_status == int(my_team_id)],roster_change_set=roster_change_set)
+# (my_team, manager.week, manager.stat_categories, roster_change_set=roster_change_set)
+print("Scoring with roster changes:")
+print(my_scores_with_rc[1].sum())
+
+manager.score_comparer.print_week_results(my_scores_with_rc[1])
+pass
 
 import cProfile, pstats, io
 
@@ -128,7 +153,7 @@ def extract_team_id(team_key):
     return int(team_key.split('.')[-1])
 
 
-if True:
+if False:
     write_team_results_es(my_scores, extract_team_id(manager.tm.team_key))
     # dump projections
 

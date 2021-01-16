@@ -27,7 +27,7 @@ class RosterChangeSetFactory(ChromosomeFactory.ChromosomeFactory):
     
     def createChromosome(self):
         """Create a roster change set."""
-        roster_changes = random.randint(0, self.num_moves)
+        roster_changes = random.randint(1, self.num_moves)
         rcs = RosterChangeSet()
         while len(rcs) < roster_changes:
             drop_date = random.choice(self.valid_dates).date()
@@ -46,18 +46,28 @@ class RandomWeightedSelector:
         self.df = df.copy()
         self.column = column
         self._normalize(self.df, column, inverse)
-        self.normalized_column_name = f'{self.column}-normalized'
+        self.normalized_column_name = f'{self.column}_normalized'
         
     def select(self):
         """Select random weighted row."""
         return self.df.sample(1,weights=self.normalized_column_name)
 
     def _normalize(self, df, column, inverse=False):
+        # add support for -ve numbers too.  find min and add that to value to get to 0
+        minimum_value = df[column].min() - .1
+        df[f'{column}_normalized'] = 0
+        df.loc[df.G.notnull(),f'{column}_normalized'] = df[column] - minimum_value
+        # if we don't have projections, their std scores end up at zero, which is higher than some players
+        # because it can be negative.  We are going to add the min std sum for each player, then normalize, 
+        # then zero out the player for which we don't have projections
         if inverse:
-            df[f'{column}-normalized'] = 1 - (df[column] / df[column].sum()) 
-            df[f'{column}-normalized'] = df[f'{column}-normalized']/df[f'{column}-normalized'].sum()  
+            df[f'{column}_normalized'] = 1 - (df[f'{column}_normalized'] / df[f'{column}_normalized'].sum()) 
+            df[f'{column}_normalized'] = df[f'{column}_normalized']/df[f'{column}_normalized'].sum()  
         else:
-            df[f'{column}-normalized'] = df[column]/df[column].sum()
+            df[f'{column}_normalized'] = (df[column] + minimum_value)/df[f'{column}_normalized'].sum()
+
+        # TODO this will break for Goalies.  Should and with GAA or some other goalie stat i think     
+        df.loc[df.G.isnull(),f'{column}_normalized'] =  0
 
 from csh_fantasy_bot.tasks import score
 

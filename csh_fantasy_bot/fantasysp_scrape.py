@@ -41,17 +41,25 @@ class ProjectionScraper:
 
         return None
 
-
+FANTASY_SP_CAT_MAP = {
+    "G": "proj-g",
+    "A": "proj-ast",
+    "SOG": "proj-sog",
+    "+/-": "proj-plusminus",
+    "HIT": "proj-hit",
+    "PIM": "proj-pim",
+    "FW": "proj-fow",
+    "PPP": "proj-ppp",
+}
 class Parser:
     goalie_headings = ["GAA", "WIN%", "SHO%"]
-    def __init__(self, positions=None):
+    def __init__(self, positions=None, scoring_categories=["G", "A", "SOG", "+/-", "HIT", "PIM", "FW"]):
         # which positions to scrape from fantasysp
         if positions is not None:
             self.positions = positions
         else:
             self.positions = ['C','LW','RW','D','G']
-
-        player_headings = ["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW"]
+        self.scoring_categories = scoring_categories
         headings = ["Name", "Tm", "Pos", "GAMES"]
         df = pd.DataFrame(data=[], columns=headings)
         index_offset = 0
@@ -78,17 +86,10 @@ class Parser:
                             break
                     num_games = int(games_base[:i])
                     if position != 'G':
-                        goals = float(row.find("td", {"class": "proj-g"}).text.strip()) / num_games
-                        assists = float(row.find("td", {"class": "proj-ast"}).text.strip()) / num_games
-                        shots = float(row.find("td", {"class": "proj-sog"}).text.strip()) / num_games
-                        plus_minus = float(row.find("td", {"class": "proj-plusminus"}).text.strip()) / num_games
-                        hit = float(row.find("td", {"class": "proj-hit"}).text.strip()) / num_games
-                        pim = float(row.find("td", {"class": "proj-pim"}).text.strip()) / num_games
-                        fow = float(row.find("td", {"class": "proj-fow"}).text.strip()) / num_games
-
+                        players_projections = [float(row.find("td", {"class": FANTASY_SP_CAT_MAP[css_class]}).text.strip()) / num_games for css_class in scoring_categories]
                         df = df.append(pd.DataFrame(
-                            data=[[name, tm, pos, num_games, goals, assists, shots, plus_minus, hit, pim, fow]],
-                            columns=headings + player_headings, index=[i + index_offset]))
+                            data=[[name, tm, pos, num_games] + players_projections],
+                            columns=headings + scoring_categories, index=[i + index_offset]))
                     else:
                         # goalie
                         # goalie_starting_status = 'Confirmed'
@@ -154,8 +155,9 @@ class Parser:
         
         
 
-        df = pd.merge(my_roster, self.ppool[["G", "A", "SOG", "+/-", "HIT", "PIM", "FOW",'name', 'Tm'] + Parser.goalie_headings], left_on=['name','abbrev'], right_on=['name', 'Tm'], how='left')
-        df.rename(columns={'FOW': 'FW'}, inplace=True)
+        df = pd.merge(my_roster, self.ppool[self.scoring_categories + ['name', 'Tm'] + Parser.goalie_headings], left_on=['name','abbrev'], right_on=['name', 'Tm'], how='left')
+        if 'FOW' in self.scoring_categories:
+            df.rename(columns={'FOW': 'FW'}, inplace=True)
         if 'player_id' in df.columns:
             df.set_index('player_id',inplace=True)
         return df

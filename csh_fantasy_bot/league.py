@@ -90,14 +90,21 @@ class FantasyLeague(League):
     def draft_results(self, format='List'):
         """Return the draft results."""
         raw = super().draft_results()
+
         if format != 'Pandas':
             return raw
         else:
-            draft_df = pd.DataFrame(raw, columns=raw[0].keys())
-            draft_df['player_id'] = draft_df.player_key.str.split('.', expand=True)[2].astype('int16')
-            draft_df['fantasy_team_id'] = draft_df.team_key.str.split('.', expand=True)[4].astype('int8')
-            draft_df.set_index(['player_id'], inplace=True)
-            return draft_df
+            if len(raw) > 0:
+                draft_df = pd.DataFrame(raw, columns=raw[0].keys())
+                try:
+                    draft_df['player_id'] = draft_df.player_key.str.split('.', expand=True)[2].astype('int16')
+                    draft_df['fantasy_team_id'] = draft_df.team_key.str.split('.', expand=True)[4].astype('int8')
+                    draft_df.set_index(['player_id'], inplace=True)
+                except AttributeError:
+                    print("Draft probably has not begun yet")
+                return draft_df
+            else:
+                return pd.DataFrame()
 
     def free_agents(self, position=None):
         """Return the free agents at give datetime."""
@@ -121,7 +128,9 @@ class FantasyLeague(League):
             # TODO add waiver expiry column
             all_players['fantasy_status'] = 'FA'
             #assign drafted players to their team
-            all_players.loc[all_players.index.intersection(draft_df.index),'fantasy_status'] = draft_df['fantasy_team_id']
+            if len(draft_df) > 0 and 'fantasy_team_id' in draft_df.columns:
+                all_players.loc[all_players.index.intersection(draft_df.index),'fantasy_status'] = draft_df['fantasy_team_id']
+            
             
             txns = self.transactions()
             asof_timestamp = datetime.timestamp(asof_date)
@@ -170,7 +179,7 @@ class FantasyLeague(League):
     def stat_predictor(self):
         """Load and return the prediction builder."""
         def loader():
-            return fantasysp_scrape.Parser()
+            return fantasysp_scrape.Parser(scoring_categories=self.scoring_categories())
 
         expiry = timedelta(days=7)
         return self.lg_cache.load_prediction_builder(expiry, loader)
@@ -183,37 +192,37 @@ class FantasyLeague(League):
         
         return self.stat_predictor().predict(self._all_players_df)
 
-    def score(self, date_range, team_key, opponent, roster_change_sets=None, simulation_mode=True):
-        try:
-            all_players = self.stat_predictor().predict(self.as_of(date_range[0]).all_players())
-            all_players = all_players.query('position_type == "P" & status != "IR"')
-            all_players.loc[:,'fpts'] = all_players[self.scoring_categories()].mul(self.weights_series).sum(1)
-            sorted_players = all_players.sort_values(by='fpts', ascending=False)
+    # def score(self, date_range, team_key, opponent, roster_change_sets=None, simulation_mode=True):
+    #     try:
+    #         all_players = self.stat_predictor().predict(self.as_of(date_range[0]).all_players())
+    #         all_players = all_players.query('position_type == "P" & status != "IR"')
+    #         all_players.loc[:,'fpts'] = all_players[self.scoring_categories()].mul(self.weights_series).sum(1)
+    #         sorted_players = all_players.sort_values(by='fpts', ascending=False)
 
-            # TODO this is now assuming that all predictions are known now(sorting), can't be lazily loaded when scoring
-            if not self.score_comparer:
-                league_scores = {tm['team_key']:score_team(all_players[all_players.fantasy_status == int(tm['team_key'].split('.')[-1])], \
-                                                date_range, \
-                                                self.scoring_categories()) 
-                                            for tm in self.teams()}
+    #         # TODO this is now assuming that all predictions are known now(sorting), can't be lazily loaded when scoring
+    #         if not self.score_comparer:
+    #             league_scores = {tm['team_key']:score_team(all_players[all_players.fantasy_status == int(tm['team_key'].split('.')[-1])], \
+    #                                             date_range, \
+    #                                             self.scoring_categories()) 
+    #                                         for tm in self.teams()}
 
-                scoring_list = [league_scores[x] for x in league_scores.keys()]
-                self.score_comparer = ScoreComparer(scoring_list,all_players,self.scoring_categories())
-                self.score_comparer.set_opponent(league_scores[f'{self.league_id}.t.{opponent}'].sum())
+    #             scoring_list = [league_scores[x] for x in league_scores.keys()]
+    #             self.score_comparer = ScoreComparer(scoring_list,all_players,self.scoring_categories())
+    #             self.score_comparer.set_opponent(league_scores[f'{self.league_id}.t.{opponent}'].sum())
 
 
-            if roster_change_sets:
-                for change_set in roster_change_sets:
-                    player_projections = all_players[all_players.fantasy_status == int(team_key.split('.')[-1])]
-                    the_score = score_team(player_projections, date_range, self.scoring_categories(), change_set)
-                    change_set.scoring_summary = the_score.reset_index()
-                    change_set.score = self.score_comparer.compute_score(the_score)
-                return roster_change_sets
-            else:
-                the_score = self.scorer.score(date_range)
-                return the_score.reset_index()
-        except UnboundLocalError as e:
-            print(e)
+    #         if roster_change_sets:
+    #             for change_set in roster_change_sets:
+    #                 player_projections = all_players[all_players.fantasy_status == int(team_key.split('.')[-1])]
+    #                 the_score = score_team(player_projections, date_range, self.scoring_categories(), change_set)
+    #                 change_set.scoring_summary = the_score.reset_index()
+    #                 change_set.score = self.score_comparer.compute_score(the_score)
+    #             return roster_change_sets
+    #         else:
+    #             the_score = self.scorer.score(date_range)
+    #             return the_score.reset_index()
+    #     except UnboundLocalError as e:
+    #         print(e)
 
             
 

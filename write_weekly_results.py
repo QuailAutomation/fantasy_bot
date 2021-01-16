@@ -18,7 +18,7 @@ week_number = 19
 
 es = Elasticsearch(hosts='http://192.168.1.20:9200', http_compress=True)
 
-manager: bot.ManagerBot = bot.ManagerBot(week_number)
+manager: bot.ManagerBot = bot.ManagerBot(league_id="403.l.18782") #league_id=266295
 
 league :League  = manager.lg
 

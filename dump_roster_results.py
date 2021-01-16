@@ -1,5 +1,6 @@
 import os
 import time
+import datetime
 from datetime import date, timedelta
 import pandas as pd
 import numpy as np
@@ -24,15 +25,19 @@ else:
 
 es = Elasticsearch(hosts=ELASTIC_URL, http_compress=True)
 
-manager = bot.ManagerBot(1)
-sc = manager.sc
+league_id = '396.l.53432'
+league_id = "403.l.18782"
+
+manager = bot.ManagerBot(1,league_id=league_id)
 lg = manager.lg
+sc = lg.sc
+
 teams = lg.teams()
 roster_positions = lg.positions()
 all_players = manager.all_players
-player_stats = ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]
-weights_series = pd.Series([1, 1, .5, .5, 1, .1, .7], index=player_stats)
-projected_player_stats = ['proj_{}'.format(stat) for stat in ["G", "A", "+/-", "PIM", "SOG", "FW", "HIT"]]
+# player_stats = manager.stat_categories
+# weights_series = pd.Series([1, 1, .5, .5, 1, .1, .7], index=player_stats)
+projected_player_stats = ['proj_{}'.format(stat) for stat in manager.stat_categories]
 # player_projection_columns =['name','eligible_positions','team_id','team_name','game_date','player_id'] + player_stats
 
 
@@ -64,11 +69,11 @@ for team_dict in teams:
     # oct 2 hard code start season
     # end mar 12
     fantasy_team_id = int(team_dict['team_key'].split('.')[-1])
-    if fantasy_team_id > 1:
+    if fantasy_team_id > 0:
         the_team = team.Team(sc, team_dict['team_key'])
         team_stats = pd.DataFrame()
-        play_date = date(2019,10,1)
-        end_date = date(2020,3,3)
+        play_date = datetime.datetime.strptime(lg.settings()['start_date'], '%Y-%m-%d') 
+        end_date = datetime.datetime.strptime(lg.settings()['end_date'], '%Y-%m-%d')  
         while play_date < end_date:
             print(f"Processing {team_dict['team_key']}, date: {play_date}")
             the_roster = the_team.roster(day=play_date)
@@ -76,8 +81,8 @@ for team_dict in teams:
             daily_roster = pd.DataFrame(the_roster)
             lineup = daily_roster.query('position_type != "G"')
             stats = lg.player_stats(lineup.player_id.tolist(), "date", date=play_date)
-            daily_stats = pd.DataFrame(stats).loc[:, ['player_id'] + player_stats]
-            daily_stats.loc[daily_stats["G"] != '-' , 'fpts'] = daily_stats[daily_stats["G"] != '-' ][player_stats].mul(weights_series).sum(1)
+            daily_stats = pd.DataFrame(stats).loc[:, ['player_id'] + manager.stat_categories]
+            # daily_stats.loc[daily_stats["G"] != '-' , 'fpts'] = daily_stats[daily_stats["G"] != '-' ][player_stats].mul(weights_series).sum(1)
             daily_stats = daily_stats.add_prefix('actual_')
             daily_stats.rename(columns={"actual_player_id": "player_id"}, inplace=True)
             daily_stats = daily_stats.merge(daily_roster.loc[:, ['name', 'selected_position', 'player_id', 'eligible_positions', 'status']],
@@ -87,6 +92,7 @@ for team_dict in teams:
                 left_on='player_id', right_on='player_id')
             daily_stats['game_date'] = play_date
             daily_stats['timestamp'] = play_date
+            daily_stats['league_id'] = league_id
             # daily_stats.replace('-', np.nan, inplace=True)
             # nan is never == nan, so remove players who did not play for date
             # daily_stats.query('G == G')

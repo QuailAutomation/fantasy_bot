@@ -27,7 +27,7 @@ def do_cprofile(func):
 
 #@do_cprofile
 def do_run():
-    driver = automation.Driver(20)
+    driver = automation.Driver(1)
     driver.run()
 
 if __name__ == "__main__":

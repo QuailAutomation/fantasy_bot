@@ -137,3 +137,14 @@ class LeagueCache(CacheBase):
     def refresh_prediction_builder(self, pred_bldr):
         self.refresh_cache_file(self.prediction_builder_file(), pred_bldr)
 
+    def load_season_stats(self, expiry, loader, season):
+         return self.run_loader(self.season_stats_file(season), expiry, loader)
+
+    def season_stats_file(self, season):
+        return f"{self.cache_dir}/{season}_player_scoring.pkl"
+
+    def player_master_list(self, expiry, loader):
+         return self.run_loader(self.player_master_list_file(), expiry, loader)
+
+    def player_master_list_file(self):
+        return f"{self.cache_dir}/player_master_list.pkl"

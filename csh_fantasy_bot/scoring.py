@@ -33,17 +33,18 @@ class ScoreComparer:
         Calculate a lineup score by comparing it against the standard devs.
 
         :param lineup: Lineup to compute standard deviation from
-        :return: Standard deviation score
+        :return: Standard deviation score 0.12
         """
         try:
             my_scores = score_sum.loc[:, self.stat_cats].sum()
+            assert(self.opp_sum is not None), "Must call set_opponent() first"
+            assert(self.stdevs is not None)
+            means = pd.DataFrame([my_scores,self.opp_sum]).mean()
+            diff = (my_scores - means)/means
+            return diff.clip(lower=-1 * self.stdev_cap, upper=self.stdev_cap).sum()
         except IndexError as e:
             self.log.exception(e)
-        assert(self.opp_sum is not None), "Must call set_opponent() first"
-        assert(self.stdevs is not None)
-        means = pd.DataFrame([my_scores,self.opp_sum]).mean()
-        diff = (my_scores - means)/means
-        return diff.clip(lower=-1 * self.stdev_cap, upper=self.stdev_cap).sum()
+        
 
 
     def print_stdev(self):
