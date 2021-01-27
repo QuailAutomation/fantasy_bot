@@ -16,7 +16,7 @@ pytest-mock==3.1.0
 elasticsearch>=6.0.0,<7.0.0
 celery==4.4.2
 get-docker-secret==1.0.1
-redis==3.4.1
+redis==3.5.3
 elasticsearch-dsl==6.4.0
 flask==1.1.1
 pydocstyle==5.0.*
@@ -26,4 +26,6 @@ jsonpickle==1.4.1
 matplotlib==3.2.1
 pygenetic==1.0.2
 ipython
-PyQt5==5.9.2
+# PyQt5==5.9.2
+# for serializing to redis
+pyarrow==2.0.0

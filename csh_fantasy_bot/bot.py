@@ -13,10 +13,13 @@ import copy
 from yahoo_oauth import OAuth2
 import yahoo_fantasy_api as yfa
 from nhl_scraper.nhl import Scraper
-from csh_fantasy_bot import roster, utils, builder,fantasysp_scrape
+from csh_fantasy_bot import roster, utils, builder, fantasysp_scrape, yahoo_scraping
+# from csh_fantasy_bot import yahoo_scraping.YahooPredictions
+
 from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.nhl import score_team
-# from csh_fantasy_bot.nhl import BestRankedPlayerScorer
+from csh_fantasy_bot.yahoo_projections import retrieve_yahoo_rest_of_season_projections
+
 from csh_fantasy_bot.scoring import ScoreComparer
 
 def produce_csh_ranking(predictions, scoring_categories, selector, ranking_column_name='fantasy_score'):
@@ -62,7 +65,13 @@ class ManagerBot:
         self.opp_team_key = None
 
         self.init_prediction_builder()
-        self.all_players = self.lg.as_of(self.week[0]).all_players()
+        as_of_date = None
+        if simulation_mode:
+            as_of_date = self.week[0] 
+        else:
+            as_of_date = datetime.datetime.now() 
+
+        self.all_players = self.lg.as_of(as_of_date).all_players()
         self.fetch_player_pool()
         self.all_player_predictions = self.produce_all_player_predictions()
         self.projected_league_scores = self.fetch_league_lineups()
@@ -157,15 +166,11 @@ class ManagerBot:
             # module = self._get_prediction_module()
             # func = getattr('csh_fantasy_bot',
             #                self.cfg['Prediction']['builderClassLoader'])
-            return fantasysp_scrape.Parser(scoring_categories=self.stat_categories)
+            # return fantasysp_scrape.Parser(scoring_categories=self.stat_categories)
+            return yahoo_scraping.YahooPredictions(self.lg.league_id)
 
         expiry = datetime.timedelta(minutes=24 * 60)
         self.pred_bldr = self.lg_cache.load_prediction_builder(expiry, loader)
-
-    def save(self):
-        self.tm_cache.refresh_lineup(self.lineup)
-        self.tm_cache.refresh_bench(self.bench)
-        self.lg_cache.refresh_prediction_builder(self.pred_bldr)
 
     def fetch_cur_lineup(self):
         """Fetch the current lineup as set in Yahoo!"""
@@ -237,18 +242,8 @@ class ManagerBot:
                 my_roster = all_players[all_players.fantasy_status.isin([my_team_id, 'FA'])]
                 my_roster.reset_index(inplace=True)
             else:
-                current_lineup = self.fetch_cur_lineup()
-                plyr_pool = self.fetch_free_agents() + current_lineup + self.fetch_waivers()
-                my_roster = pd.DataFrame(plyr_pool)
-                self._fix_yahoo_team_abbr(my_roster)
-                self.nhl_scraper = Scraper()
-
-                nhl_teams = self.nhl_scraper.teams()
-                nhl_teams.set_index("id")
-                nhl_teams.rename(columns={'name': 'team_name'}, inplace=True)
-
-                my_roster = my_roster.merge(nhl_teams, left_on='editorial_team_abbr', right_on='abbrev')
-                my_roster.rename(columns={'id': 'team_id'}, inplace=True)
+                current_lineup = self.lg.team_by_id(my_team_id)
+                my_roster = current_lineup.append(self.fetch_waivers()).append(self.fetch_free_agents())
 
             players = self.pred_bldr.predict(my_roster)
             # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
@@ -265,41 +260,40 @@ class ManagerBot:
             pass
 
     def fetch_waivers(self):
-        def loader():
-            self.logger.info("Fetching waivers")
-            fa = self.lg.waivers1()
-            self.logger.info(
-                "Waivers fetch complete.  {} players in pool".
-                format(len(fa)))
-            return fa
-
-        expiry = datetime.timedelta(minutes= 360)
-        return self.lg_cache.load_waivers(expiry, loader)
+        return self.lg.waivers()
 
     def fetch_free_agents(self):
-        def loader():
-            self.logger.info("Fetching free agents")
-            fa = self.lg.free_agents(None)
-            self.logger.info(
-                "Free agents fetch complete.  {} players in pool".
-                format(len(fa)))
-            return fa
-
-        expiry = datetime.timedelta(minutes= 360 * 50)
-        return self.lg_cache.load_free_agents(expiry, loader)
+        return self.lg.free_agents()
 
     def produce_all_player_predictions(self):
-        all_projections = self.pred_bldr.predict(self.all_players.reset_index())
-       
+        all_projections = self.pred_bldr.predict(self.all_players)
+
+        players_no_projections_on_team = all_projections[(all_projections.G != all_projections.G) \
+                    & (all_projections.fantasy_status != 'FA') \
+                    & (all_projections.position_type != 'G')    ].index
+
+        # self.log.warn(f"no projections for players: {all_projections[all_projections.G != all_projections.G) & (all_projections.fantasy_status != 'FA')].index.values}")       
+        # let's see if we rostered a player without projections.  if so we'll fall back on yahoo
+                #retrieve_yahoo_rest_of_season_projections(self.league_id).loc[roster_results[roster_results.G != roster_results.G].index.values]
+        if len(players_no_projections_on_team) > 0:
+            yahoo_projections = retrieve_yahoo_rest_of_season_projections(self.lg.league_id)
+            yahoo_projections[self.stat_categories] = yahoo_projections[self.stat_categories].div(yahoo_projections.GP, axis=0)
+            for player_id in players_no_projections_on_team.values:
+                try:
+                    all_projections.update(yahoo_projections.loc[[player_id]]) 
+                except KeyError:
+                    print(f"Could not find projection for {all_projections.loc[player_id]}")
+
         produce_csh_ranking(all_projections, self.stat_categories, 
                     all_projections.index, ranking_column_name='fpts')
+
         #TODO this can be removed with support for goalies
         return all_projections[(all_projections.position_type == 'P') & (all_projections.status != 'IR')]
 
     def fetch_league_lineups(self):
         scoring_results = {tm['team_key'].split('.')[-1]:self.score_team(self.all_player_predictions[self.all_player_predictions.fantasy_status == int(tm['team_key'].split('.')[-1])], \
                                     self.week, \
-                                    self.stat_categories)[1] 
+                                    self.stat_categories, simulation_mode=self.simulation_mode, team_id=tm['team_key'])[1] 
                                 for tm in self.lg.teams()}
         return scoring_results
 
@@ -308,13 +302,14 @@ class ManagerBot:
         projections_no_goalies = all_projections[all_projections.position_type == 'P']
         return projections_no_goalies[projections_no_goalies.fantasy_status == int(team_id.split('.')[-1])]
 
-    def score_team(self, player_projections, date_range=None, scoring_categories=None, roster_change_set=None, simulation_mode=True):
+    def score_team(self, player_projections, date_range=None, scoring_categories=None, roster_change_set=None, simulation_mode=True, team_id=None):
         if date_range is None:
             date_range = self.week
         if scoring_categories is None:
             scoring_categories = self.stat_categories
-
-        return score_team(player_projections, date_range, scoring_categories, roster_change_set, simulation_mode)
+        if team_id is None:
+            team_id = self.lg.team_key()
+        return self.lg.score_team(player_projections, date_range, roster_change_set, simulation_mode=simulation_mode, team_id=team_id)
 
 
     def invalidate_free_agents(self, plyrs):

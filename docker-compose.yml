@@ -25,9 +25,14 @@ services:
   #     - XPACK_MONITORING_ENABLED=false
   redis:
     image: redis
+    hostname: redis
+    volumes:
+     - /Users/craigh/dev/fantasy_bot/redis/data:/data
+     - /Users/craigh/dev/fantasy_bot/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    
     ports:
       - "6379:6379"
-
+    # command: redis-server /redis.conf
   # kibana:
   #   image: docker.elastic.co/kibana/kibana-oss:6.8.2
   #   ports:

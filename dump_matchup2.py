@@ -15,25 +15,10 @@ pd.set_option('display.width', 1000)
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 
-# from csh_fantasy_bot import celery
 
 import os
 
-week_number = 1
-
-
-def produce_csh_ranking(predictions, scoring_categories, selector, ranking_column_name='fantasy_score'):
-        """Create ranking by summing standard deviation of each stat, summing, then dividing by num stats."""
-        f_mean = predictions.loc[selector,scoring_categories].mean()
-        f_std =predictions.loc[selector,scoring_categories].std()
-        f_std_performance = (predictions.loc[selector,scoring_categories] - f_mean)/f_std
-        for stat in scoring_categories:
-            predictions.loc[selector, stat + '_std'] = (predictions[stat] - f_mean[stat])/f_std[stat]
-        predictions.loc[selector, ranking_column_name] = f_std_performance.sum(axis=1)/len(scoring_categories)
-        return predictions
-
-# stats = ['G','A','SOG','+/-','HIT','PIM','FW']
-# weights_series = pd.Series([1, .75, 1, .5, 1, .1, 1], index=stats)
+week_number = 2
 
 
 # es = Elasticsearch(hosts='http://192.168.1.20:9200', http_compress=True)
@@ -69,14 +54,14 @@ def write_team_results_es(scoring_data, team_id):
 
 # league_id = '396.l.53432'
 league_id = '403.l.41177'
-league_id = "403.l.18782"
-
+# league_id = "403.l.18782"
+simulation_mode = False
 manager: bot.ManagerBot = None
 if 'YAHOO_OAUTH_FILE' in os.environ:
     auth_file = os.environ['YAHOO_OAUTH_FILE']
-    manager = bot.ManagerBot(week_number,oauth_file=auth_file, league_id=league_id)
+    manager = bot.ManagerBot(week_number,oauth_file=auth_file, league_id=league_id, simulation_mode=simulation_mode)
 else:
-    manager = bot.ManagerBot(week_number, league_id=league_id)
+    manager = bot.ManagerBot(week_number, league_id=league_id, simulation_mode=simulation_mode)
 
 
 my_team_id = manager.tm.team_key.split('.')[-1]
@@ -103,7 +88,7 @@ roster_changes = list()
 # roster_changes.append(roster_change_optimizer.RosterChange(5698,5380, np.datetime64('2020-02-04')))
 roster_change_set = roster_change_optimizer.RosterChangeSet(roster_changes)
 # my_scores = manager.projected_league_scores[my_team_id]
-my_scores_with_rc = manager.score_team(manager.all_player_predictions[manager.all_player_predictions.fantasy_status == int(my_team_id)],roster_change_set=roster_change_set)
+my_scores_with_rc = manager.score_team(manager.all_player_predictions[manager.all_player_predictions.fantasy_status == int(my_team_id)],roster_change_set=roster_change_set, simulation_mode=False)
 # (my_team, manager.week, manager.stat_categories, roster_change_set=roster_change_set)
 print("Scoring with roster changes:")
 print(my_scores_with_rc[1].sum())
@@ -134,7 +119,7 @@ def do_cprofile(func):
 #@do_cprofile
 def do_run():
     print('profiling')
-    scorer.score(roster_change_set)
+    # scorer.score(roster_change_set)
 
 
 do_run()
@@ -146,7 +131,7 @@ if len(roster_changes) > 0:
 
 my_scores.to_csv('team-results.csv')
 manager.all_players.to_csv('all-players.csv')
-manager.all_players.set_index('player_id', inplace=True)
+# manager.all_players.set_index('player_id', inplace=True)
 
 
 def extract_team_id(team_key):

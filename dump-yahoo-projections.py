@@ -19,7 +19,6 @@ pd.set_option('display.width', 1000)
 def dump_predictions(league_id):
     manager = bot.ManagerBot(league_id=league_id)
 
-
     predictions = pd.read_csv(prediction_csv,
                         converters={"eligible_positions": lambda x: x.strip("[]").replace("'", "").split(", ")})
     predictions['league_id'] = league_id
@@ -86,7 +85,7 @@ if __name__ == "__main__":
     league_id = "403.l.18782"
     league_id = "403.l.41177"
 
-    prediction_csv = f'yahoo-projections-stats-{league_id}.csv'
+    prediction_csv = f'.cache/{league_id}/yahoo-projections-stats.csv'
     if os.path.exists(prediction_csv):
         dump_predictions(league_id)
     else:

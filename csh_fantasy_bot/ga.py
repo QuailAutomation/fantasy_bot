@@ -72,14 +72,15 @@ class RandomWeightedSelector:
 from csh_fantasy_bot.tasks import score
 
 
-def fitness(roster_change_sets, all_players, date_range, scoring_categories, score_comparer, team_id):
+def fitness(roster_change_sets, all_players, date_range, scoring_categories, score_comparer, team_key):
     """Score the roster change set."""
     # store the id so we can match back up after serialization
+    team_id = int(team_key.split('.')[-1])
     for rcs in roster_change_sets:
         rcs._id = id(rcs) 
     log.debug("starting chunk scoring")
     unscored_change_sets = [rc for rc in roster_change_sets if rc.score is None]
-    results = score_chunk(all_players[(all_players.fantasy_status == team_id)], date_range[0], date_range[-1], unscored_change_sets, scoring_categories)
+    results = score_chunk(all_players[(all_players.fantasy_status == team_id)], date_range[0], date_range[-1], unscored_change_sets, scoring_categories, team_key=team_key)
     log.debug("Done chunk scoring")
 
     scores_dict = {_id:score for _id,score in results}
@@ -87,10 +88,11 @@ def fitness(roster_change_sets, all_players, date_range, scoring_categories, sco
     for change_set in unscored_change_sets:
         try:
             scoring_result = scores_dict[change_set._id]
+            change_set.scoring_summary = scoring_result.reset_index()
+            change_set.score = score_comparer.compute_score(scoring_result)
         except KeyError as e:
             log.exception(e)
-        change_set.scoring_summary = scoring_result.reset_index()
-        change_set.score = score_comparer.compute_score(scoring_result)
+        
     log.debug('Done computing roster scores')
     return [(change_set, change_set.score) for change_set in roster_change_sets]
 
