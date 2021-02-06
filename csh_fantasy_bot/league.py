@@ -40,7 +40,7 @@ class FantasyLeague(League):
         """Instantiate the league."""
         super().__init__(oauth_token, league_id)
         self.lg_cache = utils.LeagueCache(league_id)
-        self.log = logging.getLogger(__name__)
+        self.log = logging.getLogger()
         self.fantasy_status_code_translation = {'waivers':'W', 'freeagents': 'FA'}
         # store datetime we are as-of use to roll transactions
         self.as_of_date = None
@@ -245,13 +245,14 @@ class FantasyLeague(League):
         return self.stat_predictor().predict(self._all_players_df)
 
     def _actuals_for_team_day(self, team_id, game_day, scoring_categories):
-        actual_cache_key = f"{team_id}-{game_day}"
+        _game_day = game_day.to_pydatetime().date()
+        actual_cache_key = f"actuals:{team_id}-{_game_day}"
         results = my_redis.get(actual_cache_key)
         if not results:
             the_roster = self.team_by_key(team_id).roster(day=game_day)
             opp_daily_roster = pd.DataFrame(the_roster)
             lineup = opp_daily_roster.query('selected_position != "BN" & selected_position != "G"')
-            stats = self.player_stats(lineup.player_id.tolist(), "date", date=game_day)
+            stats = self.player_stats(lineup.player_id.tolist(), "date", date=_game_day)
             daily_stats = pd.DataFrame(stats).loc[:,['player_id'] + scoring_categories]
             daily_stats.loc[:,'score_type'] = 'a'
             daily_stats.replace('-', np.nan, inplace=True)
@@ -287,32 +288,35 @@ class FantasyLeague(League):
         # dict to keep track of how many games players play using projected stats
         projected_games_played = defaultdict(int)
         # we need to look up roster changes by date so let's make a dict ourselves
-        rc_dict = _roster_changes_as_day_dict(roster_change_set)
+        rc_dict = defaultdict(list)
+        if roster_change_set:
+            rc_dict = _roster_changes_as_day_dict(roster_change_set)
 
         scoring_categories = self.scoring_categories()
 
         roster_week_results = None
         if not (simulation_mode or date_last_use_actuals):
-            # if date_last_use_actuals is not set, we default it to today
-            date_last_use_actuals = datetime.today()
+            # if date_last_use_actuals is not set, we default it to 1 second before midnight today
+            date_last_use_actuals = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(seconds=1)  # can't support today yet, need to watch for completed games, etc.
 
         for game_day in date_range:
             roster_results = None
+        
+            for rc in rc_dict[game_day.date()]:
+                # TODO should really figure out how to deal with this.  sometimes it is string, sometimes list. 
+                # i think has to do with serializing via jsonpickle
+                with suppress(Exception):
+                    rc.in_projections['eligible_positions'] = pd.eval(rc.in_projections['eligible_positions'])
+                # add player in projections to projection dataframe
+                current_projections = current_projections.append(rc.in_projections)
+                projections_with_added_players = projections_with_added_players.append(rc.in_projections)
+                current_projections.drop(rc.out_player_id, inplace=True)
+                current_projections.sort_values(by='fpts', ascending=False, inplace=True)
+            
             # let's see if we should grab actuals
-            if not simulation_mode and game_day <= date_last_use_actuals:
+            if not simulation_mode and game_day < date_last_use_actuals:
                 roster_results= self._actuals_for_team_day(team_id, game_day, scoring_categories)
             else:
-                for rc in rc_dict[game_day.date()]:
-                    # TODO should really figure out how to deal with this.  sometimes it is string, sometimes list. 
-                    # i think has to do with serializing via jsonpickle
-                    with suppress(Exception):
-                        rc.in_projections['eligible_positions'] = pd.eval(rc.in_projections['eligible_positions'])
-                    # add player in projections to projection dataframe
-                    current_projections = current_projections.append(rc.in_projections)
-                    projections_with_added_players = projections_with_added_players.append(rc.in_projections)
-                    current_projections.drop(rc.out_player_id, inplace=True)
-                    current_projections.sort_values(by='fpts', ascending=False, inplace=True)
-        
                 game_day_players = current_projections[current_projections.team_id.isin(find_teams_playing(game_day.to_pydatetime().date()))]
                 if len(game_day_players) > 0:
                     roster = best_roster(game_day_players.loc[:,['eligible_positions']].itertuples())
@@ -332,5 +336,8 @@ class FantasyLeague(League):
 
 
         #TODO maybe we should formalize a return structure
+        if len(roster_week_results) > 0:
+            roster_week_results.reset_index(inplace=True)
+            roster_week_results.set_index(['play_date', 'player_id'], inplace=True)
         return roster_change_set, roster_week_results
     

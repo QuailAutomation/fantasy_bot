@@ -23,12 +23,12 @@ def print_rcs(roster_change_set, score, projected_stats):
     print(f"Score: {score}\n")
 
 def do_run():
-    # celery = init_celery()
     """Run the algorithm."""
-    week = 2
-    # league_id = '396.l.53432'
+    week = 4
+
     league_id = '403.l.41177'
-    league_id = "403.l.18782"
+    # league_id = "403.l.18782"
+    
     manager: ManagerBot = ManagerBot(week=week, simulation_mode=False,league_id=league_id)
 
     league: FantasyLeague = manager.lg
@@ -59,14 +59,18 @@ def do_run():
 
     # valid dates are next day we can make changes for to end of fantasy week
     first_add = datetime.datetime.strptime(league.settings()['edit_key'], "%Y-%m-%d")
+    # TODO hack because we don't handle dates correctly yet
+    if league_id == "403.l.18782":
+        first_add += datetime.timedelta(days=1)
+
     valid_roster_change_dates = pd.date_range(first_add,date_range[-1])
     num_allowed_player_adds = int(league.settings()['max_weekly_adds']) - league.num_moves_allowed()
     if num_allowed_player_adds == 0:
         print("No roster changes left, no need to run.")
         return
     factory = RosterChangeSetFactory(projected_stats, valid_roster_change_dates, league_scoring_categories, team_id=my_team_id, num_moves=num_allowed_player_adds)
-    gea = CeleryFitnessGAEngine(factory=factory,population_size=500,fitness_type=('equal',2),
-                                cross_prob=0.3,mut_prob = 0.1)
+    gea = CeleryFitnessGAEngine(factory=factory,population_size=300,
+                                cross_prob=0.5,mut_prob = 0.1)
 
     def mutate(chromosome, add_selector, drop_selector, date_range, projected_stats, scoring_categories):
         if len(chromosome.roster_changes) == 0:

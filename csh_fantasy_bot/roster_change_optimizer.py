@@ -5,6 +5,7 @@ import datetime
 import json
 import numpy as np
 from collections import namedtuple
+from contextlib import suppress
 
 import cProfile, pstats, io
 
@@ -131,11 +132,51 @@ class RosterChangeSet:
         """Convert to json string."""
         return json.dumps(self.__dict__, default=lambda o: o.__dict__, 
             sort_keys=True, indent=4)
-    
+
+    def __str__(self):
+        return_string = ""
+        for rc in self.roster_changes:
+            return_string += f"Out id: {rc.out_player_id}, in: {rc.in_player_id}, change date: {rc.change_date}\n"
+        # return f"Number roster changes: {len(self.roster_changes)}"
+        return return_string
+
+    def pretty_print(self, score, projected_stats):
+        for rc in self.roster_changes:
+            # we may be called without names avail, just ignore
+            out_name = "Unknown"
+            with suppress(KeyError):
+                out_name = projected_stats.at[rc.out_player_id,'name']
+            in_name = "Unknown"
+            with suppress(KeyError):
+                in_name = projected_stats.at[rc.in_player_id,'name']
+            
+            print(f"Date: {rc.change_date}, in: {in_name}({rc.in_player_id}), out: {out_name}({rc.out_player_id})")
+        print(f"Score: {score}")
+
     @classmethod
     def from_json(cls, jsons):
         """Create change set from json."""
         pass
+
+    @classmethod
+    def from_pretty_print_text(cls, roster_changes, player_df):
+        """
+        Date: 2021-02-06, in: Vladislav Namestnikov(5388), out: Kevin Hayes(4984)
+        Date: 2021-02-04, in: Dylan Strome(6745), out: Jeff Carter(3349)
+        Date: 2021-02-05, in: Alexis Lafreniere(8641), out: Darnell Nurse(5986)
+        """
+        rcs = RosterChangeSet()
+        for rc_line in roster_changes.split('\n'):
+            if rc_line != '':
+                roster_change_parts = rc_line.split(',')
+                change_date = datetime.datetime.strptime(roster_change_parts[0].split(':')[-1].strip(), '%Y-%m-%d').date()
+                string = roster_change_parts[1]
+                in_player_id = int(string[string.find("(")+1:string.find(")")])
+                string = roster_change_parts[2]
+                out_player_id = int(string[string.find("(")+1:string.find(")")])
+                rcs.add(RosterChange(out_player_id, in_player_id, change_date, player_df.loc[in_player_id]))
+            # roster_changes.append(roster_change_optimizer.RosterChange) 
+        return rcs
 
 
 class RosterException(Exception):

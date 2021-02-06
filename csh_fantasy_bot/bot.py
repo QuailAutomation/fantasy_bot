@@ -1,3 +1,4 @@
+
 #!/bin/python
 import logging
 import pickle
@@ -22,6 +23,7 @@ from csh_fantasy_bot.yahoo_projections import retrieve_yahoo_rest_of_season_proj
 
 from csh_fantasy_bot.scoring import ScoreComparer
 
+        
 def produce_csh_ranking(predictions, scoring_categories, selector, ranking_column_name='fantasy_score'):
         """Create ranking by summing standard deviation of each stat, summing, then dividing by num stats."""
         f_mean = predictions.loc[selector,scoring_categories].mean()
@@ -32,10 +34,22 @@ def produce_csh_ranking(predictions, scoring_categories, selector, ranking_colum
         predictions.loc[selector, ranking_column_name] = f_std_performance.sum(axis=1)/len(scoring_categories)
         return predictions
 
+class TeamInfo:
+    def __init__(self, key, manager):
+        self.key = key
+        self.manager : ManagerBot  = manager
+    
+    def scores(self):
+        return self.manager.projected_league_scores[self.key.split('.')[-1]]
+    
+    def roster(self):
+        return self.manager.all_player_predictions[self.manager.all_player_predictions.fantasy_status == int(self.key.split('.')[-1])]
+        
 class ManagerBot:
     """A class that encapsulates an automated Yahoo! fantasy manager."""
 
-    def __init__(self, week = None, simulation_mode=True, league_id="396.l.53432"):
+
+    def __init__(self, week = None, simulation_mode=False, league_id="396.l.53432"):
         self.logger = logging.getLogger()
         self.simulation_mode = simulation_mode
         self.lg = FantasyLeague(league_id)
@@ -51,12 +65,9 @@ class ManagerBot:
         self.tm_cache = utils.TeamCache(self.tm.team_key)
         self.lg_cache = utils.LeagueCache(league_key=league_id)
         self.pred_bldr = None
-        self.my_team_bldr = self._construct_roster_builder()
         self.ppool = None
         self.nhl_scraper = Scraper()
 #        Display = self._get_display_class()
-        self.display = builder.PlayerPrinter()
-        self.blacklist = self._load_blacklist()
         self.lineup = None
         self.bench = []
         self.injury_reserve = []
@@ -75,6 +86,7 @@ class ManagerBot:
         self.fetch_player_pool()
         self.all_player_predictions = self.produce_all_player_predictions()
         self.projected_league_scores = self.fetch_league_lineups()
+        
         self.score_comparer: ScoreComparer = ScoreComparer(self.projected_league_scores.values(), self.stat_categories)
         # self.logger.debug("Reading Free Agents")
         # self.fetch_player_pool()
@@ -83,18 +95,10 @@ class ManagerBot:
      #    self.pick_injury_reserve()
         self.logger.debug("auto pick opponent")
         self.auto_pick_opponent()
+        self.my_team: TeamInfo = TeamInfo(self.tm.team_key, self)
+        self.opponent: TeamInfo = TeamInfo(self.opp_team_key, self)
         self.roster_changes_made = self._get_num_roster_changes_made()
         self.roster_changes_allowed = 4 - self.roster_changes_made
-
-    def _load_blacklist(self):
-        fn = self.tm_cache.blacklist_cache_file()
-        if os.path.exists(fn):
-            with open(fn, "rb") as f:
-                blacklist = pickle.load(f)
-        else:
-            blacklist = []
-        return blacklist
-
 
     def pick_injury_reserve(self):
         """Pick the injury reserve slots"""
@@ -169,7 +173,7 @@ class ManagerBot:
             # return fantasysp_scrape.Parser(scoring_categories=self.stat_categories)
             return yahoo_scraping.YahooPredictions(self.lg.league_id)
 
-        expiry = datetime.timedelta(minutes=24 * 60)
+        expiry = datetime.timedelta(minutes=3 * 24 * 60)
         self.pred_bldr = self.lg_cache.load_prediction_builder(expiry, loader)
 
     def fetch_cur_lineup(self):
@@ -283,7 +287,7 @@ class ManagerBot:
                     all_projections.update(yahoo_projections.loc[[player_id]]) 
                 except KeyError:
                     print(f"Could not find projection for {all_projections.loc[player_id]}")
-
+        all_projections = all_projections.round(2)
         produce_csh_ranking(all_projections, self.stat_categories, 
                     all_projections.index, ranking_column_name='fpts')
 
@@ -292,8 +296,7 @@ class ManagerBot:
 
     def fetch_league_lineups(self):
         scoring_results = {tm['team_key'].split('.')[-1]:self.score_team(self.all_player_predictions[self.all_player_predictions.fantasy_status == int(tm['team_key'].split('.')[-1])], \
-                                    self.week, \
-                                    self.stat_categories, simulation_mode=self.simulation_mode, team_id=tm['team_key'])[1] 
+                                    self.week, simulation_mode=self.simulation_mode, team_id=tm['team_key'])[1] 
                                 for tm in self.lg.teams()}
         return scoring_results
 
@@ -302,13 +305,14 @@ class ManagerBot:
         projections_no_goalies = all_projections[all_projections.position_type == 'P']
         return projections_no_goalies[projections_no_goalies.fantasy_status == int(team_id.split('.')[-1])]
 
-    def score_team(self, player_projections, date_range=None, scoring_categories=None, roster_change_set=None, simulation_mode=True, team_id=None):
+    def score_team(self, player_projections=None, date_range=None, roster_change_set=None, simulation_mode=True, team_id=None):
+        if player_projections is None:
+            my_team_id = int(self.lg.team_key().split('.')[-1])
+            player_projections = self.all_player_predictions[self.all_player_predictions.fantasy_status == my_team_id]
         if date_range is None:
             date_range = self.week
-        if scoring_categories is None:
-            scoring_categories = self.stat_categories
         if team_id is None:
-            team_id = self.lg.team_key()
+            team_id = self.tm.team_key
         return self.lg.score_team(player_projections, date_range, roster_change_set, simulation_mode=simulation_mode, team_id=team_id)
 
 
@@ -330,7 +334,7 @@ class ManagerBot:
         # Build up the predicted score of the opponent
         try:
             team_name = self._get_team_name(self.lg, opp_team_key)
-            print("opponent: {}".format(team_name))
+            self.logger.debug("opponent: {}".format(team_name))
         except LookupError:
             print("Not a valid team: {}:".format(opp_team_key))
             return(None, None)
@@ -532,7 +536,7 @@ class ManagerBot:
     def auto_pick_opponent(self):
 
         edit_wk = self.league_week
-        print("Picking opponent for week: {}".format(edit_wk))
+        self.logger.debug("Picking opponent for week: {}".format(edit_wk))
         # (wk_start, wk_end) = self.lg.week_date_range(edit_wk)
         # edit_date = self.lg.edit_date()
         # if edit_date > wk_end:
@@ -634,10 +638,6 @@ class ManagerBot:
         module = importlib.import_module('.roster_change_optimizer',
             package='csh_fantasy_bot')
         return getattr(module, 'optimize_with_genetic_algorithm')
-
-    def _construct_roster_builder(self):
-        pos_list = "C,C,LW,LW,RW,RW,D,D,D,D".split(",")
-        return roster.Builder(pos_list)
 
     def _get_position_types(self):
         settings = self.lg.settings()
@@ -806,4 +806,7 @@ class RosterChanger:
 
         if not self.dry_run:
             self.tm.change_positions(self.lg.edit_date(), pos_change)
+
+    
+
 

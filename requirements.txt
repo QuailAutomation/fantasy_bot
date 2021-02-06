@@ -29,3 +29,4 @@ ipython
 # PyQt5==5.9.2
 # for serializing to redis
 pyarrow==2.0.0
+pulp==2.4.0

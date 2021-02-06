@@ -24,47 +24,62 @@ class RosterChangeSetFactory(ChromosomeFactory.ChromosomeFactory):
         self.add_selector = RandomWeightedSelector(fantasy_players[fantasy_players.fantasy_status == 'FA'],'fpts')
         self.drop_selector = RandomWeightedSelector(all_players[(all_players.fantasy_status == team_id) & (all_players.percent_owned < 93)], 'fpts', inverse=True)
         self.log = logging.getLogger(__name__)
+        self.added_no_changes = False
     
     def createChromosome(self):
         """Create a roster change set."""
-        roster_changes = random.randint(1, self.num_moves)
         rcs = RosterChangeSet()
-        while len(rcs) < roster_changes:
-            drop_date = random.choice(self.valid_dates).date()
-            player_to_add = self.add_selector.select()
-            player_to_drop = self.drop_selector.select()
-            with suppress(RosterException):
-                rcs.add(RosterChange(player_to_drop.index.values[0], player_to_add.index.values[0], drop_date, player_to_add[self.scoring_categories + ['eligible_positions', 'team_id', 'fpts']]))
-
+        if self.added_no_changes:
+            roster_changes = random.randint(1, self.num_moves)
+            while len(rcs) < roster_changes:
+                drop_date = random.choice(self.valid_dates).date()
+                player_to_add = self.add_selector.select()
+                player_to_drop = self.drop_selector.select()
+                with suppress(RosterException):
+                    rcs.add(RosterChange(player_to_drop.index.values[0], player_to_add.index.values[0], drop_date, player_to_add[self.scoring_categories + ['eligible_positions', 'team_id', 'fpts']]))
+        else:
+            # let's always start with no changes at all
+            self.added_no_changes = True
         return rcs
 
+    def pretty_print_rcs(self, rcs):
+        for rc in rcs.roster_changes:
+            print('in loop')
+            print(f"Out id: {rc.out_player_id}-{self.drop_selector.df.loc[rc.out_player_id, 'name']}-({round(self.drop_selector.df.loc[rc.out_player_id, 'fpts'],3)}) "
+                 + f"in: {rc.in_player_id}-{self.add_selector.df.loc[rc.in_player_id, 'name']}-({round(self.add_selector.df.loc[rc.in_player_id, 'fpts'],3)}) "
+                 + f"change date: {rc.change_date}")
 
 class RandomWeightedSelector:
     """Random sampling of rows based on column in dataframe."""
 
-    def __init__(self, df, column, inverse=True):
+    def __init__(self, df, column, inverse=False):
         self.df = df.copy()
         self.column = column
-        self._normalize(self.df, column, inverse)
         self.normalized_column_name = f'{self.column}_normalized'
+        self._normalize(self.df, column, inverse)
         
     def select(self):
         """Select random weighted row."""
-        return self.df.sample(1,weights=self.normalized_column_name)
+        return self.df.sample(1,weights=self.df[self.normalized_column_name])
 
     def _normalize(self, df, column, inverse=False):
         # add support for -ve numbers too.  find min and add that to value to get to 0
-        minimum_value = df[column].min() - .1
-        df[f'{column}_normalized'] = 0
-        df.loc[df.G.notnull(),f'{column}_normalized'] = df[column] - minimum_value
+        minimum_value = df[column].min() - .2
+        #  if we have negatives, we must bump them up to eliminate them
+        if minimum_value > .2:
+            minimum_value = 0
+
+        df[f'{column}_non_zero'] = 0
         # if we don't have projections, their std scores end up at zero, which is higher than some players
         # because it can be negative.  We are going to add the min std sum for each player, then normalize, 
         # then zero out the player for which we don't have projections
+        df.loc[df.G.notnull(),f'{column}_non_zero'] = df[column] - minimum_value
+        sum_total = df[f'{column}_non_zero'].sum()
         if inverse:
-            df[f'{column}_normalized'] = 1 - (df[f'{column}_normalized'] / df[f'{column}_normalized'].sum()) 
-            df[f'{column}_normalized'] = df[f'{column}_normalized']/df[f'{column}_normalized'].sum()  
+            df[f'{column}_normalized'] = (1/df['fpts_non_zero'])/(1/df['fpts_non_zero']).sum()
+            # df[f'{column}_normalized'] = df[f'{column}_normalized']/df[f'{column}_normalized'].sum()  
         else:
-            df[f'{column}_normalized'] = (df[column] + minimum_value)/df[f'{column}_normalized'].sum()
+            df[f'{column}_normalized'] = df[f'{column}_non_zero']
 
         # TODO this will break for Goalies.  Should and with GAA or some other goalie stat i think     
         df.loc[df.G.isnull(),f'{column}_normalized'] =  0
@@ -89,7 +104,9 @@ def fitness(roster_change_sets, all_players, date_range, scoring_categories, sco
         try:
             scoring_result = scores_dict[change_set._id]
             change_set.scoring_summary = scoring_result.reset_index()
-            change_set.score = score_comparer.compute_score(scoring_result)
+            # change_set.score = score_comparer.compute_score(scoring_result)
+            score = score_comparer.score(scoring_result).loc['score_opp'].sum()
+            change_set.score = score
         except KeyError as e:
             log.exception(e)
         

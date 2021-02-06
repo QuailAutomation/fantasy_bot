@@ -71,22 +71,46 @@ class ScoreComparer:
             scores = scores.append(df.loc[:,self.stat_cats].sum(), ignore_index=True)
         return scores.agg([agg]).loc[agg,:]
 
-    def print_week_results(self, my_scores_summary):
-        scoring_stats = my_scores_summary.sum().loc[self.stat_cats]
-        opp_scoring_stats = self.opp_sum.loc[self.stat_cats]
-        sc = self.compute_score(my_scores_summary)
-        differences = scoring_stats - opp_scoring_stats
+    def score(self, team1_scores, team2_scores=None):
+        """
+        Calculate a lineup score by comparing it against the opponent.
 
-        means = pd.DataFrame([scoring_stats, opp_scoring_stats]).mean()
+        :param lineup: Lineup to compute standard deviation from
+        :return: Standard deviation score 0.12
+        """
+        scoring_stats = team1_scores[self.stat_cats].sum()
+        if team2_scores is None:
+            opp_scoring_stats = self.opp_sum
+        else:
+            opp_scoring_stats = team2_scores[self.stat_cats].sum()
+        
+        score_differential_opp = scoring_stats - opp_scoring_stats
+        score_differential_league = scoring_stats - self.league_means
+
+        means = abs(pd.DataFrame([scoring_stats, opp_scoring_stats]).mean())
+        num_std_divs_opp = score_differential_opp/self.stdevs
+        num_std_divs_league = score_differential_league/self.stdevs
         # differences / means
-        score = differences / means
-        cat_win_loss = score.mask(score < 0, -1)
-        cat_win_loss = cat_win_loss.mask(cat_win_loss > 0, 1)
+        # lets bucket scores
+        # discrete_scores = [-.2, -.1,0,.1,.2]
+        #score = num_std_divs_opp.cut(num_std_divs_opp ,bins=[-20,-10,-.5,0,.5,20], labels=discrete_scores)
+        score_opp = num_std_divs_opp.mask(num_std_divs_opp > 1.5,1.5).mask(num_std_divs_opp < -1.5,-1.5)
+        score_league = num_std_divs_league.mask(num_std_divs_league > 1.5,1.5).mask(num_std_divs_league < -1.5,-1.5)
+
+        # score = differences / means
+        cat_win_loss = pd.cut(num_std_divs_opp,bins=[-20,-.2,.2,20], labels=[-1,0,1])
+        # cat_win_loss = num_std_divs_opp.mask(cat_win_loss > 0, 1)
         # cat_win = 1 if my_scores.sum() > manager.score_comparer.opp_sum else -1
         # TODO handle tie as within threshold, which would depend on the stat
         summary_df = pd.DataFrame(
-            [scoring_stats, opp_scoring_stats, differences, means, self.league_means,
-             self.stdevs, differences/self.stdevs, score,cat_win_loss],
-            index=['my-scores', 'opponent', 'difference', 'mean-opp', 'mean-league', 'std dev', 'num_stds', 'score','win_loss'])
+            [scoring_stats, opp_scoring_stats, score_differential_opp, self.league_means, self.stdevs, means,
+                num_std_divs_opp, score_opp ,cat_win_loss, score_differential_league, score_league],
+            index=['my-scores', 'opponent', 'difference_opp', 'mean-league', 'std dev', 'mean-opp', 'num_stds_opp', 'score_opp','win_loss_opp', 'difference_league', 'score_league']).round(3)
+        return summary_df
+    
+        
+    def print_week_results(self, my_scores_summary):
+        summary_df = self.score(my_scores_summary, self.opp_sum.loc[self.stat_cats])
+        sc = self.compute_score(my_scores_summary)
         print(summary_df.head(10))
         print("Score: {:4.2f}".format(sc))

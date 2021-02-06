@@ -18,16 +18,31 @@ from elasticsearch import helpers
 
 import os
 
-week_number = 2
-
 
 # es = Elasticsearch(hosts='http://192.168.1.20:9200', http_compress=True)
 es = Elasticsearch(hosts='http://localhost:9200', http_compress=True)
 
+def to_roster_change(roster_changes, player_df):
+    """
+    Date: 2021-02-06, in: Vladislav Namestnikov(5388), out: Kevin Hayes(4984)
+    Date: 2021-02-04, in: Dylan Strome(6745), out: Jeff Carter(3349)
+    Date: 2021-02-05, in: Alexis Lafreniere(8641), out: Darnell Nurse(5986)
+    """
+    rcs = roster_change_optimizer.RosterChangeSet()
+    for rc_line in roster_changes.split('\n'):
+        if rc_line != '':
+            roster_change_parts = rc_line.split(',')
+            change_date = datetime.datetime.strptime(roster_change_parts[0].split(':')[-1].strip(), '%Y-%m-%d').date()
+            string = roster_change_parts[1]
+            in_player_id = int(string[string.find("(")+1:string.find(")")])
+            string = roster_change_parts[2]
+            out_player_id = int(string[string.find("(")+1:string.find(")")])
+            rcs.add(roster_change_optimizer.RosterChange(out_player_id, in_player_id, change_date, player_df.loc[in_player_id]))
+        # roster_changes.append(roster_change_optimizer.RosterChange) 
+    return rcs
 
 def filter_keys(document, columns):
     return {key: document[key] for key in columns}
-
 
 def write_team_results_es(scoring_data, team_id):
     '''write out weekly scoring results to ES'''
@@ -52,9 +67,11 @@ def write_team_results_es(scoring_data, team_id):
 
     helpers.bulk(es, doc_generator_team_results(data))
 
-# league_id = '396.l.53432'
+week_number = 4
+
 league_id = '403.l.41177'
-# league_id = "403.l.18782"
+league_id = "403.l.18782"
+
 simulation_mode = False
 manager: bot.ManagerBot = None
 if 'YAHOO_OAUTH_FILE' in os.environ:
@@ -65,73 +82,44 @@ else:
 
 
 my_team_id = manager.tm.team_key.split('.')[-1]
+
 my_opponent_id = manager.opp_team_key
-my_scores = manager.projected_league_scores[my_team_id]
+my_scores = manager.my_team.scores()
+# print("My team has {} roster changes available.".format(manager.roster_changes_allowed))
+# print("Scoring no roster changes:")
+# print(my_scores.sum())
 
-print("My team has {} roster changes available.".format(manager.roster_changes_allowed))
-print("Scoring no roster changes:")
-print(my_scores.sum())
+roster_change_string = """
+Date: 2021-02-09, in: Unknown(5626), out: Unknown(3788)
+Date: 2021-02-08, in: Unknown(3835), out: Unknown(4008)
+"""
+roster_change_set = to_roster_change(roster_change_string, manager.all_player_predictions[manager.stat_categories + ['fpts']])
 
-roster_changes = list()
-# roster_changes.append([4248,5710, np.datetime64('2021-01-15')])
-# coleman 5441
-# foligno 4008
-# couture 4248
-# in arvidson 6480
-# roster_changes.append(roster_change_optimizer.RosterChange(4248, 4020, datetime.date(2021, 1, 13), manager.all_player_predictions.loc[4020, manager.stat_categories + ['eligible_positions', 'team_id', 'fpts']]))
-# roster_changes.append([5698,6381, np.datetime64('2020-03-02')])
-# roster_changes.append([4792,5405, np.datetime64('2020-02-13')])
-# roster_changes.append([4792,5380, np.datetime64('2020-02-15')])
-
-# roster_changes.append(roster_change_optimizer.RosterChange(5984,7267, np.datetime64('2020-02-03')))
-# roster_changes.append(roster_change_optimizer.RosterChange(4792,5569, np.datetime64('2020-02-09')))
-# roster_changes.append(roster_change_optimizer.RosterChange(5698,5380, np.datetime64('2020-02-04')))
-roster_change_set = roster_change_optimizer.RosterChangeSet(roster_changes)
-# my_scores = manager.projected_league_scores[my_team_id]
+test = manager.score_team(roster_change_set=roster_change_set)
 my_scores_with_rc = manager.score_team(manager.all_player_predictions[manager.all_player_predictions.fantasy_status == int(my_team_id)],roster_change_set=roster_change_set, simulation_mode=False)
-# (my_team, manager.week, manager.stat_categories, roster_change_set=roster_change_set)
-print("Scoring with roster changes:")
-print(my_scores_with_rc[1].sum())
 
-manager.score_comparer.print_week_results(my_scores_with_rc[1])
+score_sum = manager.score_comparer.score(manager.my_team.scores())
+
+print(f"Opponent is: {manager.opp_team_name}")
+print(score_sum)
+
+# df = manager.my_team.scores().reset_index()
+# df1 = df.my_team.scores().set_index(['play_date', 'player_id'])
+# df1.loc[('2021-02-02', slice(None)),:].sum()
+
+# manager.score_comparer.print_week_results(my_scores_with_rc[1])
 pass
-
-import cProfile, pstats, io
-
-
-def do_cprofile(func):
-    def profiled_func(*args, **kwargs):
-        profile = cProfile.Profile()
-        try:
-            profile.enable()
-            result = func(*args, **kwargs)
-            profile.disable()
-            return result
-        finally:
-            s = io.StringIO()
-            sortby = 'cumulative'
-            ps = pstats.Stats(profile).sort_stats(sortby)
-            ps.print_stats()
-
-    return profiled_func
-
-
-#@do_cprofile
-def do_run():
-    print('profiling')
-    # scorer.score(roster_change_set)
-
 
 do_run()
 
-if len(roster_changes) > 0:
-    my_scores = scorer.score(roster_change_set)
-    manager.score_comparer.print_week_results(my_scores.sum())
+# if len(roster_changes) > 0:
+#     my_scores = scorer.score(roster_change_set)
+#     manager.score_comparer.print_week_results(my_scores.sum())
 
 
-my_scores.to_csv('team-results.csv')
-manager.all_players.to_csv('all-players.csv')
-# manager.all_players.set_index('player_id', inplace=True)
+# my_scores.to_csv('team-results.csv')
+# manager.all_players.to_csv('all-players.csv')
+# # manager.all_players.set_index('player_id', inplace=True)
 
 
 def extract_team_id(team_key):
