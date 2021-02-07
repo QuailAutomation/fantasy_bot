@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY csh_fantasy_bot ./csh_fantasy_bot
 # COPY oauth2.json .
 COPY run_ga.py .
-COPY compare_player_rankings.py .
+# COPY compare_player_rankings.py .
 COPY player_lookup.py .
 COPY run_pygenetic.py .
 # WORKDIR /app
