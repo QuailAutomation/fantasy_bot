@@ -22,7 +22,7 @@ jobs:
         with:
           publish: true
           imageName: craigham/fantasy-bot
-          platform: linux/amd64,linux/arm/v7,linux/arm64
+          #platform: linux/amd64,linux/arm/v7,linux/arm64
           dockerUser: ${{ secrets.docker_hub_username }}
           dockerPassword: ${{ secrets.docker_hub_password }}
           tag: 0.1.$GITHUB_RUN_NUMBER,latest
