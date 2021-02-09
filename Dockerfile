@@ -1,7 +1,7 @@
 # FROM python:3.8-buster
 FROM craigham/pandas:latest
 RUN apt-get update
-RUN apt-get install -y --no-install-recommends build-essential gcc pyarrow
+RUN apt-get install -y --no-install-recommends build-essential gcc
 # Make sure we use the virtualenv:
 ENV PATH="/opt/venv/bin:$PATH"
 
