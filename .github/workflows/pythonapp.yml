@@ -13,18 +13,50 @@ jobs:
     name: Build image job
     steps:
       - name: Checkout master
-        uses: actions/checkout@master
+        uses: actions/checkout@v2
         with:
            submodules: 'recursive'
 
-      - name: Build and publish image
-        uses: ilteoood/docker_buildx@master
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      -
+        name: Login to DockerHub
+        uses: docker/login-action@v1 
         with:
-          publish: true
-          imageName: craigham/fantasy-bot
-          dockerUser: ${{ secrets.docker_hub_username }}
-          dockerPassword: ${{ secrets.docker_hub_password }}
-          tag: 0.1.$GITHUB_RUN_NUMBER,latest
+          username: ${{ secrets.docker_hub_username }}
+          password: ${{ secrets.docker_hub_password }}
+      -
+        name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm/v7,linux/arm64
+          push: true
+          tags: |
+            craigham/fantasy_bot:latest
+            'craigham/fantasy_bot:0.1.${{ github.run_number}}'
+
+
+
+
+      # -
+      #   name: Set up Docker Buildx
+      #   id: buildx
+      #   uses: docker/setup-buildx-action@v1
+
+      # - name: Build and publish image
+      #   uses: ilteoood/docker_buildx@master
+      #   with:
+      #     publish: true
+      #     imageName: craigham/fantasy-bot
+      #     dockerUser: ${{ secrets.docker_hub_username }}
+      #     dockerPassword: ${{ secrets.docker_hub_password }}
+      #     tag: 0.1.$GITHUB_RUN_NUMBER,latest
       - name: Clear
         if: always()
         run: |
