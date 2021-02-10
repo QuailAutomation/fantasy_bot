@@ -39,7 +39,7 @@ jobs:
           push: true
           tags: |
             craigham/fantasy_bot:latest
-            craigham/fantasy_bot:0.1.${{ GITHUB_RUN_NUMBER }}
+            "craigham/fantasy_bot:0.1.$GITHUB_RUN_NUMBER"
         
 
 
