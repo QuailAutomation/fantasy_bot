@@ -69,7 +69,7 @@ def do_run():
         print("No roster changes left, no need to run.")
         return
     factory = RosterChangeSetFactory(projected_stats, valid_roster_change_dates, league_scoring_categories, team_id=my_team_id, num_moves=num_allowed_player_adds)
-    gea = CeleryFitnessGAEngine(factory=factory,population_size=300,
+    gea = CeleryFitnessGAEngine(factory=factory,population_size=500,
                                 cross_prob=0.5,mut_prob = 0.1)
 
     def mutate(chromosome, add_selector, drop_selector, date_range, projected_stats, scoring_categories):
