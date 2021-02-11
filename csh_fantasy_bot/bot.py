@@ -374,43 +374,43 @@ class ManagerBot:
         self.lineup = new_lineup
         self.bench = new_bench
 
-    def fill_empty_spots_from_bench(self):
-        if len(self.lineup) < self.my_team_bldr.max_players() and \
-                len(self.bench) > 0:
-            optimizer_func = self._get_lineup_optimizer_function()
-            bench_df = pd.DataFrame(data=self.bench,
-                                    columns=self.bench[0].index)
-            new_lineup = optimizer_func(self.cfg, self.score_comparer,
-                                        self.my_team_bldr, bench_df,
-                                        self.lineup)
-            if new_lineup:
-                self._set_new_lineup_and_bench(new_lineup)
+    # def fill_empty_spots_from_bench(self):
+    #     if len(self.lineup) < self.my_team_bldr.max_players() and \
+    #             len(self.bench) > 0:
+    #         optimizer_func = self._get_lineup_optimizer_function()
+    #         bench_df = pd.DataFrame(data=self.bench,
+    #                                 columns=self.bench[0].index)
+    #         new_lineup = optimizer_func(self.cfg, self.score_comparer,
+    #                                     self.my_team_bldr, bench_df,
+    #                                     self.lineup)
+    #         if new_lineup:
+    #             self._set_new_lineup_and_bench(new_lineup)
 
-    def optimize_lineup_from_bench(self):
-        """
-        Optimizes your lineup using just your bench as potential player
-        """
-        if len(self.bench) == 0:
-            return
+    # def optimize_lineup_from_bench(self):
+    #     """
+    #     Optimizes your lineup using just your bench as potential player
+    #     """
+    #     if len(self.bench) == 0:
+    #         return
 
-        optimizer_func = self._get_lineup_optimizer_function()
-        ppool = pd.DataFrame(data=self.bench, columns=self.bench[0].index)
-        ldf = pd.DataFrame(data=self.lineup, columns=self.lineup[0].index)
-        ppool = ppool.append(ldf, ignore_index=True)
-        ppool = ppool[ppool['status'] == '']
-        new_lineup = optimizer_func(self.score_comparer,
-                                    self.my_team_bldr, ppool, [])
-        if new_lineup:
-            self._set_new_lineup_and_bench(new_lineup)
+    #     optimizer_func = self._get_lineup_optimizer_function()
+    #     ppool = pd.DataFrame(data=self.bench, columns=self.bench[0].index)
+    #     ldf = pd.DataFrame(data=self.lineup, columns=self.lineup[0].index)
+    #     ppool = ppool.append(ldf, ignore_index=True)
+    #     ppool = ppool[ppool['status'] == '']
+    #     new_lineup = optimizer_func(self.score_comparer,
+    #                                 self.my_team_bldr, ppool, [])
+    #     if new_lineup:
+    #         self._set_new_lineup_and_bench(new_lineup)
 
-    def fill_empty_spots(self):
-        if len(self.lineup) < self.my_team_bldr.max_players():
-            optimizer_func = self._get_lineup_optimizer_function()
-            new_lineup = optimizer_func(self.score_comparer,
-                                        self.my_team_bldr,
-                                        self._get_filtered_pool(), self.lineup)
-            if new_lineup:
-                self.lineup = new_lineup
+    # def fill_empty_spots(self):
+    #     if len(self.lineup) < self.my_team_bldr.max_players():
+    #         optimizer_func = self._get_lineup_optimizer_function()
+    #         new_lineup = optimizer_func(self.score_comparer,
+    #                                     self.my_team_bldr,
+    #                                     self._get_filtered_pool(), self.lineup)
+    #         if new_lineup:
+    #             self.lineup = new_lineup
 
     def print_roster(self):
         self.display.printRoster(self.lineup, self.bench, self.injury_reserve)

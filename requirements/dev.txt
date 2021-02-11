@@ -1,0 +1,10 @@
+-r common.txt
+-e library/nhl_scraper
+-e library/yahoo_fantasy_api
+
+pytest==5.3.5
+pytest-mock==3.1.0
+
+ipython
+ipykernel
+pydocstyle==5.0.*

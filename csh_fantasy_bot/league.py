@@ -18,7 +18,9 @@ from csh_fantasy_bot.roster import best_roster
 from csh_fantasy_bot.scoring import ScoreComparer
 
 import redis
-import pyarrow as pa
+# import pyarrow as pa
+import pickle
+
 
 my_redis = redis.Redis(host='localhost', port=6379, db=0)
 
@@ -259,10 +261,12 @@ class FantasyLeague(League):
             daily_stats.set_index('player_id',inplace=True)
             time.sleep(.5)
             results = daily_stats.loc[~daily_stats.G.isnull(),:]
-            df_compressed = pa.serialize(daily_stats).to_buffer().to_pybytes()
-            my_redis.set(actual_cache_key, df_compressed)
+            
+            # df_compressed = pa.serialize(daily_stats).to_buffer().to_pybytes()
+            my_redis.set(actual_cache_key, pickle.dumps(daily_stats))
         else:
-            results = pa.deserialize(results)
+            results = pickle.loads(results)
+            # results = pa.deserialize(results)
         return results
 
     def score_team(self, player_projections, date_range, roster_change_set=None, simulation_mode=True, date_last_use_actuals=None, team_id=None):

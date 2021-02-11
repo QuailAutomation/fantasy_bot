@@ -79,7 +79,7 @@ class RandomWeightedSelector:
             df[f'{column}_normalized'] = (1/df['fpts_non_zero'])/(1/df['fpts_non_zero']).sum()
             # df[f'{column}_normalized'] = df[f'{column}_normalized']/df[f'{column}_normalized'].sum()  
         else:
-            df[f'{column}_normalized'] = df[f'{column}_non_zero']
+            df[f'{column}_normalized'] = df[f'{column}_non_zero']/sum_total
 
         # TODO this will break for Goalies.  Should and with GAA or some other goalie stat i think     
         df.loc[df.G.isnull(),f'{column}_normalized'] =  0

@@ -151,7 +151,7 @@ class RosterChangeSet:
                 in_name = projected_stats.at[rc.in_player_id,'name']
             
             print(f"Date: {rc.change_date}, in: {in_name}({rc.in_player_id}), out: {out_name}({rc.out_player_id})")
-        print(f"Score: {score}")
+        print(f"Score: {round(score,4)}")
 
     @classmethod
     def from_json(cls, jsons):

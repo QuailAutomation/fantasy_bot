@@ -33,3 +33,4 @@ ipython
 pyarrow==2.0.0
 pulp==2.4.0
 ipykernel
+

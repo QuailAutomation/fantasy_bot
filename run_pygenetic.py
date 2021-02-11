@@ -1,5 +1,4 @@
 """Run pygenetic GA analysis."""
-from csh_fantasy_bot.bot import ManagerBot
 import pandas as pd
 import random
 import copy
@@ -9,23 +8,18 @@ from contextlib import suppress
 from pygenetic import GAEngine
 from pygenetic import Utils
 
-from yahoo_fantasy_api.team import Team
-
 from csh_fantasy_bot.ga import RosterChangeSetFactory, fitness, RandomWeightedSelector, CeleryFitnessGAEngine
+from csh_fantasy_bot.bot import ManagerBot
 from csh_fantasy_bot.league import FantasyLeague
-from csh_fantasy_bot.roster_change_optimizer import RosterChangeSet, RosterException
+from csh_fantasy_bot.roster_change_optimizer import RosterException
 from csh_fantasy_bot.celery_app import app
 from csh_fantasy_bot.scoring import ScoreComparer
 
-def print_rcs(roster_change_set, score, projected_stats):
-    for rc in roster_change_set.roster_changes:
-        print(f"Date: {rc.change_date}, in: {projected_stats.at[rc.in_player_id,'name']}({rc.in_player_id}), out: {projected_stats.at[rc.out_player_id,'name']}({rc.out_player_id})")
-    print(f"Score: {score}\n")
 
-def do_run():
+
+def do_run(week=5, league_id='403.l.41177', population_size=100):
     """Run the algorithm."""
     week = 4
-
     league_id = '403.l.41177'
     # league_id = "403.l.18782"
     
@@ -46,7 +40,7 @@ def do_run():
 
     addable_players = projected_stats[ (projected_stats.fantasy_status == 'FA') & (projected_stats.fantasy_status != my_team_id)]
     add_selector = RandomWeightedSelector(addable_players,'fpts')
-    droppable_players = projected_stats[(projected_stats.fantasy_status == my_team_id) & (projected_stats.percent_owned < 93)]
+    droppable_players = projected_stats[(projected_stats.fantasy_status == my_team_id) & (projected_stats.percent_owned < 93) & (projected_stats.fpts < .7)]
     drop_selector = RandomWeightedSelector(droppable_players, 'fpts', inverse=True)
     # create score comparer
     valid_players = projected_stats[projected_stats.status != 'IR']
@@ -69,7 +63,7 @@ def do_run():
         print("No roster changes left, no need to run.")
         return
     factory = RosterChangeSetFactory(projected_stats, valid_roster_change_dates, league_scoring_categories, team_id=my_team_id, num_moves=num_allowed_player_adds)
-    gea = CeleryFitnessGAEngine(factory=factory,population_size=500,
+    gea = CeleryFitnessGAEngine(factory=factory,population_size=population_size,
                                 cross_prob=0.5,mut_prob = 0.1)
 
     def mutate(chromosome, add_selector, drop_selector, date_range, projected_stats, scoring_categories):
@@ -167,16 +161,13 @@ def do_run():
 
 
     gea.evolve(5)
-    print_rcs(*gea.best_fitness, projected_stats)
+    rcs, score = gea.best_fitness
+    rcs.pretty_print(score,projected_stats)
     for _ in range(20):
-        try:
-            gea.continue_evolve(1)
-            
-            print("hall of fame:")
-            print_rcs(*gea.hall_of_fame, projected_stats)
-        except TypeError as e:
-            print(e)
-    pass
+        gea.continue_evolve(1)
+        print("hall of fame:")
+        rcs, score = gea.best_fitness
+        rcs.pretty_print(score,projected_stats)
     
 if __name__ == "__main__":
     do_run()

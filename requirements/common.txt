@@ -1,0 +1,19 @@
+selenium
+beautifulsoup4==4.9.2
+lxml==4.6.2
+yahoo_oauth==1.1
+elasticsearch>=6.0.0,<7.0.0
+celery==5.0.5
+redis==3.5.3
+elasticsearch-dsl==6.4.0
+flask==1.1.2
+# jsons==1.1.2
+jsonpickle==1.4.1
+matplotlib==3.3.4
+#-e https://github.com/QuailAutomation/pygenetic.git
+-e git+git://github.com/QuailAutomation/pygenetic@master#egg=pygeneticsou  
+
+# PyQt5==5.9.2
+# for serializing to redis
+#pyarrow==2.0.0
+pulp==2.4.0
