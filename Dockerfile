@@ -1,6 +1,6 @@
 FROM python:3.8-slim AS compile-image
 RUN apt-get update
-RUN apt-get install -y --no-install-recommends build-essential gcc git libxml2 libxslt
+RUN apt-get install -y --no-install-recommends build-essential gcc git
 
 RUN python -m venv /opt/venv
 # Make sure we use the virtualenv:
