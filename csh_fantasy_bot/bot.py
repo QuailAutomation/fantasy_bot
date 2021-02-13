@@ -1,4 +1,3 @@
-
 #!/bin/python
 import logging
 import pickle
@@ -47,8 +46,6 @@ class TeamInfo:
         
 class ManagerBot:
     """A class that encapsulates an automated Yahoo! fantasy manager."""
-
-
     def __init__(self, week = None, simulation_mode=False, league_id="396.l.53432"):
         self.logger = logging.getLogger()
         self.simulation_mode = simulation_mode
@@ -69,8 +66,8 @@ class ManagerBot:
         self.nhl_scraper = Scraper()
 #        Display = self._get_display_class()
         self.lineup = None
-        self.bench = []
-        self.injury_reserve = []
+        # self.bench = []
+        # self.injury_reserve = []
         self.opp_sum = None
         self.opp_team_name = None
         self.opp_team_key = None
@@ -86,63 +83,12 @@ class ManagerBot:
         self.fetch_player_pool()
         self.all_player_predictions = self.produce_all_player_predictions()
         self.projected_league_scores = self.fetch_league_lineups()
-        
         self.score_comparer: ScoreComparer = ScoreComparer(self.projected_league_scores.values(), self.stat_categories)
-        # self.logger.debug("Reading Free Agents")
-        # self.fetch_player_pool()
-        self.logger.debug("Loading Lineups")
-        self.load_lineup()
-     #    self.pick_injury_reserve()
-        self.logger.debug("auto pick opponent")
         self.auto_pick_opponent()
         self.my_team: TeamInfo = TeamInfo(self.tm.team_key, self)
         self.opponent: TeamInfo = TeamInfo(self.opp_team_key, self)
         self.roster_changes_made = self._get_num_roster_changes_made()
         self.roster_changes_allowed = 4 - self.roster_changes_made
-
-    def pick_injury_reserve(self):
-        """Pick the injury reserve slots"""
-        self.injury_reserve = []
-        ir_spots = 1
-        if ir_spots == 0:
-            return
-
-        ir = []
-        roster = self.fetch_cur_lineup()
-        for plyr in roster:
-            if plyr['status'] == 'IR':
-                ir.append(plyr)
-                for idx, lp in enumerate(self.lineup):
-                    if lp['player_id'] == plyr['player_id']:
-                        del self.lineup[idx]
-                        break
-                for idx, bp in enumerate(self.bench):
-                    if bp['player_id'] == plyr['player_id']:
-                        del self.bench[idx]
-                        break
-
-        if len(ir) <= ir_spots:
-            self.injury_reserve = ir
-        else:
-            assert(False), "Need to implement pruning of IR"
-
-    def move_non_available_players(self):
-        """Remove any player that has a status (e.g. DTD, SUSP, etc.).
-
-        If the player is important enough, they will be added back to the bench
-        pending the ownership percentage.
-        """
-        roster = self._get_orig_roster()
-        for plyr in roster:
-            if plyr['status'].strip() != '':
-                for idx, lp in enumerate(self.lineup):
-                    if lp['player_id'] == plyr['player_id']:
-                        self.logger.info(
-                            "Moving {} out of the starting lineup because "
-                            "they are not available ({})".format(
-                                plyr['name'], plyr['status']))
-                        del self.lineup[idx]
-                        break
 
     def _save_blacklist(self):
         fn = self.tm_cache.blacklist_cache_file()
@@ -339,116 +285,7 @@ class ManagerBot:
             print("Not a valid team: {}:".format(opp_team_key))
             return(None, None)
 
-        # opp_team = roster.Container(self.lg, self.lg.to_team(opp_team_key))
-        # opp_roster = pd.DataFrame(self.lg.to_team(opp_team_key).roster())
-        # opp_roster = self._get_predicted_stats(opp_roster)
-        # # opp_df = self.pred_bldr.predict(pd.DataFrame(opp_roster))
-
-        # print(opp_roster.head(20))
-        # my_scorer: BestRankedPlayerScorer = BestRankedPlayerScorer(self.lg, self.lg.to_team(opp_team_key),self.pred_bldr.predict(
-        #     players.reset_index()),
-                                                                    # self.week)
-        #opp_sum = self.scorer.summarize(opp_df, week)
-        # opp_sum = my_scorer.score()
-       # print(opp_sum.head(20))
         return (team_name, self.projected_league_scores[opp_team_key.split('.')[-1]])
-
-    def load_lineup(self):
-        def loader():
-            self.lineup = []
-            # self.sync_lineup()
-            return self.lineup
-
-        self.lineup = self.tm_cache.load_lineup(None, loader)
-
-    def _set_new_lineup_and_bench(self, new_lineup):
-        new_bench = []
-        new_plyr_ids = [e["player_id"] for e in new_lineup]
-        for plyr in self.lineup:
-            if plyr["player_id"] not in new_plyr_ids:
-                new_bench.append(plyr)
-        for plyr in self.bench:
-            if plyr["player_id"] not in new_plyr_ids:
-                new_bench.append(plyr)
-        assert(len(new_bench) <= 8)
-        self.lineup = new_lineup
-        self.bench = new_bench
-
-    # def fill_empty_spots_from_bench(self):
-    #     if len(self.lineup) < self.my_team_bldr.max_players() and \
-    #             len(self.bench) > 0:
-    #         optimizer_func = self._get_lineup_optimizer_function()
-    #         bench_df = pd.DataFrame(data=self.bench,
-    #                                 columns=self.bench[0].index)
-    #         new_lineup = optimizer_func(self.cfg, self.score_comparer,
-    #                                     self.my_team_bldr, bench_df,
-    #                                     self.lineup)
-    #         if new_lineup:
-    #             self._set_new_lineup_and_bench(new_lineup)
-
-    # def optimize_lineup_from_bench(self):
-    #     """
-    #     Optimizes your lineup using just your bench as potential player
-    #     """
-    #     if len(self.bench) == 0:
-    #         return
-
-    #     optimizer_func = self._get_lineup_optimizer_function()
-    #     ppool = pd.DataFrame(data=self.bench, columns=self.bench[0].index)
-    #     ldf = pd.DataFrame(data=self.lineup, columns=self.lineup[0].index)
-    #     ppool = ppool.append(ldf, ignore_index=True)
-    #     ppool = ppool[ppool['status'] == '']
-    #     new_lineup = optimizer_func(self.score_comparer,
-    #                                 self.my_team_bldr, ppool, [])
-    #     if new_lineup:
-    #         self._set_new_lineup_and_bench(new_lineup)
-
-    # def fill_empty_spots(self):
-    #     if len(self.lineup) < self.my_team_bldr.max_players():
-    #         optimizer_func = self._get_lineup_optimizer_function()
-    #         new_lineup = optimizer_func(self.score_comparer,
-    #                                     self.my_team_bldr,
-    #                                     self._get_filtered_pool(), self.lineup)
-    #         if new_lineup:
-    #             self.lineup = new_lineup
-
-    def print_roster(self):
-        self.display.printRoster(self.lineup, self.bench, self.injury_reserve)
-
-    def sync_lineup(self):
-        """Reset the local lineup to the one that is set in Yahoo!"""
-        yahoo_roster = self._get_orig_roster()
-        roster_ids = [e['player_id'] for e in yahoo_roster]
-        bench_ids = [e['player_id'] for e in yahoo_roster
-                     if e['selected_position'] == 'BN']
-        ir_ids = [e['player_id'] for e in yahoo_roster
-                  if (e['selected_position'] == 'DL' or
-                      e['selected_position'] == 'IR')]
-        sel_plyrs = self.ppool.loc[roster_ids,:]
-        lineup = []
-        bench = []
-        ir = []
-        for plyr in sel_plyrs.iterrows():
-            if plyr[0] in bench_ids:
-                bench.append(plyr[1])
-            elif plyr[0] in ir_ids:
-                ir.append(plyr[1])
-            else:
-                lineup.append(plyr[1])
-        self.lineup = lineup
-        self.bench = bench
-        self.injury_reserve = ir
-
-    def _get_filtered_pool(self):
-        """
-        Get a list of players from the pool filtered on common crigeria
-
-        :return: Player pool
-        :rtype: DataFrame
-        """
-        avail_plyrs = self.ppool[~self.ppool['name'].isin(self.blacklist)]
-        avail_plyrs = avail_plyrs[avail_plyrs['percent_owned'] > 5]
-        return avail_plyrs[avail_plyrs['status'] == '']
 
     def optimize_with_pygenetic(self):
         """Utilize pygenetic to run GA."""

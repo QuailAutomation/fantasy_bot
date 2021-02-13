@@ -90,7 +90,7 @@ class FantasyLeague(League):
         def transaction_loader():
             return League.transactions(self)
 
-        expiry = timedelta(minutes=6 * 60 * 20)
+        expiry = timedelta(minutes=60)
         return self.lg_cache.load_transactions(expiry, transaction_loader)
 
     def team_by_id(self, team_id):

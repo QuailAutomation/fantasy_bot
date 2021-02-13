@@ -17,9 +17,9 @@ from csh_fantasy_bot.scoring import ScoreComparer
 
 
 
-def do_run(week=5, league_id='403.l.41177', population_size=100):
+def do_run(week=5, league_id='403.l.41177', population_size=300):
     """Run the algorithm."""
-    week = 4
+    week = 5
     league_id = '403.l.41177'
     # league_id = "403.l.18782"
     
@@ -40,17 +40,9 @@ def do_run(week=5, league_id='403.l.41177', population_size=100):
 
     addable_players = projected_stats[ (projected_stats.fantasy_status == 'FA') & (projected_stats.fantasy_status != my_team_id)]
     add_selector = RandomWeightedSelector(addable_players,'fpts')
-    droppable_players = projected_stats[(projected_stats.fantasy_status == my_team_id) & (projected_stats.percent_owned < 93) & (projected_stats.fpts < .7)]
+    droppable_players = projected_stats[(projected_stats.fantasy_status == my_team_id) & (projected_stats.percent_owned < 92) & (projected_stats.fpts < .7)]
     drop_selector = RandomWeightedSelector(droppable_players, 'fpts', inverse=True)
-    # create score comparer
-    valid_players = projected_stats[projected_stats.status != 'IR']
-    league_scores = {tm['team_key']:league.score_team(valid_players[valid_players.fantasy_status == int(tm['team_key'].split('.')[-1])], \
-                                    date_range, simulation_mode=False, team_id=tm['team_key'])[1] 
-                                for tm in league.teams()}
-
-    score_comparer = ScoreComparer(league_scores.values(),league.scoring_categories())
-    score_comparer.set_opponent(league_scores[opponent_key].sum())
-
+    
     # valid dates are next day we can make changes for to end of fantasy week
     first_add = datetime.datetime.strptime(league.settings()['edit_key'], "%Y-%m-%d")
     # TODO hack because we don't handle dates correctly yet
@@ -62,11 +54,11 @@ def do_run(week=5, league_id='403.l.41177', population_size=100):
     if num_allowed_player_adds == 0:
         print("No roster changes left, no need to run.")
         return
-    factory = RosterChangeSetFactory(projected_stats, valid_roster_change_dates, league_scoring_categories, team_id=my_team_id, num_moves=num_allowed_player_adds)
+    factory = RosterChangeSetFactory(projected_stats[manager.stat_categories + ['eligible_positions', 'team_id', 'fpts']], valid_roster_change_dates, num_moves=num_allowed_player_adds, add_selector=add_selector, drop_selector=drop_selector)
     gea = CeleryFitnessGAEngine(factory=factory,population_size=population_size,
                                 cross_prob=0.5,mut_prob = 0.1)
 
-    def mutate(chromosome, add_selector, drop_selector, date_range, projected_stats, scoring_categories):
+    def mutate(chromosome, add_selector, drop_selector, date_range, scoring_categories):
         if len(chromosome.roster_changes) == 0:
             # nothing to mutate here
             return chromosome
@@ -153,10 +145,10 @@ def do_run(week=5, league_id='403.l.41177', population_size=100):
 
 
     gea.addCrossoverHandler(crossover,1,league)
-    gea.addMutationHandler(mutate, 2, add_selector, drop_selector, valid_roster_change_dates, projected_stats, league_scoring_categories)
+    gea.addMutationHandler(mutate, 2, add_selector, drop_selector, valid_roster_change_dates, league_scoring_categories)
     # & (projected_stats.status != "IR")
     all_players = projected_stats[(projected_stats.position_type == "P") ].loc[:,['eligible_positions', 'team_id', 'fantasy_status', 'fpts'] + league_scoring_categories]
-    gea.setFitnessHandler(fitness, all_players, date_range, league_scoring_categories, score_comparer, team_key)
+    gea.setFitnessHandler(fitness, all_players, date_range, league_scoring_categories, manager.score_comparer, team_key)
     gea.setSelectionHandler(Utils.SelectionHandlers.best)
 
 

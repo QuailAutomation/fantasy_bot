@@ -140,7 +140,7 @@ class RosterChangeSet:
         # return f"Number roster changes: {len(self.roster_changes)}"
         return return_string
 
-    def pretty_print(self, score, projected_stats):
+    def pretty_print(self, score=None, projected_stats=None):
         for rc in self.roster_changes:
             # we may be called without names avail, just ignore
             out_name = "Unknown"
@@ -151,7 +151,8 @@ class RosterChangeSet:
                 in_name = projected_stats.at[rc.in_player_id,'name']
             
             print(f"Date: {rc.change_date}, in: {in_name}({rc.in_player_id}), out: {out_name}({rc.out_player_id})")
-        print(f"Score: {round(score,4)}")
+        if score is not None:
+            print(f"Score: {round(score,4)}")
 
     @classmethod
     def from_json(cls, jsons):

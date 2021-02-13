@@ -14,15 +14,12 @@ log = logging.getLogger(__name__)
 class RosterChangeSetFactory(ChromosomeFactory.ChromosomeFactory):
     """Factory to create roster change sets."""
 
-    def __init__(self, all_players, valid_dates, scoring_categories, team_id, num_moves):
+    def __init__(self, all_players, valid_dates, num_moves, add_selector, drop_selector):
         self.all_players = all_players
-        self.team_id = team_id
-        self.num_moves = num_moves
+        self.max_n_moves = num_moves
         self.valid_dates = valid_dates
-        self.scoring_categories = scoring_categories
-        fantasy_players = all_players[all_players.position_type == 'P']
-        self.add_selector = RandomWeightedSelector(fantasy_players[fantasy_players.fantasy_status == 'FA'],'fpts')
-        self.drop_selector = RandomWeightedSelector(all_players[(all_players.fantasy_status == team_id) & (all_players.percent_owned < 93)], 'fpts', inverse=True)
+        self.add_selector = add_selector
+        self.drop_selector = drop_selector
         self.log = logging.getLogger(__name__)
         self.added_no_changes = False
     
@@ -30,13 +27,13 @@ class RosterChangeSetFactory(ChromosomeFactory.ChromosomeFactory):
         """Create a roster change set."""
         rcs = RosterChangeSet()
         if self.added_no_changes:
-            roster_changes = random.randint(1, self.num_moves)
+            roster_changes = random.randint(1, self.max_n_moves)
             while len(rcs) < roster_changes:
                 drop_date = random.choice(self.valid_dates).date()
                 player_to_add = self.add_selector.select()
                 player_to_drop = self.drop_selector.select()
                 with suppress(RosterException):
-                    rcs.add(RosterChange(player_to_drop.index.values[0], player_to_add.index.values[0], drop_date, player_to_add[self.scoring_categories + ['eligible_positions', 'team_id', 'fpts']]))
+                    rcs.add(RosterChange(player_to_drop.index.values[0], player_to_add.index.values[0], drop_date, player_to_add))
         else:
             # let's always start with no changes at all
             self.added_no_changes = True

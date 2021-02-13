@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import datetime
 
-from csh_fantasy_bot import bot, nhl, roster_change_optimizer
+from csh_fantasy_bot import bot, roster_change_optimizer
 from csh_fantasy_bot.nhl import score_team
 
 
@@ -70,7 +70,7 @@ def write_team_results_es(scoring_data, team_id):
 week_number = 4
 
 league_id = '403.l.41177'
-league_id = "403.l.18782"
+# league_id = "403.l.18782"
 
 simulation_mode = False
 manager: bot.ManagerBot = None
@@ -90,8 +90,9 @@ my_scores = manager.my_team.scores()
 # print(my_scores.sum())
 
 roster_change_string = """
-Date: 2021-02-09, in: Unknown(5626), out: Unknown(3788)
-Date: 2021-02-08, in: Unknown(3835), out: Unknown(4008)
+Date: 2021-02-13, in: Nic Dowd(6350), out: Sean Monahan(5985)
+Date: 2021-02-13, in: Joel Edmundson(5414), out: Vincent Trocheck(5431)
+Date: 2021-02-14, in: Nikita Zaitsev(7098), out: Tomas Hertl(5697)
 """
 roster_change_set = to_roster_change(roster_change_string, manager.all_player_predictions[manager.stat_categories + ['fpts']])
 
@@ -110,7 +111,7 @@ print(score_sum)
 # manager.score_comparer.print_week_results(my_scores_with_rc[1])
 pass
 
-do_run()
+# do_run()
 
 # if len(roster_changes) > 0:
 #     my_scores = scorer.score(roster_change_set)
