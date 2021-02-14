@@ -1,6 +1,7 @@
 """Custom code for GA."""
 import random
 import logging 
+from copy import deepcopy as copy 
 from contextlib import suppress
 
 from pygenetic import ChromosomeFactory, GAEngine
@@ -125,18 +126,18 @@ class CeleryFitnessGAEngine(GAEngine.GAEngine):
                 self.best_fitness = self.fitness_mappings[0]
                 if self.hall_of_fame:
                     if self.best_fitness[1] > self.hall_of_fame[1]:
-                        self.hall_of_fame = self.best_fitness
+                        self.hall_of_fame = copy(self.best_fitness[0]), self.best_fitness[1]
                 else:
-                    self.hall_of_fame = self.best_fitness
+                    self.hall_of_fame = copy(self.best_fitness[0]), self.best_fitness[1]
 
             elif self.fitness_type == 'min':
                 self.fitness_mappings.sort(key=lambda x:x[1])
                 self.best_fitness = self.fitness_mappings[0]
                 if self.hall_of_fame:
                     if self.best_fitness[1] < self.hall_of_fame[1]:
-                        self.hall_of_fame = self.best_fitness
+                        self.hall_of_fame = copy(self.best_fitness[0]), self.best_fitness[1]
                 else:
-                    self.hall_of_fame = self.best_fitness
+                    self.hall_of_fame = copy(self.best_fitness[0]), self.best_fitness[1]
 
         elif type(self.fitness_type) == tuple or type(self.fitness_type) == list:
             self.fitness_mappings.sort(key=lambda x:abs(x[1]-self.fitness_type[1]))

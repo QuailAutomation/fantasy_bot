@@ -13,15 +13,14 @@ from csh_fantasy_bot.bot import ManagerBot
 from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.roster_change_optimizer import RosterException
 from csh_fantasy_bot.celery_app import app
-from csh_fantasy_bot.scoring import ScoreComparer
 
 
 
-def do_run(week=5, league_id='403.l.41177', population_size=300):
+def do_run(week=5, league_id='403.l.41177', population_size=2500):
     """Run the algorithm."""
     week = 5
     league_id = '403.l.41177'
-    league_id = "403.l.18782"
+    # league_id = "403.l.18782"
     
     manager: ManagerBot = ManagerBot(week=week, simulation_mode=False,league_id=league_id)
 
@@ -40,7 +39,7 @@ def do_run(week=5, league_id='403.l.41177', population_size=300):
 
     addable_players = projected_stats[ (projected_stats.fantasy_status == 'FA') & (projected_stats.fantasy_status != my_team_id)]
     add_selector = RandomWeightedSelector(addable_players,'fpts')
-    droppable_players = projected_stats[(projected_stats.fantasy_status == my_team_id) & (projected_stats.percent_owned < 92) & (projected_stats.fpts < .7)]
+    droppable_players = projected_stats[(projected_stats.fantasy_status == my_team_id) & (projected_stats.percent_owned < 92) & (projected_stats.fpts < 1)]
     drop_selector = RandomWeightedSelector(droppable_players, 'fpts', inverse=True)
     
     # valid dates are next day we can make changes for to end of fantasy week
