@@ -21,7 +21,7 @@ def do_run(week=5, league_id='403.l.41177', population_size=300):
     """Run the algorithm."""
     week = 5
     league_id = '403.l.41177'
-    # league_id = "403.l.18782"
+    league_id = "403.l.18782"
     
     manager: ManagerBot = ManagerBot(week=week, simulation_mode=False,league_id=league_id)
 
@@ -48,6 +48,9 @@ def do_run(week=5, league_id='403.l.41177', population_size=300):
     # TODO hack because we don't handle dates correctly yet
     if league_id == "403.l.18782":
         first_add += datetime.timedelta(days=1)
+    # can't be before start of week
+    if first_add < date_range[0]:
+        first_add = date_range[0]
 
     valid_roster_change_dates = pd.date_range(first_add,date_range[-1])
     num_allowed_player_adds = int(league.settings()['max_weekly_adds']) - league.num_moves_allowed()
@@ -65,8 +68,9 @@ def do_run(week=5, league_id='403.l.41177', population_size=300):
         # let's pick one of the roster changes to mutate
         roster_change_to_mutate_index = random.randint(1, len(chromosome.roster_changes)) - 1
         roster_change_to_mutate = chromosome.roster_changes[roster_change_to_mutate_index]
+        RANGE_EXCLUDES_DATES = 45
         # won't try and mutate date if there is not more than 1 valid date
-        random_number = random.randint(1 if len(date_range) else 30, 100)
+        random_number = random.randint(1 if len(date_range) > 1 else RANGE_EXCLUDES_DATES, 100)
         if random_number < 30:
             # lets mutate date
             while True:
@@ -75,7 +79,7 @@ def do_run(week=5, league_id='403.l.41177', population_size=300):
                     with suppress(RosterException):
                         chromosome.replace(roster_change_to_mutate, roster_change_to_mutate._replace(change_date=drop_date))
                     break
-        elif random_number < 35:
+        elif random_number < RANGE_EXCLUDES_DATES:
             # lets mutate player out
             for _ in range(50):
                 player_to_remove = drop_selector.select().index.values[0]

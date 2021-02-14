@@ -144,10 +144,10 @@ class RosterChangeSet:
         for rc in self.roster_changes:
             # we may be called without names avail, just ignore
             out_name = "Unknown"
-            with suppress(KeyError):
+            with suppress(KeyError, AttributeError):
                 out_name = projected_stats.at[rc.out_player_id,'name']
             in_name = "Unknown"
-            with suppress(KeyError):
+            with suppress(KeyError, AttributeError):
                 in_name = projected_stats.at[rc.in_player_id,'name']
             
             print(f"Date: {rc.change_date}, in: {in_name}({rc.in_player_id}), out: {out_name}({rc.out_player_id})")

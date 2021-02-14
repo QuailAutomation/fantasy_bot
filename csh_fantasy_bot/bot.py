@@ -251,7 +251,7 @@ class ManagerBot:
         projections_no_goalies = all_projections[all_projections.position_type == 'P']
         return projections_no_goalies[projections_no_goalies.fantasy_status == int(team_id.split('.')[-1])]
 
-    def score_team(self, player_projections=None, date_range=None, roster_change_set=None, simulation_mode=True, team_id=None):
+    def score_team(self, player_projections=None, date_range=None, roster_change_set=None, simulation_mode=False, team_id=None):
         if player_projections is None:
             my_team_id = int(self.lg.team_key().split('.')[-1])
             player_projections = self.all_player_predictions[self.all_player_predictions.fantasy_status == my_team_id]
