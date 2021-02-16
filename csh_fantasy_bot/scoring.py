@@ -1,5 +1,9 @@
 import pandas as pd
 import logging
+import math
+
+def sigmoid(x):
+  return 1 / (1 + math.exp(-x))
 
 class ScoreComparer:
     """
@@ -94,8 +98,8 @@ class ScoreComparer:
         # lets bucket scores
         # discrete_scores = [-.2, -.1,0,.1,.2]
         #score = num_std_divs_opp.cut(num_std_divs_opp ,bins=[-20,-10,-.5,0,.5,20], labels=discrete_scores)
-        score_opp = num_std_divs_opp.mask(num_std_divs_opp > 1.5,1.5).mask(num_std_divs_opp < -1.5,-1.5)
-        score_league = num_std_divs_league.mask(num_std_divs_league > 1.5,1.5).mask(num_std_divs_league < -1.5,-1.5)
+        score_opp = num_std_divs_opp.apply(sigmoid)
+        score_league = num_std_divs_league.apply(sigmoid)
 
         # score = differences / means
         cat_win_loss = pd.cut(num_std_divs_opp,bins=[-20,-.2,.2,20], labels=[-1,0,1])

@@ -16,7 +16,7 @@ from csh_fantasy_bot.celery_app import app
 
 
 
-def do_run(week=5, league_id='403.l.41177', population_size=2500):
+def do_run(week=5, league_id='403.l.41177', population_size=500):
     """Run the algorithm."""
     week = 5
     league_id = '403.l.41177'
@@ -52,7 +52,7 @@ def do_run(week=5, league_id='403.l.41177', population_size=2500):
         first_add = date_range[0]
 
     valid_roster_change_dates = pd.date_range(first_add,date_range[-1])
-    num_allowed_player_adds = int(league.settings()['max_weekly_adds']) - league.num_moves_allowed()
+    num_allowed_player_adds = int(league.settings()['max_weekly_adds']) - league.num_moves_made(week=week)
     if num_allowed_player_adds == 0:
         print("No roster changes left, no need to run.")
         return
@@ -67,10 +67,10 @@ def do_run(week=5, league_id='403.l.41177', population_size=2500):
         # let's pick one of the roster changes to mutate
         roster_change_to_mutate_index = random.randint(1, len(chromosome.roster_changes)) - 1
         roster_change_to_mutate = chromosome.roster_changes[roster_change_to_mutate_index]
-        RANGE_EXCLUDES_DATES = 45
+        RANGE_EXCLUDES_DATES = 50
         # won't try and mutate date if there is not more than 1 valid date
         random_number = random.randint(1 if len(date_range) > 1 else RANGE_EXCLUDES_DATES, 100)
-        if random_number < 30:
+        if random_number < 40:
             # lets mutate date
             while True:
                 drop_date = random.choice(date_range).date()
@@ -163,6 +163,8 @@ def do_run(week=5, league_id='403.l.41177', population_size=2500):
         print("hall of fame:")
         rcs, score = gea.best_fitness
         rcs.pretty_print(score,projected_stats)
+        print(manager.score_comparer.score(manager.score_team(roster_change_set=rcs)[1]))
+
     
 if __name__ == "__main__":
     do_run()

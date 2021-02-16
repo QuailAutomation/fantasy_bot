@@ -117,6 +117,7 @@ class ManagerBot:
             # func = getattr('csh_fantasy_bot',
             #                self.cfg['Prediction']['builderClassLoader'])
             # return fantasysp_scrape.Parser(scoring_categories=self.stat_categories)
+            #TODO should also retrieve all players on rosters in fantasy league, some could be outside default limit for predictor
             return yahoo_scraping.YahooPredictions(self.lg.league_id)
 
         expiry = datetime.timedelta(minutes=3 * 24 * 60)
@@ -238,7 +239,7 @@ class ManagerBot:
                     all_projections.index, ranking_column_name='fpts')
 
         #TODO this can be removed with support for goalies
-        return all_projections[(all_projections.position_type == 'P') & (all_projections.status != 'IR')]
+        return all_projections[(all_projections.position_type == 'P') & ((all_projections.status != 'IR') & (all_projections.status != 'IR-LT'))]
 
     def fetch_league_lineups(self):
         scoring_results = {tm['team_key'].split('.')[-1]:self.score_team(self.all_player_predictions[self.all_player_predictions.fantasy_status == int(tm['team_key'].split('.')[-1])], \

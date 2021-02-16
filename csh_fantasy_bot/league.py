@@ -147,19 +147,22 @@ class FantasyLeague(League):
         """Return players on waivers."""
         return self._all_players_df[self._all_players_df.fantasy_status == 'W']
 
-    def num_moves_allowed(self):
-        number_moves_made = {}
-        json = self.scoreboard()
-        t = objectpath.Tree(json)
-        my_team_id = super().team_key()
-        elems = t.execute('$..matchup')
-        for match in elems:
-            number_moves_made[match['0']['teams']['0']['team'][0][0]['team_key']] = \
-                int(match['0']['teams']['0']['team'][0][11]['roster_adds']['value'])
-            number_moves_made[match['0']['teams']['1']['team'][0][0]['team_key']] = \
-                int(match['0']['teams']['1']['team'][0][11]['roster_adds']['value'])
-    
-        return number_moves_made[my_team_id]
+    def num_moves_made(self, week):
+        if not week or week == self.current_week():
+            number_moves_made = {}
+            json = self.scoreboard()
+            t = objectpath.Tree(json)
+            my_team_id = super().team_key()
+            elems = t.execute('$..matchup')
+            for match in elems:
+                number_moves_made[match['0']['teams']['0']['team'][0][0]['team_key']] = \
+                    int(match['0']['teams']['0']['team'][0][11]['roster_adds']['value'])
+                number_moves_made[match['0']['teams']['1']['team'][0][0]['team_key']] = \
+                    int(match['0']['teams']['1']['team'][0][11]['roster_adds']['value'])
+        
+            return number_moves_made[my_team_id]
+        else:
+            return 0
 
     def as_of(self, asof_date):
         """Return the various buckets as of this date time."""
@@ -321,7 +324,7 @@ class FantasyLeague(League):
             if not simulation_mode and game_day < date_last_use_actuals:
                 roster_results= self._actuals_for_team_day(team_id, game_day, scoring_categories)
             else:
-                game_day_players = current_projections[current_projections.team_id.isin(find_teams_playing(game_day.to_pydatetime().date()))]
+                game_day_players = projections_with_added_players[projections_with_added_players.team_id.isin(find_teams_playing(game_day.to_pydatetime().date()))]
                 if len(game_day_players) > 0:
                     roster = best_roster(game_day_players.loc[:,['eligible_positions']].itertuples())
                     rostered_players = [player.player_id for player in roster]

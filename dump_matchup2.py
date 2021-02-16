@@ -67,10 +67,10 @@ def write_team_results_es(scoring_data, team_id):
 
     helpers.bulk(es, doc_generator_team_results(data))
 
-week_number = 4
+week_number = 5
 
 league_id = '403.l.41177'
-# league_id = "403.l.18782"
+league_id = "403.l.18782"
 
 simulation_mode = False
 manager: bot.ManagerBot = None
@@ -89,18 +89,26 @@ my_scores = manager.my_team.scores()
 # print("Scoring no roster changes:")
 # print(my_scores.sum())
 
+# Date: 2021-02-17, in: Adam Pelech(5756), out: Nazem Kadri(4687)
+
 roster_change_string = """
+Date: 2021-02-16, in: Zdeno Chara(1700), out: Jakob Chychrun(7124)
 """
-roster_change_set = to_roster_change(roster_change_string, manager.all_player_predictions[manager.stat_categories + ['fpts']])
+roster_change_set = to_roster_change(roster_change_string, manager.all_player_predictions[manager.stat_categories + ['fpts', 'team_id','eligible_positions']])
 
 test = manager.score_team(roster_change_set=roster_change_set)
 my_scores_with_rc = manager.score_team(manager.all_player_predictions[manager.all_player_predictions.fantasy_status == int(my_team_id)],roster_change_set=roster_change_set, simulation_mode=False)
 
-score_sum = manager.score_comparer.score(manager.my_team.scores())
+score_sum_no_rc = manager.score_comparer.score(manager.my_team.scores())
 
 print(f"Opponent is: {manager.opp_team_name}")
-print(score_sum)
+print(score_sum_no_rc)
 
+
+score_sum = manager.score_comparer.score(my_scores_with_rc[1])
+print(score_sum)
+roster_change_set.pretty_print(projected_stats=manager.all_player_predictions)
+print('done')
 # df = manager.my_team.scores().reset_index()
 # df1 = df.my_team.scores().set_index(['play_date', 'player_id'])
 # df1.loc[('2021-02-02', slice(None)),:].sum()

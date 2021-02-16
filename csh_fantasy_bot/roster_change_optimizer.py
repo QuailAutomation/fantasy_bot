@@ -49,7 +49,7 @@ class RosterChangeSet:
         return newone
 
     def __deepcopy__(self, memodict={}):
-        cloned_roster_changes = self.roster_changes.copy()
+        cloned_roster_changes = [RosterChange(**rc._asdict()) for rc in self.roster_changes]
 
         return RosterChangeSet(cloned_roster_changes)
         # new_rc_set = RosterChangeSet()

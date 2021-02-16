@@ -16,9 +16,9 @@ import settings
 
 RE_REMOVE_HTML = re.compile('<.+?>')
 
-SLEEP_SECONDS = 2
+SLEEP_SECONDS = 1
 END_WEEK = 17
-PAGES_PER_WEEK = 16
+PAGES_PER_WEEK = 40
 YAHOO_RESULTS_PER_PAGE = 25 # Static but used to calculate offsets for loading new pages
 
 nhl_team_mappings = {'LA': 'LAK', 'Ott': 'OTT', 'Bos': 'BOS', 'SJ': 'SJS', 'Anh': 'ANA', 'Min': 'MIN',
@@ -211,6 +211,8 @@ class YahooPredictions:
 
         y_projections = YahooProjectionScraper(league_id, self.scoring_categories)
         projections = y_projections.get_projections_df(predition_type.value)
+        # if no projection, then zero
+        projections.replace('-', 0, inplace=True)
         projections["team"].replace(nhl_team_mappings, inplace=True)
 
         nhl_scraper= Scraper()
@@ -234,7 +236,7 @@ class YahooPredictions:
         # let's return projections per game
         for stat in self.scoring_categories:
             all_players[stat] = pd.to_numeric(all_players[stat], downcast="float")
-            all_players[stat] = all_players[stat] / all_players['GP']
+            all_players[stat] = all_players[stat] / (all_players['GP'] + .0000001)
 
         # y_projections.get_stats(outfile, league_id, scoring_categories)
         self.all_players = all_players.set_index('player_id')

@@ -6,3 +6,4 @@ venv/
 celerybeat-schedule.db
 .history/
 settings.py
+redis/data
