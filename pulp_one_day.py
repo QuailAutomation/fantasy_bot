@@ -1,3 +1,4 @@
+from csh_fantasy_bot.roster_change_optimizer import RosterChangeSet
 import logging
 import pandas as pd 
 import numpy as np
@@ -15,18 +16,33 @@ from csh_fantasy_bot.scoring import ScoreComparer
 from pulp import *
 
 league_id = '403.l.41177'
-week_number = 3
+week_number = 5
 #  zero based (Mon = 0, to x)
-game_day_week = 1
+game_day_week = 0
 manager = ManagerBot(week_number, league_id=league_id)
+
 
 my_scores = manager.my_team.scores()
 # manager.score_comparer.print_week_results(my_scores)
 
 nhl_scraper = Scraper()
 
-# lets do second day of week, lots of guys can play
+# lets do first day of week, lots of guys can play
 game_day = manager.week[game_day_week]
+# make sure roster is as-of this date
+manager.as_of(game_day)
+
+roster_change_text="""
+Date: 2021-02-16, in: Adam Fox(7174), out: Teuvo Teravainen(5698)
+Date: 2021-02-16, in: Andrew Copp(6083), out: Oliver Ekman-Larsson(4686)
+"""
+roster_changes = RosterChangeSet.from_pretty_print_text(roster_change_text, manager.all_player_predictions)
+
+# lets sum actuals
+
+
+# for remaining days, lets maximize score by figuring out who to dress/sit
+
 teams_playing_today = nhl_scraper._teams_playing_one_day(game_day.to_pydatetime().date())
 my_roster = manager.my_team.roster().copy()
 game_day_players = my_roster[my_roster.team_id.isin(teams_playing_today)]
@@ -36,12 +52,12 @@ game_day_players = game_day_players[["eligible_positions", "name"] + manager.sta
 game_day_players.head(20)
 
 opponent_scores = manager.opponent.scores()
-opponent_scores_for_day = opponent_scores[opponent_scores.play_date == game_day]
+opponent_scores_for_day = opponent_scores.loc[game_day]
 
 my_scores = manager.my_team.scores()
-my_scores_for_day = my_scores[my_scores.play_date == game_day]
+my_scores_for_day = my_scores.loc[game_day]
 
-scorer = ScoreComparer(manager.projected_league_scores.values(),manager.stat_categories)
+scorer = manager.score_comparer
 scorer.opp_sum = opponent_scores_for_day.sum()
 
 result = scorer.compute_score(game_day_players)
@@ -77,7 +93,6 @@ for position in available_positions.keys():
 #     teams_playing_today = nhl_scraper._teams_playing_one_day(day.to_pydatetime().date())
 #     game_day_players = my_roster[my_roster.team_id.isin(teams_playing_today)]
 
-
 variables = {position: LpVariable.dict(position, players[position], cat="Binary")
              for position in players}
 
@@ -107,7 +122,6 @@ for stat in manager.stat_categories:
     objective += np.clip(rewards[stat] - opponent_scoring_summary[stat], -1 * scoring_max_diff[stat], scoring_max_diff[stat])
 
 prob += lpSum(objective) 
-
 
 status = prob.solve()
 

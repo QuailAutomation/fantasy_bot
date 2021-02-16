@@ -70,7 +70,7 @@ def write_team_results_es(scoring_data, team_id):
 week_number = 5
 
 league_id = '403.l.41177'
-league_id = "403.l.18782"
+# league_id = "403.l.18782"
 
 simulation_mode = False
 manager: bot.ManagerBot = None
@@ -92,7 +92,6 @@ my_scores = manager.my_team.scores()
 # Date: 2021-02-17, in: Adam Pelech(5756), out: Nazem Kadri(4687)
 
 roster_change_string = """
-Date: 2021-02-16, in: Zdeno Chara(1700), out: Jakob Chychrun(7124)
 """
 roster_change_set = to_roster_change(roster_change_string, manager.all_player_predictions[manager.stat_categories + ['fpts', 'team_id','eligible_positions']])
 

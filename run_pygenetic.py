@@ -14,8 +14,6 @@ from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.roster_change_optimizer import RosterException
 from csh_fantasy_bot.celery_app import app
 
-
-
 def do_run(week=5, league_id='403.l.41177', population_size=500):
     """Run the algorithm."""
     week = 5
@@ -28,8 +26,6 @@ def do_run(week=5, league_id='403.l.41177', population_size=500):
     team_key = league.team_key()
     my_team_id = int(team_key.split('.')[-1])
     my_team = league.team_by_key(team_key)
-    # could allow override of opp here
-    opponent_key = my_team.matchup(week)
 
     date_range = pd.date_range(*league.week_date_range(week))
     league = league.as_of(date_range[0])

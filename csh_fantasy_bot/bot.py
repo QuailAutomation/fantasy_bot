@@ -78,7 +78,13 @@ class ManagerBot:
             as_of_date = self.week[0] 
         else:
             as_of_date = datetime.datetime.now() 
+        
+        self.as_of(as_of_date)
+        
+        self.roster_changes_made = self._get_num_roster_changes_made()
+        self.roster_changes_allowed = 4 - self.roster_changes_made
 
+    def as_of(self, as_of_date):
         self.all_players = self.lg.as_of(as_of_date).all_players()
         self.fetch_player_pool()
         self.all_player_predictions = self.produce_all_player_predictions()
@@ -87,8 +93,6 @@ class ManagerBot:
         self.auto_pick_opponent()
         self.my_team: TeamInfo = TeamInfo(self.tm.team_key, self)
         self.opponent: TeamInfo = TeamInfo(self.opp_team_key, self)
-        self.roster_changes_made = self._get_num_roster_changes_made()
-        self.roster_changes_allowed = 4 - self.roster_changes_made
 
     def _save_blacklist(self):
         fn = self.tm_cache.blacklist_cache_file()
