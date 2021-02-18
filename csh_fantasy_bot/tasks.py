@@ -116,29 +116,23 @@ def do_chunk(team_key, start_date, end_date, roster_change_sets_jp, opponent=Non
 
 # @celery.task(bind=True, name='score_team')
 @shared_task
-def score_team(player_projections, start_date, end_date, scoring_categories, team_id, roster_change_sets_jp):
+def score_team(player_projections, start_date, end_date, scoring_categories, team_id, opponent_scores, roster_change_sets_jp):
     """Score a team by applying roster change sets."""
-    # team_key, start_date, end_date, roster_change_sets_jp, opponent = params
-    # log.debug(f"Scoring team offset is{offset}")
-    # '396.l.53432.t.2' - league key is first 3 parts
     league_id = _league_id_from_team_key(team_id)
     if league_id not in my_leagues:
         my_leagues[league_id] = FantasyLeague(league_id=league_id)
     league = my_leagues[league_id]
     roster_change_sets = jsonpickle.decode(roster_change_sets_jp)
     if roster_change_sets:
-        # league_key = ".".join(team_key.split('.')[:3])
         date_range = pd.date_range(start_date, end_date)
         # TODO figure out player projections....players on team and players getting added via roster change
         roster = jsonpickle.decode(player_projections)
         # json pickle seems to be decoding eligble_positions back into str...should be list
         roster['eligible_positions'] = pd.eval(roster['eligible_positions'])
         
-        # score = partial(nhl_score_team, roster, date_range, scoring_categories)
-        
         if roster_change_sets:
             log.debug(f"starting scoring for len change_sets {len(roster_change_sets)}")
-            the_scores = (league.score_team(roster, date_range, roster_change_set=rc, simulation_mode=False, team_id=team_id) for rc in roster_change_sets)
+            the_scores = [league.score_team_new(roster, date_range, opponent_scores, roster_change_set=rc, simulation_mode=False, team_id=team_id) for rc in roster_change_sets]
             log.debug("done scoring")
             # just serialize the id of the roster change
             return jsonpickle.encode([(rc._id,score) for rc,score in the_scores])
@@ -154,11 +148,11 @@ def chunks(lst, n):
         for i in range(0, len(lst), n): 
             yield lst[i:i + n ]
 
-def score_chunk(team_roster, start_date, end_date, roster_change_sets, scoring_categories, team_key):
+def score_chunk(team_roster, start_date, end_date, roster_change_sets, scoring_categories, team_key, opponent_scores):
     count_words = group([score_team.s(jsonpickle.encode(i)) for i in chunks(roster_change_sets,CHUNK_SIZE)])
     # jsonpickle.encode(i)                  
     log.debug(f"start score, # roster change sets: {len(roster_change_sets)}")
-    return_val =  count_words(jsonpickle.encode(team_roster), start_date, end_date, scoring_categories, team_key)
+    return_val =  count_words(jsonpickle.encode(team_roster), start_date, end_date, scoring_categories, team_key, opponent_scores)
     
     final_results = []
     for result in return_val.get():

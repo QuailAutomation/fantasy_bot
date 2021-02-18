@@ -14,7 +14,7 @@ from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.roster_change_optimizer import RosterException
 from csh_fantasy_bot.celery_app import app
 
-def do_run(week=5, league_id='403.l.41177', population_size=500):
+def do_run(week=5, league_id='403.l.41177', population_size=50):
     """Run the algorithm."""
     week = 5
     league_id = '403.l.41177'
@@ -147,7 +147,7 @@ def do_run(week=5, league_id='403.l.41177', population_size=500):
     gea.addMutationHandler(mutate, 2, add_selector, drop_selector, valid_roster_change_dates, league_scoring_categories)
     # & (projected_stats.status != "IR")
     all_players = projected_stats[(projected_stats.position_type == "P") ].loc[:,['eligible_positions', 'team_id', 'fantasy_status', 'fpts'] + league_scoring_categories]
-    gea.setFitnessHandler(fitness, all_players, date_range, league_scoring_categories, manager.score_comparer, team_key)
+    gea.setFitnessHandler(fitness, all_players, date_range, league_scoring_categories, manager.score_comparer, team_key, manager.opponent.scores()[league_scoring_categories].sum().to_dict())
     gea.setSelectionHandler(Utils.SelectionHandlers.best)
 
 

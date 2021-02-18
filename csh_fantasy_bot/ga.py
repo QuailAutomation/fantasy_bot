@@ -85,7 +85,7 @@ class RandomWeightedSelector:
 from csh_fantasy_bot.tasks import score
 
 
-def fitness(roster_change_sets, all_players, date_range, scoring_categories, score_comparer, team_key):
+def fitness(roster_change_sets, all_players, date_range, scoring_categories, score_comparer, team_key, opponent_scores):
     """Score the roster change set."""
     # store the id so we can match back up after serialization
     team_id = int(team_key.split('.')[-1])
@@ -93,7 +93,7 @@ def fitness(roster_change_sets, all_players, date_range, scoring_categories, sco
         rcs._id = id(rcs) 
     log.debug("starting chunk scoring")
     unscored_change_sets = [rc for rc in roster_change_sets if rc.score is None]
-    results = score_chunk(all_players[(all_players.fantasy_status == team_id)], date_range[0], date_range[-1], unscored_change_sets, scoring_categories, team_key=team_key)
+    results = score_chunk(all_players[(all_players.fantasy_status == team_id)], date_range[0], date_range[-1], unscored_change_sets, scoring_categories, team_key=team_key, opponent_scores=opponent_scores)
     log.debug("Done chunk scoring")
 
     scores_dict = {_id:score for _id,score in results}

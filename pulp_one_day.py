@@ -40,6 +40,7 @@ roster_changes = RosterChangeSet.from_pretty_print_text(roster_change_text, mana
 
 # lets sum actuals
 
+my_scores = manager.score_team_pulp(manager.opponent.scores(), roster_change_set=roster_changes)
 
 # for remaining days, lets maximize score by figuring out who to dress/sit
 

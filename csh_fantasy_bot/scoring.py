@@ -2,6 +2,7 @@ import pandas as pd
 import logging
 import math
 
+
 def sigmoid(x):
   return 1 / (1 + math.exp(-x))
 
@@ -118,3 +119,5 @@ class ScoreComparer:
         sc = self.compute_score(my_scores_summary)
         print(summary_df.head(10))
         print("Score: {:4.2f}".format(sc))
+
+

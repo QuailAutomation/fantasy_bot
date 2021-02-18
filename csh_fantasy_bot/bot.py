@@ -3,17 +3,17 @@ import logging
 import pickle
 import os
 import math
-import datetime
+from datetime import datetime, timedelta, date
 import pandas as pd
 import numpy as np
 import importlib
 import copy
 
-
 from yahoo_oauth import OAuth2
 import yahoo_fantasy_api as yfa
 from nhl_scraper.nhl import Scraper
 from csh_fantasy_bot import roster, utils, builder, fantasysp_scrape, yahoo_scraping
+# from csh_fantasy_bot.pulp import optimize_roster
 # from csh_fantasy_bot import yahoo_scraping.YahooPredictions
 
 from csh_fantasy_bot.league import FantasyLeague
@@ -22,6 +22,7 @@ from csh_fantasy_bot.yahoo_projections import retrieve_yahoo_rest_of_season_proj
 
 from csh_fantasy_bot.scoring import ScoreComparer
 
+from csh_fantasy_bot.score_gekko import score_gekko as optimize_roster
         
 def produce_csh_ranking(predictions, scoring_categories, selector, ranking_column_name='fantasy_score'):
         """Create ranking by summing standard deviation of each stat, summing, then dividing by num stats."""
@@ -77,7 +78,7 @@ class ManagerBot:
         if simulation_mode:
             as_of_date = self.week[0] 
         else:
-            as_of_date = datetime.datetime.now() 
+            as_of_date = datetime.now() 
         
         self.as_of(as_of_date)
         
@@ -124,7 +125,7 @@ class ManagerBot:
             #TODO should also retrieve all players on rosters in fantasy league, some could be outside default limit for predictor
             return yahoo_scraping.YahooPredictions(self.lg.league_id)
 
-        expiry = datetime.timedelta(minutes=3 * 24 * 60)
+        expiry = timedelta(minutes=3 * 24 * 60)
         self.pred_bldr = self.lg_cache.load_prediction_builder(expiry, loader)
 
     def fetch_cur_lineup(self):
@@ -265,6 +266,18 @@ class ManagerBot:
         if team_id is None:
             team_id = self.tm.team_key
         return self.lg.score_team(player_projections, date_range, roster_change_set, simulation_mode=simulation_mode, team_id=team_id)
+
+    def score_team_pulp(self,player_projections=None, opponent_scores=None, date_range=None, roster_change_set=None, simulation_mode=True, date_last_use_actuals=None, team_id=None):
+        if player_projections is None:
+            my_team_id = int(self.lg.team_key().split('.')[-1])
+            player_projections = self.all_player_predictions[self.all_player_predictions.fantasy_status == my_team_id]
+        if date_range is None:
+            date_range = self.week
+        if team_id is None:
+            team_id = self.tm.team_key
+        if opponent_scores is None:
+            opponent_scores = self.opponent.scores().sum()
+        return self.lg.score_team_new(player_projections, date_range, opponent_scores, roster_change_set, simulation_mode=simulation_mode, team_id=team_id)
 
 
     def invalidate_free_agents(self, plyrs):
@@ -494,7 +507,7 @@ class ManagerBot:
 
     def _get_num_roster_changes_made(self):
         # if the game week is in the future then we couldn't have already made changes
-        if datetime.date.today() < self.week[0]:
+        if date.today() < self.week[0]:
             return 0
 
         def retrieve_attribute_from_team_info(team_info, attribute):
