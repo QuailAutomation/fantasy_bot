@@ -13,12 +13,12 @@ import pandas as pd
 
 nhl_scraper = Scraper()
 
-available_positions = {
-        "C":2,
-        "LW":2,
-        "RW":2,
-        "D":4,
-    }
+# available_positions = {
+#         "C":2,
+#         "LW":2,
+#         "RW":2,
+#         "D":4,
+#     }
 
 def _roster_changes_as_day_dict(rcs):
     rc_dict = defaultdict(list)
@@ -28,8 +28,13 @@ def _roster_changes_as_day_dict(rcs):
     
     return rc_dict
 
-def score_gekko(team_projections, team_id, opponent_scoring, scoring_categories, date_range, date_last_use_actuals=None, roster_change_set=None, actual_scores=None):
-  m = GEKKO(remote=True, server='http://localhost:8083')
+def score_gekko(team_projections, team_id, opponent_scoring, scoring_categories, date_range, roster_makeup, date_last_use_actuals=None, roster_change_set=None, actual_scores=None):
+
+  # if we don't have any actuals, lets return 0 for all stats
+  if actual_scores is None:
+    actual_scores = defaultdict(lambda:0)
+
+  m = GEKKO(remote=False, server='http://localhost:8083')
   m.options.SOLVER = 1
 
   # with roster changes we make changes, so let's copy the projections
@@ -60,10 +65,11 @@ def score_gekko(team_projections, team_id, opponent_scoring, scoring_categories,
     game_day_players = current_projections[current_projections.team_id.isin(teams_playing_today)]
     scores = {}
     players = {}
-    for position in available_positions.keys():
+    for position in roster_makeup.keys():
       available_for_position = game_day_players[game_day_players.eligible_positions.map(set([position]).issubset)]
-      players[position]= list(available_for_position.index)
-      scores[position] = available_for_position[scoring_categories]
+      if len(available_for_position) > 0:
+        players[position]= list(available_for_position.index)
+        scores[position] = available_for_position[scoring_categories]
 
     vars_by_player = defaultdict(list)
     for position in players:
@@ -77,7 +83,7 @@ def score_gekko(team_projections, team_id, opponent_scoring, scoring_categories,
           rewards[category].append(player_var * game_day_players.loc[player,category])
       # limit amount players to roster size allowed for position
       if position in player_vars[game_day_idx]:
-        m.Equation(m.sum(player_vars[game_day_idx][position]) <= available_positions[position])
+        m.Equation(m.sum(player_vars[game_day_idx][position]) <= roster_makeup[position])
       
 
     # for players with multiple eligible positions, make sure only appear once
@@ -91,7 +97,7 @@ def score_gekko(team_projections, team_id, opponent_scoring, scoring_categories,
 
   result = None
   try:  
-    m.solve(disp=True)
+    m.solve(disp=False)
   except Exception as ex:
     print('Exception')
     time.sleep(1)
@@ -100,7 +106,7 @@ def score_gekko(team_projections, team_id, opponent_scoring, scoring_categories,
 
   rostered_players = []
   for game_day_idx, game_day in enumerate(date_range):
-    for position in available_positions.keys():
+    for position in roster_makeup.keys():
       if position in player_vars[game_day_idx]:
         for player in player_vars[game_day_idx][position]:
           if player.value[0] == 1:
