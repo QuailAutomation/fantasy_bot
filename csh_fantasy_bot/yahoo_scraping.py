@@ -1,5 +1,6 @@
 import pandas as pd
 import datetime
+from enum import Enum
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -159,7 +160,7 @@ class YahooProjectionScraper:
 
         driver.close()
 
-from enum import Enum
+
 class PredictionType(Enum):
     days_7 = "S_PS7" # S_PS7 or S_PSR
     days_14 = "S_PS14"

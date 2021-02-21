@@ -3,6 +3,7 @@ import random
 import logging 
 from copy import deepcopy as copy 
 from contextlib import suppress
+from enum import Enum
 
 from pygenetic import ChromosomeFactory, GAEngine
 
@@ -11,6 +12,10 @@ from csh_fantasy_bot.roster_change_optimizer import RosterChangeSet, RosterExcep
 from csh_fantasy_bot.tasks import score_chunk
 
 log = logging.getLogger(__name__)
+
+class ScoringType(Enum):
+    opponent = "score_opp" # S_PS7 or S_PSR
+    league= "score_league"
 
 class RosterChangeSetFactory(ChromosomeFactory.ChromosomeFactory):
     """Factory to create roster change sets."""
@@ -85,7 +90,7 @@ class RandomWeightedSelector:
 from csh_fantasy_bot.tasks import score
 
 
-def fitness(roster_change_sets, all_players, date_range, scoring_categories, score_comparer, team_key, opponent_scores):
+def fitness(roster_change_sets, all_players, date_range, scoring_categories, score_comparer, team_key, opponent_scores, scoring_type=ScoringType.opponent):
     """Score the roster change set."""
     # store the id so we can match back up after serialization
     team_id = int(team_key.split('.')[-1])
@@ -103,7 +108,7 @@ def fitness(roster_change_sets, all_players, date_range, scoring_categories, sco
             scoring_result = scores_dict[change_set._id]
             change_set.scoring_summary = scoring_result.reset_index()
             # change_set.score = score_comparer.compute_score(scoring_result)
-            score = score_comparer.score(scoring_result).loc['score_opp'].sum()
+            score = score_comparer.score(scoring_result).loc[scoring_type.value].sum()
             change_set.score = score
         except KeyError as e:
             log.exception(e)
