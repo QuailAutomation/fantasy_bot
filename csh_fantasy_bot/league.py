@@ -19,12 +19,13 @@ from csh_fantasy_bot.roster import best_roster
 from csh_fantasy_bot.scoring import ScoreComparer
 from csh_fantasy_bot.score_gekko import score_gekko
 
-import redis
+
+from csh_fantasy_bot import RedisClient
 # import pyarrow as pa
 import pickle
 
 
-my_redis = redis.Redis(host='localhost', port=6379, db=0)
+
 
 def _roster_changes_as_day_dict(rcs):
     rc_dict = defaultdict(list)
@@ -265,7 +266,7 @@ class FantasyLeague(League):
     def _actuals_for_team_day(self, team_id, game_day, scoring_categories):
         _game_day = game_day.to_pydatetime().date()
         actual_cache_key = f"actuals:{team_id}-{_game_day}"
-        results = my_redis.get(actual_cache_key)
+        results = RedisClient().conn.get(actual_cache_key)
         if not results:
             the_roster = self.team_by_key(team_id).roster(day=game_day)
             opp_daily_roster = pd.DataFrame(the_roster)
@@ -279,7 +280,7 @@ class FantasyLeague(League):
             results = daily_stats.loc[~daily_stats.G.isnull(),:]
             
             # df_compressed = pa.serialize(daily_stats).to_buffer().to_pybytes()
-            my_redis.set(actual_cache_key, pickle.dumps(daily_stats))
+            RedisClient().conn.set(actual_cache_key, pickle.dumps(daily_stats))
         else:
             results = pickle.loads(results)
             # results = pa.deserialize(results)

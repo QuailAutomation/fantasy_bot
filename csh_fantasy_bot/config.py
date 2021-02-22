@@ -43,4 +43,3 @@ GELF_URL = os.getenv("GELF_URL", default=None)
 
 
 OAUTH_TOKEN_BACKING = os.getenv("OAUTH_TOKEN_BACKING", default=OAuthBacking.file)
-REDIS_URL = os.getenv("REDIS_URL", default=None)
