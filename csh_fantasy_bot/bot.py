@@ -2,17 +2,16 @@
 import logging
 import pickle
 import os
-import math
+
 from datetime import datetime, timedelta, date
 import pandas as pd
 import numpy as np
 import importlib
-import copy
 
-from yahoo_oauth import OAuth2
+
 import yahoo_fantasy_api as yfa
 from nhl_scraper.nhl import Scraper
-from csh_fantasy_bot import roster, utils, builder, fantasysp_scrape, yahoo_scraping
+from csh_fantasy_bot import utils, yahoo_scraping
 # from csh_fantasy_bot.pulp import optimize_roster
 # from csh_fantasy_bot import yahoo_scraping.YahooPredictions
 
@@ -22,7 +21,6 @@ from csh_fantasy_bot.yahoo_projections import retrieve_yahoo_rest_of_season_proj
 
 from csh_fantasy_bot.scoring import ScoreComparer
 
-from csh_fantasy_bot.score_gekko import score_gekko as optimize_roster
         
 def produce_csh_ranking(predictions, scoring_categories, selector, ranking_column_name='fantasy_score'):
         """Create ranking by summing standard deviation of each stat, summing, then dividing by num stats."""
@@ -65,10 +63,7 @@ class ManagerBot:
         self.pred_bldr = None
         self.ppool = None
         self.nhl_scraper = Scraper()
-#        Display = self._get_display_class()
         self.lineup = None
-        # self.bench = []
-        # self.injury_reserve = []
         self.opp_sum = None
         self.opp_team_name = None
         self.opp_team_key = None

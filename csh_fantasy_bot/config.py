@@ -2,7 +2,13 @@
 import os
 import logging
 
+from enum import Enum
+
 log = logging.getLogger(__name__)
+
+class OAuthBacking(Enum):
+    file = "file" # S_PS7 or S_PSR
+    redis= "redis"
 
 LOG_LEVEL='INFO'
 ENV = os.getenv("FLASK_ENV")
@@ -34,3 +40,7 @@ CELERY_TASK_FILE_WRITE_PATH = "/Users/craigh/dev/fantasy_bot"
 
 ELASTIC_URL = os.getenv("ELASTIC_URL", default="http://localhost:9200")
 GELF_URL = os.getenv("GELF_URL", default=None)
+
+
+OAUTH_TOKEN_BACKING = os.getenv("OAUTH_TOKEN_BACKING", default=OAuthBacking.file)
+REDIS_URL = os.getenv("REDIS_URL", default=None)
