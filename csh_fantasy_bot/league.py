@@ -21,7 +21,7 @@ from csh_fantasy_bot.score_gekko import score_gekko
 
 
 from csh_fantasy_bot import RedisClient
-# import pyarrow as pa
+
 import pickle
 
 

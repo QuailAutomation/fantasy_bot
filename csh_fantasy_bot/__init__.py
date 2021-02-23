@@ -16,7 +16,7 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-class RedisClient(redis.Redis, metaclass=Singleton):
+class RedisClient(metaclass=Singleton):
     def __init__(self) -> None:
         redis_url = os.getenv("REDIS_URL",default='localhost')
         self.pool = redis.ConnectionPool(host = redis_url)

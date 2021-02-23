@@ -24,7 +24,7 @@ services:
   #     - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
   #     - XPACK_MONITORING_ENABLED=false
   redis:
-    image: redis
+    image: redis:6.0.10
     hostname: redis
     volumes:
      - /Users/craigh/dev/fantasy_bot/redis/data:/data
