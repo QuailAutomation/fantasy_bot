@@ -58,7 +58,7 @@ class ManagerBot:
             self.week = pd.date_range(start_week, end_week)
         except Exception:
             self.week = pd.date_range('2021-1-13', '2021-1-24')
-        self.tm_cache = utils.TeamCache(self.tm.team_key)
+        # self.tm_cache = utils.TeamCache(self.tm.team_key)
         self.lg_cache = utils.LeagueCache(league_key=league_id)
         self.pred_bldr = None
         self.ppool = None
@@ -90,10 +90,10 @@ class ManagerBot:
         self.my_team: TeamInfo = TeamInfo(self.tm.team_key, self)
         self.opponent: TeamInfo = TeamInfo(self.opp_team_key, self)
 
-    def _save_blacklist(self):
-        fn = self.tm_cache.blacklist_cache_file()
-        with open(fn, "wb") as f:
-            pickle.dump(self.blacklist, f)
+    # def _save_blacklist(self):
+    #     fn = self.tm_cache.blacklist_cache_file()
+    #     with open(fn, "wb") as f:
+    #         pickle.dump(self.blacklist, f)
 
     def add_to_blacklist(self, plyr_name):
         self.blacklist.append(plyr_name)

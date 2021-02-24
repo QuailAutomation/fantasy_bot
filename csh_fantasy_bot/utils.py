@@ -7,6 +7,9 @@ import pickle
 import datetime
 
 
+from csh_fantasy_bot.config import CACHE_BACKING
+
+
 def normalized(name):
     """Normalize a name to remove any accents
 
@@ -19,29 +22,56 @@ def normalized(name):
         'ascii', 'ignore').decode('utf-8')
 
 
+class RedisLoader:
+    def __init__(self, key_prefix, redis) -> None:
+        self.key_prefix = key_prefix
+        self.redis = redis
+    def load(self, fn):
+        data = self.redis.conn.get(f'{self.key_prefix}-{fn}')
+        if data:
+            data = pickle.loads(data)
+        return data
+
+    def write(self, fn, data):
+        self.redis.conn.set(f'{self.key_prefix}-{fn}', pickle.dumps(data))
+
+
 class CacheBase(object):
     def __init__(self, cache_dir):
         self.logger = logging.getLogger()
+        if CACHE_BACKING == CACHE_BACKING.file:
+            self.cache_dir = cache_dir
+            if not os.path.exists(self.cache_dir):
+                os.makedirs(self.cache_dir)
+        else:
+            from csh_fantasy_bot import RedisClient
+            self.redis_loader = RedisLoader(cache_dir, RedisClient())
+            self.load = self.redis_loader.load
+            self.write = self.redis_loader.write
+    
+    def load(self, fn):
+        cached_data = None
+        if os.path.exists(fn):
+            with open(f'{self.cache_dir}/{fn}', "rb") as f:
+                cached_data = f
+        return cached_data
 
-        self.cache_dir = cache_dir
-        if not os.path.exists(self.cache_dir):
-            os.makedirs(self.cache_dir)
+    def write(self, fn, data):
+        with open(f'{self.cache_dir}/{fn}', "wb") as f:
+                pickle.dump(data, f)
 
     def run_loader(self, fn, expiry, loader):
-        cached_data = None
-
-        if os.path.exists(fn):
-            with open(fn, "rb") as f:
-                cached_data = pickle.load(f)
-            if type(cached_data) != dict or "expiry" not in cached_data or \
-                    "payload" not in cached_data:
+        cached_data = self.load(fn)
+     
+        if type(cached_data) != dict or "expiry" not in cached_data or \
+                "payload" not in cached_data:
+            cached_data = None
+        elif cached_data["expiry"] is not None:
+            if datetime.datetime.now() > cached_data["expiry"]:
+                self.logger.info(
+                    "{} file is stale.  Expired at {}".
+                    format(fn, cached_data["expiry"]))
                 cached_data = None
-            elif cached_data["expiry"] is not None:
-                if datetime.datetime.now() > cached_data["expiry"]:
-                    self.logger.info(
-                        "{} file is stale.  Expired at {}".
-                        format(fn, cached_data["expiry"]))
-                    cached_data = None
 
         if cached_data is None:
             self.logger.info("Building new {} file".format(fn))
@@ -51,10 +81,10 @@ class CacheBase(object):
                 cached_data["expiry"] = datetime.datetime.now() + expiry
             else:
                 cached_data["expiry"] = None
-            with open(fn, "wb") as f:
-                pickle.dump(cached_data, f)
+            
+            self.write(fn, cached_data)
             self.logger.info("Finished building {} file".format(fn))
-
+        
         return cached_data["payload"]
 
     def refresh_cache_file(self, fn, refresh_payload):
@@ -69,8 +99,7 @@ class CacheBase(object):
 
 class TeamCache(CacheBase):
     def __init__(self,  team_key):
-        super(TeamCache, self).__init__(
-             "{}/{}".format(".cache/", team_key))
+        super(TeamCache, self).__init__(team_key)
 
     def lineup_cache_file(self):
         return "{}/lineup.pkl".format(self.cache_dir)
@@ -96,16 +125,16 @@ class TeamCache(CacheBase):
 
 class LeagueCache(CacheBase):
     def __init__(self, league_key='396.l.53432'):
-        super(LeagueCache, self).__init__(f".cache/{league_key}")
+        super(LeagueCache, self).__init__(league_key)
 
     def free_agents_cache_file(self):
-        return "{}/free_agents.pkl".format(self.cache_dir)
+        return "free_agents.pkl"
 
     def all_players_cache_file(self):
-        return "{}/all_players.pkl".format(self.cache_dir)
+        return "all_players.pkl"
 
     def waivers_cache_file(self):
-        return "{}/waivers.pkl".format(self.cache_dir)
+        return "waivers.pkl"
 
     def load_all_players(self, expiry, loader):
         return self.run_loader(self.all_players_cache_file(), expiry, loader)
@@ -117,10 +146,10 @@ class LeagueCache(CacheBase):
         return self.run_loader(self.waivers_cache_file(), expiry, loader)
 
     def league_lineup_file(self):
-        return "{}/lg_lineups.pkl".format(self.cache_dir)
+        return "lg_lineups.pkl"
     
     def league_transaction_file(self):
-        return "{}/transactions.pkl".format(self.cache_dir)
+        return "transactions.pkl"
 
     def load_league_lineup(self, expiry, loader):
         return self.run_loader(self.league_lineup_file(), expiry, loader)
@@ -129,7 +158,7 @@ class LeagueCache(CacheBase):
         return self.run_loader(self.league_transaction_file(), expiry, loader)
 
     def prediction_builder_file(self):
-        return "{}/pred_builder.pkl".format(self.cache_dir)
+        return "pred_builder.pkl"
 
     def load_prediction_builder(self, expiry, loader):
         return self.run_loader(self.prediction_builder_file(), expiry, loader)

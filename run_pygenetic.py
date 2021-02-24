@@ -14,11 +14,11 @@ from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.roster_change_optimizer import RosterException
 from csh_fantasy_bot.celery_app import app
 
-def do_run(week=5, league_id='403.l.41177', population_size=60):
+def do_run(week=5, league_id='403.l.41177', population_size=400):
     """Run the algorithm."""
     week = 6
     league_id = '403.l.41177'
-    league_id = "403.l.18782"
+    # league_id = "403.l.18782"
     scoring=ScoringType.league
     
     manager: ManagerBot = ManagerBot(week=week, simulation_mode=False,league_id=league_id)

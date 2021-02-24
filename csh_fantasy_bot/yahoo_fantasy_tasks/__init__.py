@@ -4,11 +4,11 @@ import os
 import redis
 
 from yahoo_oauth import OAuth2
-from csh_fantasy_bot.config import OAUTH_TOKEN_BACKING,OAuthBacking
+from csh_fantasy_bot.config import OAUTH_TOKEN_BACKING,CacheBacking
 
 oauth_token = None
 # TODO configure to read from redis
-if OAUTH_TOKEN_BACKING == OAuthBacking.redis.value:
+if OAUTH_TOKEN_BACKING == CacheBacking.redis.value:
     print("NOT IMPLEMENTED, READ auth token from redis")
     oauth_token = RedisClient().conn.get('yahoo_oauth')
     print("token received")
