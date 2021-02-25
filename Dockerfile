@@ -32,6 +32,7 @@ COPY run_ga.py .
 # COPY compare_player_rankings.py .
 COPY player_lookup.py .
 COPY run_pygenetic.py .
+COPY run_roster_check.py .
 # WORKDIR /app
 
 CMD ["python","compare_player_rankings.py"]
