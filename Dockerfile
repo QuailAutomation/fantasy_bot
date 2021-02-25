@@ -31,6 +31,7 @@ COPY csh_fantasy_bot ./csh_fantasy_bot
 COPY run_ga.py .
 # COPY compare_player_rankings.py .
 COPY player_lookup.py .
+COPY chrome-ublock.crx .
 COPY run_pygenetic.py .
 COPY run_roster_check.py .
 # WORKDIR /app
