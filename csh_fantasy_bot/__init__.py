@@ -8,7 +8,6 @@ serverLogger.setLevel(logging.WARNING)
 logging.getLogger("yahoo_oauth").setLevel(level=logging.INFO)
 
 
-
 class Singleton(type):
     _instances = {}
     def __call__(cls, *args, **kwargs):
