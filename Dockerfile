@@ -9,8 +9,15 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY requirements /requirements
 RUN pip install --no-cache-dir -r /requirements/prod.txt
 
+# lets grab gekko runtimes
+WORKDIR /
+RUN git clone https://github.com/APMonitor/apm_server.git
+
+
 FROM python:3.8-slim AS build-image
 COPY --from=compile-image /opt/venv /opt/venv
+COPY --from=compile-image /apm_server/apm_linux/bin/apm /usr/local/bin
+RUN chmod a+x /usr/local/bin/apm
 
 ENV PATH="/opt/venv/bin:$PATH"
 
