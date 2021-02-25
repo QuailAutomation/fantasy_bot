@@ -2,6 +2,7 @@ import os
 import logging
 import redis
 
+# reduce log levels for selenium.  debug is chatty, doesnt default to root level
 from selenium.webdriver.remote.remote_connection import LOGGER as serverLogger
 serverLogger.setLevel(logging.WARNING)
 logging.getLogger("yahoo_oauth").setLevel(level=logging.INFO)

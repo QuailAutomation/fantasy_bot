@@ -41,5 +41,5 @@ CELERY_TASK_FILE_WRITE_PATH = "/Users/craigh/dev/fantasy_bot"
 ELASTIC_URL = os.getenv("ELASTIC_URL", default="http://localhost:9200")
 GELF_URL = os.getenv("GELF_URL", default=None)
 
-CACHE_BACKING = CacheBacking[os.getenv("OAUTH_TOKEN_BACKING", default=CacheBacking.redis.value)]
+CACHE_BACKING = CacheBacking[os.getenv("CACHE_BACKING", default=CacheBacking.file.value)]
 OAUTH_TOKEN_BACKING = CacheBacking[os.getenv("OAUTH_TOKEN_BACKING", default=CacheBacking.file.value)]

@@ -13,7 +13,7 @@ from yahoo_fantasy_api import League,Team
 from csh_fantasy_bot import utils
 from csh_fantasy_bot import utils, fantasysp_scrape
 from csh_fantasy_bot import scoring
-from csh_fantasy_bot.yahoo_fantasy_tasks import oauth_token
+from csh_fantasy_bot.yahoo_authentication import oauth_token
 from csh_fantasy_bot.nhl import find_teams_playing
 from csh_fantasy_bot.roster import best_roster
 from csh_fantasy_bot.scoring import ScoreComparer

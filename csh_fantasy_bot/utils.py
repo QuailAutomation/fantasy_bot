@@ -40,7 +40,7 @@ class CacheBase(object):
     def __init__(self, cache_dir):
         self.logger = logging.getLogger()
         if CACHE_BACKING == CACHE_BACKING.file:
-            self.cache_dir = cache_dir
+            self.cache_dir = '.cache/' + cache_dir
             if not os.path.exists(self.cache_dir):
                 os.makedirs(self.cache_dir)
         else:
@@ -51,9 +51,10 @@ class CacheBase(object):
     
     def load(self, fn):
         cached_data = None
-        if os.path.exists(fn):
-            with open(f'{self.cache_dir}/{fn}', "rb") as f:
-                cached_data = f
+        file_path = f'{self.cache_dir}/{fn}'
+        if os.path.exists(file_path):
+            with open(file_path, "rb") as f:
+                cached_data = pickle.load(f)
         return cached_data
 
     def write(self, fn, data):

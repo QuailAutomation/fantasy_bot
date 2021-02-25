@@ -36,7 +36,7 @@ def do_run(week=5, league_id='403.l.41177', population_size=400):
 
     addable_players = projected_stats[ (projected_stats.fantasy_status == 'FA') & (projected_stats.fantasy_status != my_team_id)]
     add_selector = RandomWeightedSelector(addable_players,'fpts')
-    droppable_players = projected_stats[(projected_stats.fantasy_status == my_team_id) & (projected_stats.percent_owned < 92) & (projected_stats.fpts < 1)]
+    droppable_players = projected_stats[(projected_stats.fantasy_status == my_team_id) & (projected_stats.percent_owned < 92) ] # & (projected_stats.fpts < 1)
     drop_selector = RandomWeightedSelector(droppable_players, 'fpts', inverse=True)
     
     # valid dates are next day we can make changes for to end of fantasy week
