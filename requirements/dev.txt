@@ -8,5 +8,3 @@ pytest-mock==3.1.0
 ipython
 ipykernel
 pydocstyle==5.0.*
-
-gekko
