@@ -16,10 +16,10 @@ from csh_fantasy_bot.celery_app import app
 
 def do_run(week=5, league_id='403.l.41177', population_size=400):
     """Run the algorithm."""
-    week = 6
+    week = 7
     league_id = '403.l.41177'
-    # league_id = "403.l.18782"
-    scoring=ScoringType.league
+    league_id = "403.l.18782"
+    scoring=ScoringType.opponent
     
     manager: ManagerBot = ManagerBot(week=week, simulation_mode=False,league_id=league_id)
 
