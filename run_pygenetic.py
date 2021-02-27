@@ -14,6 +14,16 @@ from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.roster_change_optimizer import RosterException
 from csh_fantasy_bot.celery_app import app
 
+# this will hold player ids of players which can be dropped as overrides to the drop selection criteria
+white_list = {
+    '403.l.41177': [3358],
+    '403.l.18782': [],
+}
+# this will hold player ids of players which can't be dropped as overrides to the drop selection criteria
+black_list = {
+    '403.l.41177': [4684, 5696],
+    '403.l.18782': [],
+}
 def do_run(week=5, league_id='403.l.41177', population_size=400):
     """Run the algorithm."""
     week = 7
@@ -36,7 +46,12 @@ def do_run(week=5, league_id='403.l.41177', population_size=400):
 
     addable_players = projected_stats[ (projected_stats.fantasy_status == 'FA') & (projected_stats.fantasy_status != my_team_id)]
     add_selector = RandomWeightedSelector(addable_players,'fpts')
-    droppable_players = projected_stats[(projected_stats.fantasy_status == my_team_id) & (projected_stats.percent_owned < 92) ] # & (projected_stats.fpts < 1)
+    droppable_players = projected_stats[((((projected_stats.fantasy_status == my_team_id) & 
+                                        (projected_stats.percent_owned < 92)) |
+                                        (projected_stats.index.isin(white_list[league_id]))) &
+                                        ~(projected_stats.index.isin(black_list[league_id])))
+                                        ] # & (projected_stats.fpts < 1)
+
     drop_selector = RandomWeightedSelector(droppable_players, 'fpts', inverse=True)
     
     # valid dates are next day we can make changes for to end of fantasy week
