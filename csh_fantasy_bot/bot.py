@@ -1,27 +1,32 @@
 #!/bin/python
+from calendar import week
 import logging
 import pickle
 import os
+from enum import Enum
 
 from datetime import datetime, timedelta, date
+from collections import defaultdict 
 import pandas as pd
 import numpy as np
 import importlib
+from pandas.core.indexes.datetimes import date_range
 
 
 import yahoo_fantasy_api as yfa
 from nhl_scraper.nhl import Scraper
 from csh_fantasy_bot import utils, yahoo_scraping
-# from csh_fantasy_bot.pulp import optimize_roster
-# from csh_fantasy_bot import yahoo_scraping.YahooPredictions
-
 from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.nhl import score_team
 from csh_fantasy_bot.yahoo_projections import retrieve_yahoo_rest_of_season_projections
 
 from csh_fantasy_bot.scoring import ScoreComparer
 
-        
+
+class ScoringAlgorithm(Enum):
+    milp = "score_opp" # S_PS7 or S_PSR
+    fpts= "score_league"
+
 def produce_csh_ranking(predictions, scoring_categories, selector, ranking_column_name='fantasy_score'):
         """Create ranking by summing standard deviation of each stat, summing, then dividing by num stats."""
         f_mean = predictions.loc[selector,scoring_categories].mean()
@@ -33,32 +38,33 @@ def produce_csh_ranking(predictions, scoring_categories, selector, ranking_colum
         return predictions
 
 class TeamInfo:
-    def __init__(self, key, manager):
+    def __init__(self, key, game_week):
         self.key = key
-        self.manager : ManagerBot  = manager
+        self.game_week : GameWeek  = game_week
     
     def scores(self):
-        return self.manager.projected_league_scores[self.key.split('.')[-1]]
+        return self.game_week.score(team_key=self.key)
     
     def roster(self):
-        return self.manager.all_player_predictions[self.manager.all_player_predictions.fantasy_status == int(self.key.split('.')[-1])]
+        return self.game_week.all_player_predictions[self.game_week.all_player_predictions.fantasy_status == int(self.key.split('.')[-1])]
         
 class ManagerBot:
     """A class that encapsulates an automated Yahoo! fantasy manager."""
-    def __init__(self, week = None, simulation_mode=False, league_id="396.l.53432"):
+    def __init__(self, league_id, week = None, simulation_mode=False, as_of=None):
         self.logger = logging.getLogger()
         self.simulation_mode = simulation_mode
         self.lg = FantasyLeague(league_id)
         self.stat_categories = [stat['display_name'] for stat in self.lg.stat_categories() if stat['position_type'] == 'P']
         self.stat_categories_goalies = [stat['display_name'] for stat in self.lg.stat_categories() if stat['position_type'] == 'G']
         self.tm = self.lg.to_team(self.lg.team_key())
-        self.league_week = week or self.lg.current_week()
-        try:
-            (start_week, end_week) = self.lg.week_date_range(self.league_week)
-            self.week = pd.date_range(start_week, end_week)
-        except Exception:
-            self.week = pd.date_range('2021-1-13', '2021-1-24')
-        # self.tm_cache = utils.TeamCache(self.tm.team_key)
+        # TODO week should be lazy if none, do in game_week property
+        self._current_week = None
+        self.initialized_week = week or self.current_week()
+        self._game_weeks = {}
+        
+        self._as_of = as_of or datetime.now()
+        self._game_weeks[week]= GameWeek(self, week=self.initialized_week,as_of = self._as_of)
+        
         self.lg_cache = utils.LeagueCache(league_key=league_id)
         self.pred_bldr = None
         self.ppool = None
@@ -67,28 +73,47 @@ class ManagerBot:
         self.opp_sum = None
         self.opp_team_name = None
         self.opp_team_key = None
+        self.my_team: TeamInfo = None
+        self.opponent: TeamInfo = None
 
         self.init_prediction_builder()
-        as_of_date = None
-        if simulation_mode:
-            as_of_date = self.week[0] 
-        else:
-            as_of_date = datetime.now() 
         
-        self.as_of(as_of_date)
         
-        self.roster_changes_made = self._get_num_roster_changes_made()
-        self.roster_changes_allowed = 4 - self.roster_changes_made
+    def current_week(self):
+        if not self._current_week:
+            self._current_week = self.lg.current_week()
+        return self._current_week
 
-    def as_of(self, as_of_date):
-        self.all_players = self.lg.as_of(as_of_date).all_players()
-        self.fetch_player_pool()
-        self.all_player_predictions = self.produce_all_player_predictions()
-        self.projected_league_scores = self.fetch_league_lineups()
-        self.score_comparer: ScoreComparer = ScoreComparer(self.projected_league_scores.values(), self.stat_categories)
-        self.auto_pick_opponent()
-        self.my_team: TeamInfo = TeamInfo(self.tm.team_key, self)
-        self.opponent: TeamInfo = TeamInfo(self.opp_team_key, self)
+    def week_for_day(self, day):
+        for week, game_week in self._game_weeks.items():
+            if day in game_week.date_range:
+                return game_week
+        
+        # not a loaded week.  can only get next week, yahoo only supports 1 week in advance
+        next_game_week = GameWeek(self,self.initialized_week + 1)
+        if day in next_game_week.date_range:
+            self.game_weeks[self.initialized_week + 1] = next_game_week
+            return next_game_week
+        else:
+            raise Exception("Can only support as of date in current week or the next week")
+    
+    def game_week(self, week_number=None):
+        week_number = week_number or self.current_week
+        return self._game_weeks[week_number]
+        
+    # def as_of(self, as_of_date):
+    #     for week, game_week in self.game_weeks.items():
+    #         if as_of_date in game_week.date_range():
+    #             pass
+
+    #     # self.all_players = self.lg.as_of(as_of_date).all_players()
+    #     self.fetch_player_pool()
+    #     self.all_player_predictions = self.produce_all_player_predictions()
+    #     self.projected_league_scores = self.fetch_league_lineups()
+    #     self.score_comparer: ScoreComparer = ScoreComparer(self.projected_league_scores.values(), self.stat_categories)
+    #     self.auto_pick_opponent()
+    #     self.my_team = TeamInfo(self.tm.team_key, self)
+    #     self.opponent= TeamInfo(self.opp_team_key, self)
 
     # def _save_blacklist(self):
     #     fn = self.tm_cache.blacklist_cache_file()
@@ -119,9 +144,13 @@ class ManagerBot:
             # return fantasysp_scrape.Parser(scoring_categories=self.stat_categories)
             #TODO should also retrieve all players on rosters in fantasy league, some could be outside default limit for predictor
             return yahoo_scraping.YahooPredictions(self.lg.league_id)
-
-        expiry = timedelta(minutes=3 * 24 * 60)
-        self.pred_bldr = self.lg_cache.load_prediction_builder(expiry, loader)
+            
+        try:
+            expiry = timedelta(minutes=3 * 24 * 60)
+            self.pred_bldr = self.lg_cache.load_prediction_builder(expiry, loader)
+        except Exception as e:
+            print("Error retrieving new projections, use existing if avail")
+            self.pred_bldr = self.lg_cache.load_prediction_builder(None, None,ignore_expiry=True)
 
     def fetch_cur_lineup(self):
         """Fetch the current lineup as set in Yahoo!"""
@@ -147,8 +176,6 @@ class ManagerBot:
 
         my_roster = my_roster.merge(nhl_teams, left_on='editorial_team_abbr', right_on='abbrev')
         my_roster.rename(columns={'id': 'team_id'}, inplace=True)
-        # self.ppool.rename(columns={'Name': 'name'}, inplace=True)
-        # self.nhl_players = self.nhl_scraper.players()
 
         players = self.pred_bldr.predict(my_roster)
         # start_week,end_week = self.lg.week_date_range(self.lg.current_week())
@@ -160,9 +187,7 @@ class ManagerBot:
         for player_w_stats in the_stats:
             for stat in self.stat_categories:
                 if player_w_stats['GP'] > 0:
-                    players.loc[player_w_stats['player_id'], [stat]] = player_w_stats[
-                                                                                                       stat] / \
-                                                                                                   player_w_stats['GP']
+                    players.loc[player_w_stats['player_id'], [stat]] = player_w_stats[stat] / player_w_stats['GP']
         return players
 
     def _fix_yahoo_team_abbr(self, df):
@@ -182,33 +207,6 @@ class ManagerBot:
 
         expiry = datetime.timedelta(minutes=6 * 60 * 20)
         return self.lg_cache.load_all_players(expiry,all_loader)
-
-    def fetch_player_pool(self):
-        """Build the roster pool of players."""
-        if self.ppool is None:
-            my_team_id = int(self.tm.team_key.split('.')[-1])
-            if self.simulation_mode:
-                all_players = self.all_players
-                
-                my_roster = all_players[all_players.fantasy_status.isin([my_team_id, 'FA'])]
-                my_roster.reset_index(inplace=True)
-            else:
-                current_lineup = self.lg.team_by_id(my_team_id)
-                my_roster = current_lineup.append(self.fetch_waivers()).append(self.fetch_free_agents())
-
-            players = self.pred_bldr.predict(my_roster)
-            # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
-            ids_no_stats = list(players.query(f'fantasy_status == {my_team_id} & G != G & position_type == "P" & status != "IR" ').index.values)
-            the_stats = self.lg.player_stats(ids_no_stats,'season')
-            
-            for player_w_stats in the_stats:
-                # a_player = players[players.player_id == player_w_stats['player_id']]
-                for stat in self.stat_categories:
-                    if player_w_stats['GP'] != '-' and player_w_stats['GP'] > 0:
-                        players.loc[player_w_stats['player_id'], [stat]] = player_w_stats[stat] / player_w_stats['GP']
-
-            self.ppool = players.query('~(G != G & position_type == "P" )')
-            pass
 
     def fetch_waivers(self):
         return self.lg.waivers()
@@ -242,8 +240,8 @@ class ManagerBot:
         return all_projections[(all_projections.position_type == 'P') & ((all_projections.status != 'IR') & (all_projections.status != 'IR-LT'))]
 
     def fetch_league_lineups(self):
-        scoring_results = {tm['team_key'].split('.')[-1]:self.score_team(self.all_player_predictions[self.all_player_predictions.fantasy_status == int(tm['team_key'].split('.')[-1])], \
-                                    self.week, simulation_mode=self.simulation_mode, team_id=tm['team_key'])[1] 
+        scoring_results = {tm['team_key'].split('.')[-1]:self.lg.score_team_fpts(self.all_player_predictions[self.all_player_predictions.fantasy_status == int(tm['team_key'].split('.')[-1])], \
+                                    date_range=self.week, simulation_mode=self.simulation_mode, team_id=tm['team_key'])[1] 
                                 for tm in self.lg.teams()}
         return scoring_results
 
@@ -252,27 +250,33 @@ class ManagerBot:
         projections_no_goalies = all_projections[all_projections.position_type == 'P']
         return projections_no_goalies[projections_no_goalies.fantasy_status == int(team_id.split('.')[-1])]
 
-    def score_team(self, player_projections=None, date_range=None, roster_change_set=None, simulation_mode=False, team_id=None):
-        if player_projections is None:
-            my_team_id = int(self.lg.team_key().split('.')[-1])
-            player_projections = self.all_player_predictions[self.all_player_predictions.fantasy_status == my_team_id]
-        if date_range is None:
-            date_range = self.week
-        if team_id is None:
-            team_id = self.tm.team_key
-        return self.lg.score_team(player_projections, date_range, roster_change_set, simulation_mode=simulation_mode, team_id=team_id)
+    # def score_team(self, player_projections=None, date_range=None, roster_change_set=None, simulation_mode=False, team_id=None):
+    #     if player_projections is None:
+    #         my_team_id = int(self.lg.team_key().split('.')[-1])
+    #         player_projections = self.all_player_predictions[self.all_player_predictions.fantasy_status == my_team_id]
+    #     if date_range is None:
+    #         date_range = self.week
+    #     if team_id is None:
+    #         team_id = self.tm.team_key
+    #     return self.lg.score_team(player_projections, date_range, roster_change_set, simulation_mode=simulation_mode, team_id=team_id)
 
-    def score_team_pulp(self,player_projections=None, opponent_scores=None, date_range=None, roster_change_set=None, simulation_mode=True, date_last_use_actuals=None, team_id=None):
+    def score_team(self,player_projections=None, opponent_scores=None, date_range=None, roster_change_set=None, simulation_mode=True, date_last_use_actuals=None, team_id=None):
+        if date_range is None:
+            date_range = self.game_week(self.initialized_week).date_range
+
         if player_projections is None:
             my_team_id = int(self.lg.team_key().split('.')[-1])
-            player_projections = self.all_player_predictions[self.all_player_predictions.fantasy_status == my_team_id]
-        if date_range is None:
-            date_range = self.week
+            game_week = self.week_for_day(date_range[0])
+            player_projections = game_week.all_player_predictions[game_week.all_player_predictions.fantasy_status == my_team_id]
+        
         if team_id is None:
             team_id = self.tm.team_key
         if opponent_scores is None:
-            opponent_scores = self.opponent.scores().sum()
-        return self.lg.score_team_new(player_projections, date_range, opponent_scores, roster_change_set, simulation_mode=simulation_mode, team_id=team_id)
+            if self.opponent:
+                opponent_scores = self.opponent.scores().sum()
+            else:
+                opponent_scores = defaultdict(lambda: 0)
+        return self.lg.score_team(player_projections, date_range, opponent_scores, roster_change_set, simulation_mode=simulation_mode, team_id=team_id)
 
 
     def invalidate_free_agents(self, plyrs):
@@ -500,9 +504,106 @@ class ManagerBot:
         else:
             return self.tm.roster(day=self.lg.edit_date())
 
+    def compare_roster_yahoo_ideal(self, day=None):
+        if not day:
+            day = datetime.today()
+        day = day.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        game_week = self.week_for_day(day)
+        
+        
+        return game_week.compare_roster_yahoo_ideal(day)
+
+
+class GameWeek:
+    def __init__(self, manager, week, as_of) -> None:
+        self.manager:ManagerBot = manager
+        self.week_number = week
+        self.simulation_mode = False
+        self.as_of = as_of
+        self.date_range = pd.date_range(*manager.lg.week_date_range(self.week_number))
+        self._team_scores = None
+        assert as_of >= self.date_range[0]
+        self.all_players = self.manager.lg.as_of(as_of).all_players()
+        self._roster_changes_made = None
+        self._roster_changes_allowed = None
+        self._all_player_predictions = None
+        self._score_comparer = None
+        self._opponent = None
+
+    @property
+    def opponent(self) -> TeamInfo:
+        if not self._opponent:
+            opp_team_key = self.manager.tm.matchup(self.week_number)
+            self._opponent = TeamInfo(opp_team_key, self)   
+        return self._opponent 
+
+    @property
+    def score_comparer(self):
+        if not self._score_comparer:
+            self._score_comparer = ScoreComparer(self.team_scores.values(), self.manager.stat_categories)
+            self._score_comparer.opp_sum = self.opponent.scores().sum()
+
+        return self._score_comparer
+
+    def fetch_league_lineups(self):
+        scoring_results = {tm['team_key'].split('.')[-1]:self.manager.lg.score_team_fpts(self.all_player_predictions[self.all_player_predictions.fantasy_status == int(tm['team_key'].split('.')[-1])], \
+                                    date_range=self.date_range, simulation_mode=self.simulation_mode, team_id=tm['team_key'])[1] 
+                                for tm in self.lg.teams()}
+        return scoring_results
+
+    @property
+    def all_player_predictions(self):
+        try:
+            if self._all_player_predictions == None:
+                self._all_player_predictions = self.produce_all_player_predictions()
+        except ValueError:
+            pass
+        return self._all_player_predictions
+
+    @property
+    def team_scores(self):
+        if not self._team_scores:
+            self._team_scores =  {tm['team_key'].split('.')[-1]:self.manager.lg.score_team_fpts(self.all_player_predictions[self.all_player_predictions.fantasy_status == int(tm['team_key'].split('.')[-1])], \
+                                    date_range=self.date_range, simulation_mode=self.simulation_mode, team_id=tm['team_key'])[1] 
+                                for tm in self.manager.lg.teams()}
+        return self._team_scores
+
+    def score(self, team_number=None, team_key=None, scoring_algo=ScoringAlgorithm.fpts):
+        if team_key:
+            team_number = team_key.split('.')[-1]
+        if team_number:
+            return self.team_scores[team_number]
+        else:    
+            return self._team_scores
+    
+    def produce_all_player_predictions(self):
+        all_projections = self.manager.pred_bldr.predict(self.all_players)
+
+        players_no_projections_on_team = all_projections[(all_projections.G != all_projections.G) \
+                    & (all_projections.fantasy_status != 'FA') \
+                    & (all_projections.position_type != 'G')    ].index
+
+        # let's see if we rostered a player without projections.  if so we'll fall back on yahoo
+                #retrieve_yahoo_rest_of_season_projections(self.league_id).loc[roster_results[roster_results.G != roster_results.G].index.values]
+        if len(players_no_projections_on_team) > 0:
+            yahoo_projections = retrieve_yahoo_rest_of_season_projections(self.manager.lg.league_id)
+            yahoo_projections[self.manager.stat_categories] = yahoo_projections[self.manager.stat_categories].div(yahoo_projections.GP, axis=0)
+            for player_id in players_no_projections_on_team.values:
+                try:
+                    all_projections.update(yahoo_projections.loc[[player_id]]) 
+                except KeyError:
+                    print(f"Could not find projection for {all_projections.loc[player_id]}")
+        all_projections = all_projections.round(2)
+        produce_csh_ranking(all_projections, self.manager.stat_categories, 
+                    all_projections.index, ranking_column_name='fpts')
+
+        #TODO this can be removed with support for goalies
+        return all_projections[(all_projections.position_type == 'P') & ((all_projections.status != 'IR') & (all_projections.status != 'IR-LT'))]
+    
     def _get_num_roster_changes_made(self):
         # if the game week is in the future then we couldn't have already made changes
-        if date.today() < self.week[0]:
+        if date.today() < self.date_range[0]:
             return 0
 
         def retrieve_attribute_from_team_info(team_info, attribute):
@@ -510,8 +611,8 @@ class ManagerBot:
                 if attribute in attr:
                     return attr[attribute]
 
-        raw_matchups = self.lg.matchups()
-        team_id = self.tm.team_key.split('.')[-1]
+        raw_matchups = self.manager.lg.matchups()
+        team_id = self.manager.tm.team_key.split('.')[-1]
         num_matchups = raw_matchups['fantasy_content']['league'][1]['scoreboard']['0']['matchups']['count']
         for matchup_index in range(0, num_matchups):
             matchup = raw_matchups['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup_index)]
@@ -530,133 +631,48 @@ class ManagerBot:
         return plug_value
         assert False, 'Did not find roster changes for team'
 
-class RosterChanger:
-    def __init__(self, lg, dry_run, orig_roster, lineup, bench,
-                 injury_reserve):
-        self.lg = lg
-        self.tm = lg.to_team(lg.team_key())
-        self.dry_run = dry_run
-        self.orig_roster = orig_roster
-        self.lineup = lineup
-        self.bench = bench
-        self.injury_reserve = injury_reserve
-        self.orig_roster_ids = [e['player_id'] for e in orig_roster]
-        self.new_roster_ids = [e['player_id'] for e in lineup] + \
-            [e['player_id'] for e in bench] + \
-            [e['player_id'] for e in injury_reserve]
-        self.adds = []
-        self.drops = []
-        self.adds_completed = []
+    def compare_roster_yahoo_ideal(self, day=None):
+        roster_positions = self.manager.lg.roster_makeup(position_type='P').keys()
+        opponent_key = self.manager.tm.matchup(self.week_number)
+        opponent_scores = self.score(team_key=opponent_key)
+        scores = self.manager.score_team(date_range=self.date_range,opponent_scores=opponent_scores.sum())
+        todays_roster = scores[1].loc[(day,slice(None))].merge(self.all_players, left_index=True, right_on='player_id')[['name','rostered_position']]
+        yahoo_roster = pd.DataFrame.from_dict(self.manager.tm.roster(day=day))
+        yahoo_scoring_players = yahoo_roster[yahoo_roster.selected_position.isin(roster_positions)].set_index('player_id')
+        missing_player_ids = todays_roster.index.difference(yahoo_scoring_players.index)
+        
+        league_name = self.manager.lg.settings()['name']
+        if len(missing_player_ids) > 0:
+            print(f"League: {league_name} - Players missing from projected ideal.")
+            for player_id in missing_player_ids:
+                print(self.all_players.loc[player_id][['name','status']])
+        else:
+            print(f'League: {league_name} - Yahoo roster matches projected ideal')    
 
-    def apply(self):
-        self._calc_player_drops()
-        self._calc_player_adds()
-        # Need to drop players first in case the person on IR isn't dropped
-        self._apply_player_drops()
-        self._apply_ir_moves()
-        self._apply_player_adds_and_drops()
-        self._apply_position_selector()
-
-    def get_adds_completed(self):
-        return self.adds_completed
-
-    def _calc_player_drops(self):
-        self.drops = []
-        for plyr in self.orig_roster:
-            if plyr['player_id'] not in self.new_roster_ids:
-                self.drops.append(plyr)
-
-    def _calc_player_adds(self):
-        self.adds = []
-        for plyr in self.lineup + self.bench:
-            if plyr['player_id'] not in self.orig_roster_ids:
-                self.adds.append(plyr)
-
-    def _apply_player_drops(self):
-        while len(self.drops) > len(self.adds):
-            plyr = self.drops.pop()
-            print("Drop " + plyr['name'])
-            if not self.dry_run:
-                self.tm.drop_player(plyr['player_id'])
-
-    def _apply_player_adds_and_drops(self):
-        while len(self.drops) != len(self.adds):
-            if len(self.drops) > len(self.adds):
-                plyr = self.drops.pop()
-                print("Drop " + plyr['name'])
-                if not self.dry_run:
-                    self.tm.drop_player(plyr['player_id'])
+    def _fetch_player_pool(self):
+        """Build the roster pool of players."""
+        if self.ppool is None:
+            my_team_id = int(self.manager.tm.team_key.split('.')[-1])
+            if self.simulation_mode:
+                all_players = self.all_players
+                
+                my_roster = all_players[all_players.fantasy_status.isin([my_team_id, 'FA'])]
+                my_roster.reset_index(inplace=True)
             else:
-                plyr = self.adds.pop()
-                self.adds_completed.append(plyr)
-                print("Add " + plyr['name'])
-                if not self.dry_run:
-                    self.tm.add_player(plyr['player_id'])
+                current_lineup = self.lg.team_by_id(my_team_id)
+                my_roster = current_lineup.append(self.fetch_waivers()).append(self.fetch_free_agents())
 
-        for add_plyr, drop_plyr in zip(self.adds, self.drops):
-            self.adds_completed.append(add_plyr)
-            print("Add {} and drop {}".format(add_plyr['name'],
-                                              drop_plyr['name']))
-            if not self.dry_run:
-                self.tm.add_and_drop_players(add_plyr['player_id'],
-                                             drop_plyr['player_id'])
+            players = self.pred_bldr.predict(my_roster)
+            # let's double check for players on my roster who don't have current projections.  We will create our own by using this season's stats
+            ids_no_stats = list(players.query(f'fantasy_status == {my_team_id} & G != G & position_type == "P" & status != "IR" ').index.values)
+            the_stats = self.lg.player_stats(ids_no_stats,'season')
+            
+            for player_w_stats in the_stats:
+                # a_player = players[players.player_id == player_w_stats['player_id']]
+                for stat in self.stat_categories:
+                    if player_w_stats['GP'] != '-' and player_w_stats['GP'] > 0:
+                        players.loc[player_w_stats['player_id'], [stat]] = player_w_stats[stat] / player_w_stats['GP']
 
-    def _apply_one_player_drop(self):
-        if len(self.drops) > 0:
-            plyr = self.drops.pop()
-            print("Drop " + plyr['name'])
-            if not self.dry_run:
-                self.tm.drop_player(plyr['player_id'])
-
-    def _apply_ir_moves(self):
-        orig_ir = [e for e in self.orig_roster
-                   if e['selected_position'] == 'IR']
-        new_ir_ids = [e['player_id'] for e in self.injury_reserve]
-        pos_change = []
-        num_drops = 0
-        for plyr in orig_ir:
-            if plyr['player_id'] in self.new_roster_ids and \
-                    plyr['player_id'] not in new_ir_ids:
-                pos_change.append({'player_id': plyr['player_id'],
-                                   'selected_position': 'BN',
-                                   'name': plyr['name']})
-                num_drops += 1
-
-        for plyr in self.injury_reserve:
-            assert(plyr['player_id'] in self.orig_roster_ids)
-            pos_change.append({'player_id': plyr['player_id'],
-                               'selected_position': 'IR',
-                               'name': plyr['name']})
-            num_drops -= 1
-
-        # Prior to changing any of the IR spots, we may need to drop players.
-        # The number has been precalculated in the above loops.  Basically the
-        # different in the number of players moving out of IR v.s. moving into
-        # IR.
-        for _ in range(num_drops):
-            self._apply_one_player_drop()
-
-        for plyr in pos_change:
-            print("Move {} to {}".format(plyr['name'],
-                                         plyr['selected_position']))
-        if len(pos_change) > 0 and not self.dry_run:
-            self.tm.change_positions(self.lg.edit_date(), pos_change)
-
-    def _apply_position_selector(self):
-        pos_change = []
-        for plyr in self.lineup:
-            pos_change.append({'player_id': plyr['player_id'],
-                               'selected_position': plyr['selected_position']})
-            print("Move {} to {}".format(plyr['name'],
-                                         plyr['selected_position']))
-        for plyr in self.bench:
-            pos_change.append({'player_id': plyr['player_id'],
-                               'selected_position': 'BN'})
-            print("Move {} to BN".format(plyr['name']))
-
-        if not self.dry_run:
-            self.tm.change_positions(self.lg.edit_date(), pos_change)
-
-    
-
-
+            self.ppool = players.query('~(G != G & position_type == "P" )')
+            pass
+        

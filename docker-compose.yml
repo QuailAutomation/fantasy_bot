@@ -65,3 +65,4 @@ services:
 #      - proxy
     depends_on:
       - redis
+

@@ -133,7 +133,7 @@ class YahooProjectionScraper:
         chrome_options.add_argument("--disable-logging")
         chrome_options.add_argument("--log-level=3")
 
-        driver = webdriver.Remote("http://192.168.1.20:3001/webdriver", chrome_options.to_capabilities())
+        driver =  webdriver.Remote("http://192.168.1.20:3001/webdriver", chrome_options.to_capabilities())
         
         # driver = webdriver.Chrome(chrome_options=chrome_options)
         driver.set_page_load_timeout(6000)
@@ -178,7 +178,7 @@ class YahooProjectionScraper:
                 page_stats = self.process_page(driver, cnt)
             except Exception as e:
                 print('Failed to process page, sleeping and retrying', e)
-                time.sleep(SLEEP_SECONDS * 5)
+                time.sleep(SLEEP_SECONDS * 1)
                 page_stats = self.process_page(driver, cnt)
             stats.extend(page_stats)
 

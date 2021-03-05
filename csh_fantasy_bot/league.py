@@ -17,8 +17,9 @@ from csh_fantasy_bot.yahoo_authentication import oauth_token
 from csh_fantasy_bot.nhl import find_teams_playing
 from csh_fantasy_bot.roster import best_roster
 from csh_fantasy_bot.scoring import ScoreComparer
-from csh_fantasy_bot.score_gekko import score_gekko
 
+from csh_fantasy_bot.score_gekko import score_gekko
+from csh_fantasy_bot.roster import best_roster
 
 from csh_fantasy_bot import RedisClient
 
@@ -59,13 +60,15 @@ class FantasyLeague(League):
 
         self._roster_makeup = None
 
-    def roster_makeup(self):
+    def roster_makeup(self, position_type=None):
         if self._roster_makeup is None:
             positions = self.positions()
             roster_makeup = {}
             for position in positions.keys():
                 roster_makeup[position] = int(positions[position]['count'])
             self._roster_makeup = roster_makeup
+        if position_type:
+            return {key:value['count'] for key, value in self.positions().items() if position_type == value.get('position_type', None)}
         return self._roster_makeup
 
     def scoring_categories(self, position_type=['P']):
@@ -286,9 +289,8 @@ class FantasyLeague(League):
             # results = pa.deserialize(results)
         return results
 
-    def score_team(self, player_projections, date_range, roster_change_set=None, simulation_mode=True, date_last_use_actuals=None, team_id=None):
+    def score_team_fpts(self, player_projections, date_range, roster_change_set=None, simulation_mode=True, date_last_use_actuals=None, team_id=None):
         """Score the team.
-
         Args:
             player_projections (DataFrame): Projections for all players on the team
             date_range (pd.DateRange): Date range to project for
@@ -362,10 +364,10 @@ class FantasyLeague(League):
             roster_week_results.set_index(['play_date', 'player_id'], inplace=True)
         return roster_change_set, roster_week_results
     
-    def score_team_new(self, player_projections, date_range, opponent_scores, roster_change_set=None, simulation_mode=True, date_last_use_actuals=None, team_id=None):
+    def score_team(self, player_projections, date_range, opponent_scores, roster_change_set=None, simulation_mode=True, date_last_use_actuals=None, team_id=None):
         date_last_use_actuals = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(seconds=1)
-        if date_last_use_actuals < date_range[0]:
-            date_last_use_actuals = date_range[0]
+        # if date_range[0] > date_last_use_actuals:
+        #     date_last_use_actuals = date_range[0]
         scoring_categories = self.scoring_categories()
         # lets add actuals, they can't be optimized
         actuals_results = self.score_actuals(team_id,date_range[date_range.slice_indexer(date_range[0],date_last_use_actuals)], scoring_categories)
@@ -373,7 +375,7 @@ class FantasyLeague(League):
         if actuals_results is not None:
             actual_results_summed = actuals_results.sum()
 
-        roster_makeup = self.roster_makeup()    
+        roster_makeup = self.roster_makeup(position_type='P')    
         projected_results = score_gekko(player_projections, team_id, opponent_scores,scoring_categories,date_range[date_range.slice_indexer(date_last_use_actuals)], roster_makeup, roster_change_set=roster_change_set, actual_scores=actual_results_summed)
 
         if actuals_results is not None:
@@ -399,3 +401,5 @@ class FantasyLeague(League):
                 else:
                     roster_week_results = roster_week_results.append(roster_results)
         return roster_week_results
+
+    

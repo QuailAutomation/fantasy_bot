@@ -61,14 +61,14 @@ class CacheBase(object):
         with open(f'{self.cache_dir}/{fn}', "wb") as f:
                 pickle.dump(data, f)
 
-    def run_loader(self, fn, expiry, loader):
+    def run_loader(self, fn, expiry, loader, ignore_expiry=False):
         cached_data = self.load(fn)
      
         if type(cached_data) != dict or "expiry" not in cached_data or \
                 "payload" not in cached_data:
             cached_data = None
         elif cached_data["expiry"] is not None:
-            if datetime.datetime.now() > cached_data["expiry"]:
+            if not ignore_expiry and datetime.datetime.now() > cached_data["expiry"]:
                 self.logger.info(
                     "{} file is stale.  Expired at {}".
                     format(fn, cached_data["expiry"]))
@@ -161,8 +161,8 @@ class LeagueCache(CacheBase):
     def prediction_builder_file(self):
         return "pred_builder.pkl"
 
-    def load_prediction_builder(self, expiry, loader):
-        return self.run_loader(self.prediction_builder_file(), expiry, loader)
+    def load_prediction_builder(self, expiry, loader, ignore_expiry=False):
+        return self.run_loader(self.prediction_builder_file(), expiry, loader, ignore_expiry)
 
     def refresh_prediction_builder(self, pred_bldr):
         self.refresh_cache_file(self.prediction_builder_file(), pred_bldr)

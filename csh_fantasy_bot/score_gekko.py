@@ -84,6 +84,7 @@ def score_gekko(team_projections, team_id, opponent_scoring, scoring_categories,
       # limit amount players to roster size allowed for position
       if position in player_vars[game_day_idx]:
         m.Equation(m.sum(player_vars[game_day_idx][position]) <= roster_makeup[position])
+    
       
 
     # for players with multiple eligible positions, make sure only appear once

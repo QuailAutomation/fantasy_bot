@@ -60,6 +60,7 @@ class RandomWeightedSelector:
         self.column = column
         self.normalized_column_name = f'{self.column}_normalized'
         self._normalize(self.df, column, inverse)
+        self.df.sort_values(self.normalized_column_name, ascending=(not inverse), inplace=True)
         
     def select(self):
         """Select random weighted row."""
@@ -108,7 +109,7 @@ def fitness(roster_change_sets, all_players, date_range, scoring_categories, sco
             scoring_result = scores_dict[change_set._id]
             change_set.scoring_summary = scoring_result.reset_index()
             # change_set.score = score_comparer.compute_score(scoring_result)
-            score = score_comparer.score(scoring_result).loc[scoring_type.value].sum()
+            score = score_comparer.score(scoring_result, opponent_scores).loc[scoring_type.value].sum()
             change_set.score = score
         except KeyError as e:
             log.exception(e)

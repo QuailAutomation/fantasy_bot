@@ -87,8 +87,11 @@ class ScoreComparer:
         if team2_scores is None:
             opp_scoring_stats = self.opp_sum
         else:
-            opp_scoring_stats = team2_scores[self.stat_cats].sum()
-        
+            if isinstance(team2_scores, dict):
+                opp_scoring_stats = pd.Series(team2_scores)
+            else:
+                opp_scoring_stats = team2_scores
+                
         score_differential_opp = scoring_stats - opp_scoring_stats
         score_differential_league = scoring_stats - self.league_means
 
