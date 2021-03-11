@@ -36,7 +36,7 @@ def doc_generator_team_results(df, columns):
         }
 
 
-def export_results(league_id="396.l.53432", start_date=None,end_date=None):
+def export_results(league_id, start_date=None,end_date=None):
     """Move player results to ES."""
     league = FantasyLeague(league_id)
     posns = league.positions()

@@ -8,7 +8,7 @@ from csh_fantasy_bot.config import OAUTH_TOKEN_BACKING, CacheBacking
 
 def my_get_data(filename):
     print('works')
-    # return RedisClient().conn.get(filename)
+    return RedisClient().conn.get(filename)
 
 
 @mock.patch('yahoo_oauth.oauth.get_data', side_effect=my_get_data)
@@ -26,7 +26,7 @@ if OAUTH_TOKEN_BACKING == CacheBacking.redis:
     print("token received")
 else:
     oauth_file = os.getenv("YAHOO_OAUTH_FILE",default='./oauth2.json')
-    auth_token = patched_load()
+    oauth_token = OAuth2(None, None, from_file=oauth_file)
 
 
 

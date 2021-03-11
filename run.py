@@ -8,14 +8,14 @@ app = app.create_app()
 
 @app.route('/')
 def hello_world():
-    from csh_fantasy_bot.tasks import refresh
-    refresh.delay()
+    # from csh_fantasy_bot.tasks import refresh
+    # refresh.delay()
     return 'Hello world!'
 
 @app.route('/load_draft')
 def load_draft():
     from csh_fantasy_bot.tasks import load_draft
-    load_draft.delay("396.l.53432")
+    load_draft.delay("403.l.41177")
     return 'Sucessfully loaded into elastic search.'
 
 @app.route("/<string:fname>/<string:content>")
@@ -30,6 +30,13 @@ def run_ga(week):
     from csh_fantasy_bot.tasks import run_ga
     run_ga.delay(week)
     return 'Sucessfully started GA.'
+
+@app.route('/check_rosters')
+def check_rosters():
+    from csh_fantasy_bot.tasks import check_daily_roster
+    result = check_daily_roster.delay()
+
+    return str(result.get())
 
 @app.route('/cube/<int:num>')
 def cube(num):

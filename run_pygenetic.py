@@ -25,7 +25,7 @@ black_list = {
 }
 def do_run(week=5, league_id='403.l.41177', population_size=400):
     """Run the algorithm."""
-    week = 7
+    week = 8
     league_id = '403.l.41177'
     # league_id = "403.l.18782"
     scoring=ScoringType.opponent

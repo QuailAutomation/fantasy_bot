@@ -1,5 +1,5 @@
 """Write draft results to ES."""
-import datetime
+from datetime import datetime
 import logging
 
 from elasticsearch import Elasticsearch
@@ -12,9 +12,10 @@ from csh_fantasy_bot.config import ELASTIC_URL
 def export_draft_es(league_id):
     """Read draft results for league, write to ES."""
     league = FantasyLeague(league_id)
-    all_players_df = league.all_players()
-    all_players_df.set_index('player_id', inplace=True)
-    teams = league.teams()
+    as_of = datetime.now()
+    all_players_df = league.as_of(as_of).all_players()
+    # all_players_df.set_index('player_id', inplace=True)
+    teams = {team['team_key']:team for team in league.teams()}
     draft_results = league.draft_results()
     print(f"Number of players drafted {len(draft_results)}")
     es = Elasticsearch(hosts=ELASTIC_URL, http_compress=True)
@@ -23,7 +24,7 @@ def export_draft_es(league_id):
             document['player_id'] = int(document['player_key'].split('.')[-1])
             document['draft_year'] = draft_year
             document['fantasy_team_id'] = int(document['team_key'].split('.')[-1])
-            document['team_name'] = teams[document['fantasy_team_id'] - 1]['name']
+            document['team_name'] = teams[document['team_key']]['name']
             document['league_ID'] = int(document['team_key'].split('.')[2])
             document['timestamp'] = draft_date
             try:
@@ -39,6 +40,7 @@ def export_draft_es(league_id):
                 "_source": document,
             }
 
-
-    helpers.bulk(es, doc_generator_projections(draft_results,2020,datetime.date(2019,9,27)))
+    draft_date = datetime.fromtimestamp(int(league.settings()['draft_time']))
+    season = int(league.settings()['season'])
+    helpers.bulk(es, doc_generator_projections(draft_results, season, draft_date))
     

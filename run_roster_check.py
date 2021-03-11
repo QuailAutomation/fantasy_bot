@@ -9,6 +9,6 @@ leagues = ['403.l.41177', '403.l.18782']
 
 for league_id in leagues:
     manager = ManagerBot(league_id=league_id)
-    day = datetime.today() #+ timedelta(days=1)
+    day = datetime.today() + timedelta(days=1)
     manager.compare_roster_yahoo_ideal(day)    
     

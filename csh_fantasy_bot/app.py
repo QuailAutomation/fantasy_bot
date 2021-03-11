@@ -13,7 +13,7 @@ def create_app(testing=False, cli=False):
 
     if testing is True:
         app.config["TESTING"] = True
-    
+    ''
     init_celery(app)
 
     return app

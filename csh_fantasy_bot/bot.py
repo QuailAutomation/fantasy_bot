@@ -523,7 +523,7 @@ class GameWeek:
         self.as_of = as_of
         self.date_range = pd.date_range(*manager.lg.week_date_range(self.week_number))
         self._team_scores = None
-        assert as_of >= self.date_range[0]
+        # assert as_of >= self.date_range[0]
         self.all_players = self.manager.lg.as_of(as_of).all_players()
         self._roster_changes_made = None
         self._roster_changes_allowed = None
@@ -632,6 +632,7 @@ class GameWeek:
         assert False, 'Did not find roster changes for team'
 
     def compare_roster_yahoo_ideal(self, day=None):
+        results = []
         roster_positions = self.manager.lg.roster_makeup(position_type='P').keys()
         opponent_key = self.manager.tm.matchup(self.week_number)
         opponent_scores = self.score(team_key=opponent_key)
@@ -643,11 +644,12 @@ class GameWeek:
         
         league_name = self.manager.lg.settings()['name']
         if len(missing_player_ids) > 0:
-            print(f"League: {league_name} - Players missing from projected ideal.")
+            results.append(f"League: {league_name} - Players missing from projected ideal.")
             for player_id in missing_player_ids:
-                print(self.all_players.loc[player_id][['name','status']])
+                results.append(self.all_players.loc[player_id][['name','status']])
         else:
-            print(f'League: {league_name} - Yahoo roster matches projected ideal')    
+            results.append(f'League: {league_name} - Yahoo roster matches projected ideal')    
+        return results
 
     def _fetch_player_pool(self):
         """Build the roster pool of players."""
