@@ -98,7 +98,10 @@ class ManagerBot:
             raise Exception("Can only support as of date in current week or the next week")
     
     def game_week(self, week_number=None):
-        week_number = week_number or self.current_week
+        week_number = week_number or self.current_week()
+        if week_number not in self._game_weeks.keys():
+            game_week = GameWeek(self,week_number)
+            self._game_weeks[week_number] = game_week
         return self._game_weeks[week_number]
         
     # def as_of(self, as_of_date):

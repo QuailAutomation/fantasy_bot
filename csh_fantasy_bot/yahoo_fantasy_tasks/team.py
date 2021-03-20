@@ -1,9 +1,9 @@
 """Export teams player results to ES."""
-from datetime import date, timedelta, datetime
-import time
+from csh_fantasy_bot.bot import ManagerBot
+import datetime
 import logging
 import pandas as pd
-
+import time
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 
@@ -36,39 +36,34 @@ def doc_generator_team_results(df, columns):
         }
 
 
-def export_results(league_id, start_date=None,end_date=None):
+def export_results(league_id, start_date, end_date):
     """Move player results to ES."""
-    league = FantasyLeague(league_id)
+    start_date = datetime.date(2021,3,15)
+    end_date = datetime.date(2021,3,21)
+    manager = ManagerBot(league_id)
+    league = manager.lg
     posns = league.positions()
-    roster_spots = list()
-    for posn in posns:
-        for index in range(posns[posn]['count']):
-            roster_spots.append(f"{posn}{index +1}")
-
+    # C1, C2, LW1, etc...
+    roster_spots = [f'{position}{i+1}' for position,count in league.roster_makeup().items() for i in range(count) ]
     # TODO excluding goalie stats for now
-    player_stats = [stat['display_name'] for stat in league.stat_categories() if stat['position_type'] == 'P']
-    # Weighting for valuing results for each player stat
-    weights_series = pd.Series([1, 1, .5, .5, 1, .1, .7], index=player_stats)
+    player_stats = league.scoring_categories()
 
-    all_players_df = league.all_players()
+    all_players_df = league._all_players()
     all_players_df.set_index('player_id', inplace=True)
     es = Elasticsearch(hosts=ELASTIC_URL, http_compress=True)
     
-    """Will load and return the prediction builder."""
-    def loader():
-        return fantasysp_scrape.Parser()
-
-    expiry = timedelta(minutes=300 * 24 * 60)
-    # TODO need to be able to pull predictions as-of
-    pred_bldr = team_caching.load_prediction_builder(expiry, loader)
     projections = all_players_df[all_players_df.position_type == 'P']
-    projections.reset_index(inplace=True)
-    projections = pred_bldr.predict(projections)
+    # projections.reset_index(inplace=True)
+    projections = manager.pred_bldr.predict(projections)
 
-    season_start_date = datetime.strptime(league.settings()['start_date'], '%Y-%m-%d').date()
-    season_end_date = datetime.strptime(league.settings()['end_date'], '%Y-%m-%d').date()
+    season_start_date = datetime.datetime.strptime(league.settings()['start_date'], '%Y-%m-%d').date()
+    season_end_date = datetime.datetime.strptime(league.settings()['end_date'], '%Y-%m-%d').date()
+
     for team_dict in league.teams():
         fantasy_team_id = int(team_dict['team_key'].split('.')[-1])
+        
+        if fantasy_team_id != 2: continue
+
         the_team = league.team_by_key(team_dict['team_key'])
         team_stats = pd.DataFrame()
         #  if start_date is None else start_date
@@ -82,7 +77,8 @@ def export_results(league_id, start_date=None,end_date=None):
             lineup = daily_roster.query('position_type != "G"')
             actual_stats = pd.DataFrame(league.player_stats(lineup.index.tolist(), "date", date=play_date)).loc[:, ['player_id'] + player_stats]
             actual_stats.set_index('player_id', inplace=True)
-            actual_stats.loc[actual_stats["G"] != '-' , 'fpts'] = actual_stats[actual_stats["G"] != '-' ][player_stats].mul(weights_series).sum(1)
+            # TODO do we want fpts back in?
+            # actual_stats.loc[actual_stats["G"] != '-' , 'fpts'] = actual_stats[actual_stats["G"] != '-' ][player_stats].mul(weights_series).sum(1)
 
             # we will create another set of stats 'fantasy_' which will be actual 
             # if player was on active roster for the day, otherwise stats will be 0
@@ -90,15 +86,16 @@ def export_results(league_id, start_date=None,end_date=None):
             fantasy_stats.loc[daily_roster['selected_position'] == 'BN',:] = 0
             daily_stats = actual_stats.join(fantasy_stats, lsuffix='_actual', rsuffix='_fantasy')
             projected_stats = projections.loc[daily_stats.index,player_stats]
-            projected_stats.loc[projected_stats.G == projected_stats.G, 'fpts'] = projected_stats.mul(weights_series).sum(1)
+            # projected_stats.loc[projected_stats.G == projected_stats.G, 'fpts'] = projected_stats.mul(weights_series).sum(1)
             daily_stats = daily_stats.join(projected_stats.add_suffix('_projected'))
             daily_stats = daily_stats.join(daily_roster.loc[:,['name', 'selected_position', 'eligible_positions', 'status','roster_position']])
-            daily_stats['game_date'] = play_date
+            # ES uses UTC, use end of day PST
+            daily_stats['game_date'] = datetime.datetime.combine(play_date, datetime.time.max)
         
             team_stats = team_stats.append(daily_stats)
-            play_date += timedelta(days=1)
+            play_date += datetime.timedelta(days=1)
             # So we don't get rate limited by Yahoo
-            time.sleep(2)
+            time.sleep(1)
         
         team_stats.loc[:, 'fantasy_team_id'] = fantasy_team_id
         team_stats.loc[:, 'fantasy_team_name'] = team_dict['name']

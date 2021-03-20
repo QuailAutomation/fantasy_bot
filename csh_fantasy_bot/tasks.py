@@ -22,14 +22,14 @@ log = logging.getLogger(__name__)
 my_leagues = {}
 
 def get_league(lg_id):
+    global my_leagues
     if lg_id not in my_leagues:
         try:
             from csh_fantasy_bot.league import FantasyLeague
-            league = FantasyLeague(league_id=lg_id)
-            my_leagues[lg_id] = league
+            my_leagues[lg_id] = FantasyLeague(league_id=lg_id)
         except Exception as e:
             log.exception(e)
-    return league
+    return my_leagues[lg_id]
 
 def _league_id_from_team_key(team_key):
     """Extract the league key from the passed in team_key.
@@ -114,6 +114,7 @@ def run_ga(self,league_id, week=None):
 
 @celery.task(bind=True, name='check_daily_roster')
 def check_daily_roster(self):
+    
     results = []
     leagues = ['403.l.41177', '403.l.18782']
     # TODO should ignore players designated out if they are not on yahoo roster
@@ -125,7 +126,7 @@ def check_daily_roster(self):
         results.append(result)
     return results
     
-league = None  
+# league = None  
 CHUNK_SIZE = 15
 log.debug(f'chunk size for scoring is{CHUNK_SIZE}')
 
