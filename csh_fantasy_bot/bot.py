@@ -57,13 +57,10 @@ class ManagerBot:
         self.stat_categories = [stat['display_name'] for stat in self.lg.stat_categories() if stat['position_type'] == 'P']
         self.stat_categories_goalies = [stat['display_name'] for stat in self.lg.stat_categories() if stat['position_type'] == 'G']
         self.tm = self.lg.to_team(self.lg.team_key())
-        # TODO week should be lazy if none, do in game_week property
         self._current_week = None
-        self.initialized_week = week or self.current_week()
         self._game_weeks = {}
-        
         self._as_of = as_of or datetime.now()
-        self._game_weeks[week]= GameWeek(self, week=self.initialized_week,as_of = self._as_of)
+        self._game_weeks[week]= GameWeek(self, week=week or self.current_week, as_of = self._as_of)
         
         self.lg_cache = utils.LeagueCache(league_key=league_id)
         self.pred_bldr = None
@@ -78,17 +75,16 @@ class ManagerBot:
 
         self.init_prediction_builder()
         
-        
+    @property    
     def current_week(self):
         if not self._current_week:
             self._current_week = self.lg.current_week()
         return self._current_week
 
     def week_for_day(self, day):
-        for week, game_week in self._game_weeks.items():
+        for _, game_week in self._game_weeks.items():
             if day in game_week.date_range:
                 return game_week
-        
         # not a loaded week.  can only get next week, yahoo only supports 1 week in advance
         next_game_week = GameWeek(self,self.initialized_week + 1)
         if day in next_game_week.date_range:
@@ -98,9 +94,10 @@ class ManagerBot:
             raise Exception("Can only support as of date in current week or the next week")
     
     def game_week(self, week_number=None):
-        week_number = week_number or self.current_week()
+        week_number = week_number or self.current_week
         if week_number not in self._game_weeks.keys():
-            game_week = GameWeek(self,week_number)
+            start_date, _ = self.lg._date_range_of_played_or_current_week(week_number)
+            game_week = GameWeek(self,week_number, start_date)
             self._game_weeks[week_number] = game_week
         return self._game_weeks[week_number]
         
@@ -265,7 +262,7 @@ class ManagerBot:
 
     def score_team(self,player_projections=None, opponent_scores=None, date_range=None, roster_change_set=None, simulation_mode=True, date_last_use_actuals=None, team_id=None):
         if date_range is None:
-            date_range = self.game_week(self.initialized_week).date_range
+            date_range = self.game_week(self.current_week).date_range
 
         if player_projections is None:
             my_team_id = int(self.lg.team_key().split('.')[-1])

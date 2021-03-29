@@ -43,6 +43,7 @@ COPY player_lookup.py .
 COPY chrome-ublock.crx .
 COPY run_pygenetic.py .
 COPY run_roster_check.py .
+COPY run.py .
 # WORKDIR /app
 
 CMD ["python","compare_player_rankings.py"]

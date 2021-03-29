@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import pandas as pd
 import numpy as np
 import logging
@@ -183,6 +183,10 @@ class FantasyLeague(League):
 
     def as_of(self, asof_date):
         """Return the various buckets as of this date time."""
+        # if asof_date is a date, lets make it midnight
+        if type(asof_date) is date:
+            asof_date = datetime.combine(asof_date, datetime.min.time())
+
         if not self.as_of_date or asof_date != self.as_of_date:
             all_players = self._all_players()
             all_players = all_players.set_index(keys=['player_id'])
@@ -205,7 +209,7 @@ class FantasyLeague(League):
                         elif method =='_apply_commish':
                             pass
                         else:
-                            self.log.error("Unexpected transaction type: {method}")
+                            self.log.error(f"Unexpected transaction type: {method}")
 
             self.as_of_date = asof_date
             self._all_players_df = all_players
