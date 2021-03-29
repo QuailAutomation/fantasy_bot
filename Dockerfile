@@ -45,7 +45,7 @@ COPY run_pygenetic.py .
 COPY run_roster_check.py .
 COPY run.py .
 # WORKDIR /app
-
+EXPOSE 5000
 CMD ["python","compare_player_rankings.py"]
 
 # # FROM python:3.8-buster
