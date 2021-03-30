@@ -10,7 +10,7 @@ class CacheBacking(Enum):
     file = "file" # S_PS7 or S_PSR
     redis= "redis"
 
-LOG_LEVEL='INFO'
+LOG_LEVEL=os.getenv("LOG_LEVEL", 'INFO')
 ENV = os.getenv("FLASK_ENV")
 DEBUG = ENV == "development"
 CELERY_TIMEZONE = 'US/Pacific'
