@@ -49,8 +49,11 @@ def run_ga(week):
 def check_rosters():
     # TODO add support for days from now, and specifying a date
     from csh_fantasy_bot.tasks import check_daily_roster
-    result = check_daily_roster.delay()
-    return str(result.get())
+    try:
+        result = check_daily_roster.delay()
+        return str(result.get())
+    except Exception as e:
+        return str(e)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2 or 'ipython' != sys.argv[1]:

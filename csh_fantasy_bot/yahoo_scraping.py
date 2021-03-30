@@ -1,5 +1,6 @@
 import pandas as pd
 import datetime
+import logging
 from enum import Enum
 
 from selenium import webdriver
@@ -17,6 +18,7 @@ from nhl_scraper.nhl import Scraper
 
 from csh_fantasy_bot.docker_utils import get_docker_secret
 
+logger = logging.getLogger(__name__)
 
 def get_yahoo_credential(property, missing_val=None):
     from pathlib import Path
@@ -102,18 +104,22 @@ class YahooProjectionScraper:
         return stats
 
     def login(self, driver):
-        driver.get("https://login.yahoo.com/")
 
+        driver.get("https://login.yahoo.com/")
+        driver.get_screenshot_as_file('/Users/craigh/pre-user.png')
         username = driver.find_element_by_name('username')
         username.send_keys(YAHOO_USERNAME)
         driver.find_element_by_id("login-signin").send_keys(Keys.RETURN)
 
         time.sleep(SLEEP_SECONDS)
-
-        password = driver.find_element_by_name('password')
-        password.send_keys(YAHOO_PASSWORD)
-        driver.find_element_by_id("login-signin").send_keys(Keys.RETURN)
-        time.sleep(SLEEP_SECONDS)
+        try:
+            driver.get_screenshot_as_file('/Users/craigh/pre-password.png')
+            password = driver.find_element_by_name('password')
+            password.send_keys(YAHOO_PASSWORD)
+            driver.find_element_by_id("login-signin").send_keys(Keys.RETURN)
+            time.sleep(SLEEP_SECONDS)
+        except Exception as e:
+            logging.exception(driver)
 
     def write_stats(self, stats, out):
         print('Writing to file', out)
