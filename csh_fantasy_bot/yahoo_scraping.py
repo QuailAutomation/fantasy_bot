@@ -113,10 +113,16 @@ class YahooProjectionScraper:
 
         time.sleep(SLEEP_SECONDS)
         try:
-            driver.get_screenshot_as_file('pre-password.png')
+            driver.get_screenshot_as_file('/pre-password.png')
             password = driver.find_element_by_name('password')
-            password.send_keys(YAHOO_PASSWORD)
-            driver.find_element_by_id("login-signin").send_keys(Keys.RETURN)
+            if password:
+                password.send_keys(YAHOO_PASSWORD)
+                driver.find_element_by_id("login-signin").send_keys(Keys.RETURN)
+            else:
+                skip = driver.find_element_by_name('skip')
+                skip.click()
+                time.sleep(SLEEP_SECONDS)
+                driver.get_screenshot_as_file('/skip.png')
             time.sleep(SLEEP_SECONDS)
         except Exception as e:
             logging.exception(driver)
