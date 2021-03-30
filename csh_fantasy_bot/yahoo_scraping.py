@@ -15,8 +15,19 @@ from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.nhl import find_teams_playing
 from nhl_scraper.nhl import Scraper
 
-# import settings
-import settings
+from csh_fantasy_bot.docker_utils import get_docker_secret
+
+
+def get_yahoo_credential(property, missing_val=None):
+    from pathlib import Path
+    import configparser
+    config = configparser.ConfigParser()
+    config.read(f'{Path.home()}/.yahoo/credentials')
+    return config['main'][property]
+
+
+YAHOO_USERNAME=get_docker_secret("YAHOO_USERNAME", get_yahoo_credential("YAHOO_USERNAME"))
+YAHOO_PASSWORD=get_docker_secret("YAHOO_PASSWORD", get_yahoo_credential("YAHOO_PASSWORD"))
 
 RE_REMOVE_HTML = re.compile('<.+?>')
 
