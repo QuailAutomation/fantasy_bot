@@ -5,5 +5,5 @@ venv/
 .vscode/
 celerybeat-schedule.db
 .history/
-settings.py
+#settings.py
 redis/data
