@@ -42,6 +42,7 @@ COPY run_ga.py .
 COPY player_lookup.py .
 COPY chrome-ublock.crx .
 COPY run_pygenetic.py .
+COPY settings.py .
 COPY run_roster_check.py .
 COPY run.py .
 # WORKDIR /app
