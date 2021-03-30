@@ -76,7 +76,7 @@ jobs:
         with:
           status: ${{ job.status }}
           fields: repo,message,commit,author,ref,workflow, run_id # selectable (default: repo,message)
-          text: 'Pushed: craigham/fantasy-bot:${{ steps.prep.outputs.tags}}'
+          text: 'Pushed: ${{ steps.prep.outputs.tags}}'
         env:
           #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # optional
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} 
