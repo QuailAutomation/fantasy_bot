@@ -26,8 +26,14 @@ def get_yahoo_credential(property, missing_val=None):
     return config['main'][property]
 
 
-YAHOO_USERNAME=get_docker_secret("YAHOO_USERNAME", get_yahoo_credential("YAHOO_USERNAME"))
-YAHOO_PASSWORD=get_docker_secret("YAHOO_PASSWORD", get_yahoo_credential("YAHOO_PASSWORD"))
+YAHOO_USERNAME=get_docker_secret("YAHOO_USERNAME")
+if not YAHOO_USERNAME:
+    YAHOO_USERNAME = get_yahoo_credential("YAHOO_USERNAME")
+
+YAHOO_PASSWORD=get_docker_secret("YAHOO_PASSWORD")
+if not YAHOO_PASSWORD:
+    YAHOO_USERNAME = get_yahoo_credential("YAHOO_PASSWORD")
+
 
 RE_REMOVE_HTML = re.compile('<.+?>')
 
