@@ -105,13 +105,13 @@ class YahooProjectionScraper:
         driver.get("https://login.yahoo.com/")
 
         username = driver.find_element_by_name('username')
-        username.send_keys(settings.YAHOO_USERNAME)
+        username.send_keys(YAHOO_USERNAME)
         driver.find_element_by_id("login-signin").send_keys(Keys.RETURN)
 
         time.sleep(SLEEP_SECONDS)
 
         password = driver.find_element_by_name('password')
-        password.send_keys(settings.YAHOO_PASSWORD)
+        password.send_keys(YAHOO_PASSWORD)
         driver.find_element_by_id("login-signin").send_keys(Keys.RETURN)
         time.sleep(SLEEP_SECONDS)
 
