@@ -112,20 +112,21 @@ class YahooProjectionScraper:
         driver.find_element_by_id("login-signin").send_keys(Keys.RETURN)
 
         time.sleep(SLEEP_SECONDS)
+        
+        driver.get_screenshot_as_file('/pre-password.png')
         try:
-            driver.get_screenshot_as_file('/pre-password.png')
             password = driver.find_element_by_name('password')
-            if password:
-                password.send_keys(YAHOO_PASSWORD)
-                driver.find_element_by_id("login-signin").send_keys(Keys.RETURN)
-            else:
-                skip = driver.find_element_by_name('skip')
-                skip.click()
-                time.sleep(SLEEP_SECONDS)
-                driver.get_screenshot_as_file('/skip.png')
-            time.sleep(SLEEP_SECONDS)
+            password.send_keys(YAHOO_PASSWORD)
+            driver.find_element_by_id("login-signin").send_keys(Keys.RETURN)
         except Exception as e:
-            logging.exception(driver)
+            logging.exception(driver)        
+            skip = driver.find_element_by_name('skip')
+            skip.click()
+            time.sleep(SLEEP_SECONDS)
+            driver.get_screenshot_as_file('/skip.png')
+        
+        time.sleep(SLEEP_SECONDS)
+        
 
     def write_stats(self, stats, out):
         print('Writing to file', out)
