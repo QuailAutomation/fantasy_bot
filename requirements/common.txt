@@ -1,6 +1,6 @@
 selenium
 beautifulsoup4==4.9.2
-lxml==4.6.2
+lxml==4.6.3
 yahoo_oauth==1.1
 elasticsearch>=6.0.0,<7.0.0
 celery==5.0.5

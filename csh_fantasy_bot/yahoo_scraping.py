@@ -34,7 +34,7 @@ if not YAHOO_USERNAME:
 
 YAHOO_PASSWORD=get_docker_secret("YAHOO_PASSWORD")
 if not YAHOO_PASSWORD:
-    YAHOO_USERNAME = get_yahoo_credential("YAHOO_PASSWORD")
+    YAHOO_PASSWORD = get_yahoo_credential("YAHOO_PASSWORD")
 
 
 RE_REMOVE_HTML = re.compile('<.+?>')
@@ -108,6 +108,7 @@ class YahooProjectionScraper:
         driver.get("https://login.yahoo.com/")
         driver.get_screenshot_as_file('/pre-user.png')
         username = driver.find_element_by_name('username')
+        logger.info(f"Setting username: {YAHOO_USERNAME}")
         username.send_keys(YAHOO_USERNAME)
         driver.find_element_by_id("login-signin").send_keys(Keys.RETURN)
 
@@ -115,6 +116,7 @@ class YahooProjectionScraper:
         
         driver.get_screenshot_as_file('/pre-password.png')
         try:
+            logger.info(f'Setting pass for yahoo: {YAHOO_PASSWORD}')
             password = driver.find_element_by_name('password')
             password.send_keys(YAHOO_PASSWORD)
             driver.find_element_by_id("login-signin").send_keys(Keys.RETURN)
