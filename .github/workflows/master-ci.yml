@@ -85,13 +85,4 @@ jobs:
       #     dockerPassword: ${{ secrets.docker_hub_password }}
       #     tag: 0.1.$GITHUB_RUN_NUMBER,latest
            
-      - name: Slack Notification
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,ref,workflow, run_id # selectable (default: repo,message)
-          text: 'Pushed: craigham/fantasy-bot:0.1.${{ github.run_number}}'
-        env:
-          #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # optional
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} 
-        if: success() 
+      
