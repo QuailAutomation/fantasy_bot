@@ -6,8 +6,12 @@ from yahoo_oauth import OAuth2
 
 from csh_fantasy_bot import RedisClient
 from csh_fantasy_bot.config import OAUTH_TOKEN_BACKING, CacheBacking
+import logging
+
+logger = logging.getLogger(__name__)
 
 def my_get_data(filename):
+    logger.debug(f"Retrieving token using key {filename} from redis")
     return json.loads(RedisClient().conn.get(filename))
 
 def my_write_data(data, filename):

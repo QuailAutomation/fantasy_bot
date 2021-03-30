@@ -46,7 +46,7 @@ class FantasyLeague(League):
         """Instantiate the league."""
         super().__init__(oauth_token, league_id)
         self.lg_cache = utils.LeagueCache(league_id)
-        self.log = logging.getLogger()
+        self.log = logging.getLogger(__name__)
         self.fantasy_status_code_translation = {'waivers':'W', 'freeagents': 'FA'}
         # store datetime we are as-of use to roll transactions
         self.as_of_date = None
