@@ -146,6 +146,8 @@ class YahooProjectionScraper:
             driver.get_screenshot_as_file('./skip.png')
             verification = driver.find_element_by_name("username")
             verification.click()
+            time.sleep(SLEEP_SECONDS)
+            driver.get_screenshot_as_file('./picked-account.png')
         
         time.sleep(SLEEP_SECONDS)
         
