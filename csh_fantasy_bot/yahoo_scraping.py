@@ -1,6 +1,7 @@
 import pandas as pd
 import datetime
 import logging
+import os
 from enum import Enum
 
 from selenium import webdriver
@@ -103,13 +104,17 @@ class YahooProjectionScraper:
         time.sleep(random.randint(SLEEP_SECONDS, SLEEP_SECONDS * 2))
         return stats
 
-    def watch_verification(self):
+    
+    def retrieve_verification_code(self):
+        VERIFICATION_FNAME = './verification.txt'
         start_watch = datetime.datetime.now()
         while datetime.datetime.now() - start_watch < datetime.timedelta(minutes=5):
             print("checking for file")
             try:
-                with open('./verification.txt', 'r') as reader:
-                    return reader.readline().rstrip('\n')
+                with open(VERIFICATION_FNAME, 'r') as reader:
+                    return_val = reader.readline().rstrip('\n')
+                os.remove(VERIFICATION_FNAME)
+                return return_val
             except IOError:
                 pass
             time.sleep(1)
@@ -135,8 +140,7 @@ class YahooProjectionScraper:
             password.send_keys(YAHOO_PASSWORD)
             password.send_keys(Keys.RETURN)
         except Exception as e:
-            verification_code = self.watch_verification()
-
+            verification_code = self.retrieve_verification_code()
             # should loop for 5 mins and look for file verification.txt.  load that and submit
             verification = driver.find_element_by_id("verification-code-field")
             verification.send_keys(verification_code)
@@ -144,8 +148,8 @@ class YahooProjectionScraper:
 
             time.sleep(SLEEP_SECONDS)
             driver.get_screenshot_as_file('./skip.png')
-            verification = driver.find_element_by_name("username")
-            verification.click()
+            pick_account = driver.find_element_by_name("username")
+            pick_account.click()
             time.sleep(SLEEP_SECONDS)
             driver.get_screenshot_as_file('./picked-account.png')
         
