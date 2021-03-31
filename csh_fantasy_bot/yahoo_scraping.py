@@ -103,10 +103,22 @@ class YahooProjectionScraper:
         time.sleep(random.randint(SLEEP_SECONDS, SLEEP_SECONDS * 2))
         return stats
 
+    def watch_verification(self):
+        start_watch = datetime.datetime.now()
+        while datetime.datetime.now() - start_watch < datetime.timedelta(minutes=5):
+            print("checking for file")
+            try:
+                with open('./verification.txt', 'r') as reader:
+                    return reader.readline().rstrip('\n')
+            except IOError:
+                pass
+            time.sleep(1)
+
+
     def login(self, driver):
 
         driver.get("https://login.yahoo.com/")
-        driver.get_screenshot_as_file('/pre-user.png')
+        driver.get_screenshot_as_file('./pre-user.png')
         username = driver.find_element_by_name('username')
         logger.info(f"Setting username: {YAHOO_USERNAME}")
         username.send_keys(YAHOO_USERNAME)
@@ -114,18 +126,23 @@ class YahooProjectionScraper:
 
         time.sleep(SLEEP_SECONDS)
         
-        driver.get_screenshot_as_file('/pre-password.png')
+        driver.get_screenshot_as_file('./pre-password.png')
+        
+
         try:
             logger.info(f'Setting pass for yahoo: {YAHOO_PASSWORD}')
             password = driver.find_element_by_name('password')
             password.send_keys(YAHOO_PASSWORD)
-            driver.find_element_by_id("login-signin").send_keys(Keys.RETURN)
+            password.send_keys(Keys.RETURN)
         except Exception as e:
-            logging.exception(driver)        
-            skip = driver.find_element_by_name('skip')
-            skip.click()
-            time.sleep(SLEEP_SECONDS)
-            driver.get_screenshot_as_file('/skip.png')
+            verification_code = self.watch_verification()
+
+            # should loop for 5 mins and look for file verification.txt.  load that and submit
+            verification = driver.find_element_by_id("verification-code-field")
+            verification.send_keys(verification_code)
+            verification.send_keys(Keys.RETURN)
+           
+            driver.get_screenshot_as_file('./skip.png')
         
         time.sleep(SLEEP_SECONDS)
         

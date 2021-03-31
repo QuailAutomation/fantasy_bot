@@ -1,3 +1,4 @@
+pandas==1.2.3
 selenium
 beautifulsoup4==4.9.2
 lxml==4.6.3
@@ -9,9 +10,11 @@ elasticsearch-dsl==6.4.0
 flask==1.1.2
 # jsons==1.1.2
 jsonpickle==1.4.1
-matplotlib==3.3.4
+matplotlib==3.4.0
 #-e https://github.com/QuailAutomation/pygenetic.git
--e git+git://github.com/QuailAutomation/pygenetic@master#egg=pygeneticsou  
+-e git+git://github.com/QuailAutomation/pygenetic@master#egg=pygenetic  
 
 # PyQt5==5.9.2
 gekko
+# watcher (doesnt work on m1)
+
