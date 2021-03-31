@@ -141,8 +141,11 @@ class YahooProjectionScraper:
             verification = driver.find_element_by_id("verification-code-field")
             verification.send_keys(verification_code)
             verification.send_keys(Keys.RETURN)
-           
+
+            time.sleep(SLEEP_SECONDS)
             driver.get_screenshot_as_file('./skip.png')
+            verification = driver.find_element_by_name("username")
+            verification.click()
         
         time.sleep(SLEEP_SECONDS)
         
