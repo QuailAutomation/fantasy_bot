@@ -75,7 +75,7 @@ def get_last_yahoo_confirmation(earliest_datetime):
     mail = _get_mail_client(GMAIL_USERNAME, GMAIL_PASSWORD)
     mail.select('INBOX')
     ids = _get_email_ids(mail, criteria=yahoo_confirmation_criteria)
-    assert len(ids) < 2
+    logger.debug(f'Number messages matching criteria: {len(ids)}')
     message = get_email_msg(mail, ids[0])
     # make sure received for email is after passed in earliest_datetime
     if not earliest_datetime or mktime_tz(parsedate_tz(message['Date'])) > earliest_datetime.timestamp():
