@@ -118,6 +118,7 @@ class YahooProjectionScraper:
             if return_val:
                 return return_val
             time.sleep(3)
+        logger.warn("Gave up looking for yahoo verification code")
 
 
     def login(self, driver):
@@ -135,7 +136,6 @@ class YahooProjectionScraper:
         
 
         try:
-            logger.info(f'Setting pass for yahoo: {YAHOO_PASSWORD}')
             password = driver.find_element_by_name('password')
             password.send_keys(YAHOO_PASSWORD)
             password.send_keys(Keys.RETURN)

@@ -4,7 +4,7 @@ import logging
 import pickle
 import os
 from enum import Enum
-
+from collections import namedtuple
 from datetime import datetime, timedelta, date
 from collections import defaultdict 
 import pandas as pd
@@ -22,6 +22,8 @@ from csh_fantasy_bot.yahoo_projections import retrieve_yahoo_rest_of_season_proj
 
 from csh_fantasy_bot.scoring import ScoreComparer
 
+
+MissingRosterPlayer = namedtuple('MissingRosterPlayer', 'player_id name status')
 
 class ScoringAlgorithm(Enum):
     milp = "score_opp" # S_PS7 or S_PSR
@@ -631,6 +633,8 @@ class GameWeek:
         return plug_value
         assert False, 'Did not find roster changes for team'
 
+    
+    
     def compare_roster_yahoo_ideal(self, day=None):
         results = []
         roster_positions = self.manager.lg.roster_makeup(position_type='P').keys()
@@ -646,7 +650,7 @@ class GameWeek:
         if len(missing_player_ids) > 0:
             results.append(f"League: {league_name} - Players missing from projected ideal.")
             for player_id in missing_player_ids:
-                results.append(self.all_players.loc[player_id][['name','status']])
+                results.append(MissingRosterPlayer(player_id,*self.all_players.loc[player_id,['name', 'status']].values))
         else:
             results.append(f'League: {league_name} - Yahoo roster matches projected ideal')    
         return results
