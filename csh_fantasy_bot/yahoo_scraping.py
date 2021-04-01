@@ -108,7 +108,8 @@ class YahooProjectionScraper:
     
     def retrieve_verification_code(self):
         
-        start_scrape_time = datetime.datetime.utcnow()
+        # subtract 2 mins just in case clocks are off
+        start_scrape_time = datetime.datetime.utcnow() - datetime.timedelta(minutes=2)
         
         start_watch = datetime.datetime.now()
         while datetime.datetime.now() - start_watch < datetime.timedelta(minutes=5):
