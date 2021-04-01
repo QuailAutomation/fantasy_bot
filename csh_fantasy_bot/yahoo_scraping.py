@@ -18,6 +18,7 @@ from csh_fantasy_bot.nhl import find_teams_playing
 from nhl_scraper.nhl import Scraper
 
 from csh_fantasy_bot.docker_utils import get_docker_secret
+from csh_fantasy_bot.google_email import get_last_yahoo_confirmation
 
 logger = logging.getLogger(__name__)
 
@@ -106,18 +107,16 @@ class YahooProjectionScraper:
 
     
     def retrieve_verification_code(self):
-        VERIFICATION_FNAME = './verification.txt'
+        
+        start_scrape_time = datetime.datetime.utcnow()
+        
         start_watch = datetime.datetime.now()
         while datetime.datetime.now() - start_watch < datetime.timedelta(minutes=5):
             print("checking for file")
-            try:
-                with open(VERIFICATION_FNAME, 'r') as reader:
-                    return_val = reader.readline().rstrip('\n')
-                os.remove(VERIFICATION_FNAME)
+            return_val = get_last_yahoo_confirmation(start_scrape_time)
+            if return_val:
                 return return_val
-            except IOError:
-                pass
-            time.sleep(1)
+            time.sleep(3)
 
 
     def login(self, driver):
