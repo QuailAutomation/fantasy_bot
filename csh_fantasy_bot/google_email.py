@@ -15,11 +15,11 @@ def get_gmail_credential(property, missing_val=None):
     config.read(f'{Path.home()}/.fantasy/credentials')
     return config['gmail'][property]
 
-GMAIL_USERNAME=get_docker_secret("GMAIL_USERNAME")
+GMAIL_USERNAME=get_docker_secret("GMAIL_IMAP_ACCOUNT")
 if not GMAIL_USERNAME:
     GMAIL_USERNAME = get_gmail_credential("imap_email")
 
-GMAIL_PASSWORD=get_docker_secret("GMAIL_PASSWORD")
+GMAIL_PASSWORD=get_docker_secret("GMAIL_IMAP_PASS")
 if not GMAIL_PASSWORD:
     GMAIL_PASSWORD = get_gmail_credential("imap_password")
 
