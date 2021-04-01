@@ -77,6 +77,7 @@ def get_last_yahoo_confirmation(earliest_datetime):
     ids = _get_email_ids(mail, criteria=yahoo_confirmation_criteria)
     logger.debug(f'Number messages matching criteria: {len(ids)}')
     message = get_email_msg(mail, ids[0])
+    logger.debug(f'Email subject(0): {message["subject"]}')
     # make sure received for email is after passed in earliest_datetime
     if not earliest_datetime or mktime_tz(parsedate_tz(message['Date'])) > earliest_datetime.timestamp():
         ver_code = extract_verification_subject(message['subject'])
