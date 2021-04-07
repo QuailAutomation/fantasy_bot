@@ -2,7 +2,8 @@ pandas==1.2.3
 selenium
 beautifulsoup4==4.9.2
 lxml==4.6.3
-yahoo_oauth==1.1
+# yahoo_oauth==1.1
+-e git+git://github.com/QuailAutomation/yahoo-oauth@master#egg=yahoo_oauth
 elasticsearch>=6.0.0,<7.0.0
 celery==5.0.5
 redis==3.5.3

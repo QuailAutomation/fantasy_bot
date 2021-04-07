@@ -21,12 +21,11 @@ from csh_fantasy_bot.scoring import ScoreComparer
 from csh_fantasy_bot.score_gekko import score_gekko
 from csh_fantasy_bot.roster import best_roster
 
-from csh_fantasy_bot import RedisClient
+from csh_fantasy_bot.redis import RedisClient
 
 import pickle
 
-
-
+LOG = logging.getLogger(__name__)
 
 def _roster_changes_as_day_dict(rcs):
     rc_dict = defaultdict(list)
@@ -46,7 +45,7 @@ class FantasyLeague(League):
         """Instantiate the league."""
         super().__init__(oauth_token, league_id)
         self.lg_cache = utils.LeagueCache(league_id)
-        self.log = logging.getLogger(__name__)
+        
         self.fantasy_status_code_translation = {'waivers':'W', 'freeagents': 'FA'}
         # store datetime we are as-of use to roll transactions
         self.as_of_date = None
@@ -209,7 +208,7 @@ class FantasyLeague(League):
                         elif method =='_apply_commish':
                             pass
                         else:
-                            self.log.error(f"Unexpected transaction type: {method}")
+                            LOG.error(f"Unexpected transaction type: {method}")
 
             self.as_of_date = asof_date
             self._all_players_df = all_players
@@ -238,7 +237,7 @@ class FantasyLeague(League):
         dest_team_id = int(player_info['player'][1]['transaction_data'][0]['destination_team_key'].split('.')[-1])
         dest_team_name = player_info['player'][1]['transaction_data'][0]['destination_team_name']
         post_draft_player_list.at[player_id,'fantasy_status'] = dest_team_id
-        self.log.debug(f'apply add, player: {player_name} to: {dest_team_name}')
+        LOG.debug(f'apply add, player: {player_name} to: {dest_team_name}')
 
     def _drop_player(self, player_info, post_draft_player_list, drop_date):
         player_id = int(player_info['player'][0][1]['player_id'])
@@ -252,7 +251,7 @@ class FantasyLeague(League):
             post_draft_player_list.at[player_id,'waiver_date'] = time_clear_waivers
         else:
             post_draft_player_list.at[player_id,'fantasy_status'] ='FA'
-        self.log.debug(f'dropping player: {player_name}, from: {source_team_name} to: {destination}')
+        LOG.debug(f'dropping player: {player_name}, from: {source_team_name} to: {destination}')
 
     def stat_predictor(self):
         """Load and return the prediction builder."""
@@ -352,7 +351,7 @@ class FantasyLeague(League):
                     roster_results.loc[:,'score_type'] = 'p'
 
                     if len(roster_results[roster_results.G != roster_results.G].index.values) > 0:
-                        self.log.warn(f"no projections for players: {roster_results[roster_results.G != roster_results.G].index.values}")
+                        LOG.warn(f"no projections for players: {roster_results[roster_results.G != roster_results.G].index.values}")
 
             if roster_results is not None and len(roster_results) > 0:
                 roster_results['play_date'] = game_day

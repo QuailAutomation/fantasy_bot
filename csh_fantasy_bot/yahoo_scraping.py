@@ -20,7 +20,7 @@ from nhl_scraper.nhl import Scraper
 from csh_fantasy_bot.docker_utils import get_docker_secret
 from csh_fantasy_bot.google_email import get_last_yahoo_confirmation
 
-logger = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 def get_yahoo_credential(property, missing_val=None):
     from pathlib import Path
@@ -84,7 +84,7 @@ class YahooProjectionScraper:
         return stats_item
 
     def process_page(self, driver, cnt, projection_length="S_PSR"):
-        print('Getting stats for count', cnt)
+        LOG.debug('Getting stats for count', cnt)
 
         url = f'https://hockey.fantasysports.yahoo.com/hockey/{self.league_suffix}/players?status=ALL&pos=P&cut_type=33&stat1={projection_length}&sort=AR&sdir=1&count={cnt}'
 
@@ -101,7 +101,7 @@ class YahooProjectionScraper:
 
         driver.find_element_by_tag_name('body').send_keys(Keys.END)
 
-        print('Sleeping for', SLEEP_SECONDS)
+        LOG.trace('Sleeping for', SLEEP_SECONDS)
         time.sleep(random.randint(SLEEP_SECONDS, SLEEP_SECONDS * 2))
         return stats
 
@@ -118,7 +118,7 @@ class YahooProjectionScraper:
             if return_val:
                 return return_val
             time.sleep(3)
-        logger.warn("Gave up looking for yahoo verification code")
+        LOG.warn("Gave up looking for yahoo verification code")
 
 
     def login(self, driver):
@@ -126,7 +126,7 @@ class YahooProjectionScraper:
         driver.get("https://login.yahoo.com/")
         driver.get_screenshot_as_file('./pre-user.png')
         username = driver.find_element_by_name('username')
-        logger.info(f"Setting username: {YAHOO_USERNAME}")
+        LOG.info(f"Setting username: {YAHOO_USERNAME}")
         username.send_keys(YAHOO_USERNAME)
         driver.find_element_by_id("login-signin").send_keys(Keys.RETURN)
 

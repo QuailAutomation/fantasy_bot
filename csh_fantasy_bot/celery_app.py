@@ -8,7 +8,7 @@ from csh_fantasy_bot.app import init_celery
 from csh_fantasy_bot.config import LOG_LEVEL
 
 log = logging.getLogger()
-
+print("in celery_app")
 app = init_celery()
 log.debug("Celery initialized")
 
@@ -35,6 +35,7 @@ def setup_loggers(logger, *args, **kwargs):
                 for h in v.handlers:
                     print('     +++',str(h.__class__)[8:-2] )
 
+print(f"setting log level to {LOG_LEVEL}")
 logging.getLogger().setLevel(level=LOG_LEVEL)
 # this lib doesn't connect to root
 logging.getLogger('yahoo_oauth').setLevel(level=LOG_LEVEL)

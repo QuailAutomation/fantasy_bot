@@ -4,7 +4,7 @@ import os
 
 from yahoo_oauth import OAuth2
 
-from csh_fantasy_bot import RedisClient
+from csh_fantasy_bot.redis import RedisClient
 from csh_fantasy_bot.config import OAUTH_TOKEN_BACKING, CacheBacking
 import logging
 

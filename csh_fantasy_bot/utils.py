@@ -44,7 +44,7 @@ class CacheBase(object):
             if not os.path.exists(self.cache_dir):
                 os.makedirs(self.cache_dir)
         else:
-            from csh_fantasy_bot import RedisClient
+            from csh_fantasy_bot.redis import RedisClient
             self.redis_loader = RedisLoader(cache_dir, RedisClient())
             self.load = self.redis_loader.load
             self.write = self.redis_loader.write

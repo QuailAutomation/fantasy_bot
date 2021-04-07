@@ -62,12 +62,12 @@ jobs:
           context: .
           file: ./Dockerfile
           target: build-image
-          platforms: linux/amd64, linux/arm64, linux/arm/v7
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.prep.outputs.tags }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
-
+#, linux/arm64, linux/arm/v7
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
       

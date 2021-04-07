@@ -15,7 +15,7 @@ from csh_fantasy_bot.celery_app import app
 
 # this will hold player ids of players which can be dropped as overrides to the drop selection criteria
 white_list = {
-    '403.l.41177': [],
+    '403.l.41177': [6759],
     '403.l.18782': [],
 }
 # this will hold player ids of players which can't be dropped as overrides to the drop selection criteria
@@ -25,7 +25,7 @@ black_list = {
 }
 def do_run(week=5, league_id='403.l.41177', population_size=400):
     """Run the algorithm."""
-    week = 11
+    week = 12
     league_id = '403.l.41177'
     # league_id = "403.l.18782"
     scoring=ScoringType.opponent

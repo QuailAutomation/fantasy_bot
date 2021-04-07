@@ -4,8 +4,6 @@ import logging
 
 from enum import Enum
 
-log = logging.getLogger(__name__)
-
 class CacheBacking(Enum):
     file = "file" # S_PS7 or S_PSR
     redis= "redis"
@@ -38,8 +36,8 @@ CELERYBEAT_SCHEDULE = {
 
 CELERY_TASK_FILE_WRITE_PATH = "/Users/craigh/dev/fantasy_bot"
 
-ELASTIC_URL = os.getenv("ELASTIC_URL", default="http://localhost:9200")
+ELASTIC_URL = os.getenv("FB_ELASTIC_URL", default="http://localhost:9200")
 GELF_URL = os.getenv("GELF_URL", default=None)
 
-CACHE_BACKING = CacheBacking[os.getenv("CACHE_BACKING", default=CacheBacking.file.value)]
-OAUTH_TOKEN_BACKING = CacheBacking[os.getenv("OAUTH_TOKEN_BACKING", default=CacheBacking.file.value)]
+CACHE_BACKING = CacheBacking[os.getenv("FB_CACHE_BACKING", default=CacheBacking.file.value)]
+OAUTH_TOKEN_BACKING = CacheBacking[os.getenv("FB_OAUTH_TOKEN_BACKING", default=CacheBacking.file.value)]
