@@ -27,7 +27,7 @@ def do_run(week=5, league_id='403.l.41177', population_size=400):
     """Run the algorithm."""
     week = 12
     league_id = '403.l.41177'
-    # league_id = "403.l.18782"
+    league_id = "403.l.18782"
     scoring=ScoringType.opponent
 
     simulation_mode = False
@@ -52,9 +52,9 @@ def do_run(week=5, league_id='403.l.41177', population_size=400):
                                         (projected_stats.percent_owned > 5)]
     add_selector = RandomWeightedSelector(addable_players,'fpts')
 
-    droppable_players = projected_stats[((((projected_stats.fantasy_status == my_team_id) & 
-                                        (projected_stats.percent_owned < 92)) |
-                                        (projected_stats.index.isin(white_list[league_id]))) &
+    droppable_players = projected_stats[(((projected_stats.fantasy_status == my_team_id) & 
+                                        ((projected_stats.percent_owned < 92) |
+                                        (projected_stats.index.isin(white_list[league_id])))) &
                                         ~(projected_stats.index.isin(black_list[league_id])))
                                         ] # & (projected_stats.fpts < 1)
     drop_selector = RandomWeightedSelector(droppable_players, 'fpts', inverse=True)

@@ -11,6 +11,7 @@ from typing import ClassVar
 import pandas as pd
 import numpy as np
 import importlib
+from pandas.core.frame import DataFrame
 from pandas.core.indexes.datetimes import date_range
 
 
@@ -705,7 +706,7 @@ class ManagerBot:
             week_n = week or self.current_week
         return week_n
 
-    def retreive_scores(self, week=None, ts=TS.me, **params):
+    def retreive_scores(self, week=None, ts=TS.me, **params) -> DataFrame:
         all_weeks = [i for i in range(1, self.current_week + 2)]
         # print(f'All weeks: {all_weeks}')
         # all_weeks = range(self.current_week + 2)
