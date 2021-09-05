@@ -15,7 +15,7 @@ matplotlib==3.4.0
 #-e https://github.com/QuailAutomation/pygenetic.git
 -e git+git://github.com/QuailAutomation/pygenetic@master#egg=pygenetic  
 
-# PyQt5==5.9.2
+PyQt5==5.15.4
 gekko
 # watcher (doesnt work on m1)
 

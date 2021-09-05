@@ -23,12 +23,14 @@ black_list = {
     '403.l.41177': [4684, 5696],
     '403.l.18782': [],
 }
-def do_run(week=5, league_id='403.l.41177', population_size=400):
+def do_run(week=5, league_id='403.l.41177', population_size=800):
     """Run the algorithm."""
-    week = 12
+    week = 16
     league_id = '403.l.41177'
-    league_id = "403.l.18782"
+    # league_id = "403.l.18782"
     scoring=ScoringType.opponent
+    # can override opponent.  useful for playoffs
+    opponent = None #"403.l.41177.t.4"
 
     simulation_mode = False
     manager: ManagerBot = ManagerBot(week=week, simulation_mode=False,league_id=league_id)
@@ -45,9 +47,13 @@ def do_run(week=5, league_id='403.l.41177', population_size=400):
     league_scoring_categories = league.scoring_categories()
     rostering_columns = ['eligible_positions', 'team_id', 'fpts', 'fantasy_status'] + league_scoring_categories 
     game_week = manager.game_week(week)
+    if opponent:
+        game_week.override_opponent(opponent)
+
     projected_stats = game_week.all_player_predictions
 
     addable_players = projected_stats[ (projected_stats.fantasy_status == 'FA') & 
+                                        (projected_stats.status != 'O') &
                                         (projected_stats.fantasy_status != my_team_id) & 
                                         (projected_stats.percent_owned > 5)]
     add_selector = RandomWeightedSelector(addable_players,'fpts')

@@ -101,7 +101,7 @@ class YahooProjectionScraper:
 
         driver.find_element_by_tag_name('body').send_keys(Keys.END)
 
-        LOG.trace('Sleeping for', SLEEP_SECONDS)
+        LOG.debug('Sleeping for', SLEEP_SECONDS)
         time.sleep(random.randint(SLEEP_SECONDS, SLEEP_SECONDS * 2))
         return stats
 

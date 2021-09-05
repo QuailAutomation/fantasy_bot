@@ -109,6 +109,8 @@ class GameWeek:
 
         return self._score_comparer
 
+    def override_opponent(self, opponent_id):
+        self._opponent = TeamInfo(opponent_id, self)
     def fetch_league_lineups(self):
         scoring_results = {tm['team_key'].split('.')[-1]:self.manager.lg.score_team_fpts(self.all_player_predictions[self.all_player_predictions.fantasy_status == int(tm['team_key'].split('.')[-1])], \
                                     date_range=self.date_range, simulation_mode=self.simulation_mode, team_id=tm['team_key'])[1] 
@@ -294,7 +296,7 @@ class ManagerBot:
         # not a loaded week.  can only get next week, yahoo only supports 1 week in advance
         next_game_week = GameWeek(self,self.current_week + 1, day)
         if day in next_game_week.date_range:
-            self.game_weeks[self.current_week + 1] = next_game_week
+            self._game_weeks[self.current_week + 1] = next_game_week
             return next_game_week
         else:
             raise Exception("Can only support as of date in current week or the next week")
@@ -302,7 +304,11 @@ class ManagerBot:
     def game_week(self, week_number=None)->GameWeek:
         week_number = week_number or self.current_week
         if week_number not in self._game_weeks.keys():
-            start_date, _ = self.lg._date_range_of_played_or_current_week(week_number)
+            try:
+                start_date, _ = self.lg._date_range_of_played_or_current_week(week_number)
+            except StopIteration:
+                today = date.today()
+                start_date = today + timedelta(days=-today.weekday(), weeks=1)
             game_week = GameWeek(self,week_number, start_date)
             self._game_weeks[week_number] = game_week
         return self._game_weeks[week_number]
