@@ -12,6 +12,7 @@ from PyQt5.QtCore import pyqtSlot, QCoreApplication, QRunnable, QThreadPool, QId
 from csh_fantasy_bot.bot import ManagerBot
 from csh_fantasy_bot.yahoo_projections import retrieve_yahoo_rest_of_season_projections, produce_csh_ranking
 from csh_fantasy_bot.projections.yahoo_nfl import generate_predictions, PredictionType, retrieve_draft_order
+from csh_fantasy_bot.projections.fantasypros_nfl import get_projections
 
 from csh_fantasy_bot.draft import generate_snake_draft_picks
 import yahoo_fantasy_api as yfa
@@ -23,16 +24,21 @@ def extract_yahoo_id(yahoo_key):
         return int(yahoo_key.split('.')[-1])
 
 class DraftMonitor(QRunnable):
-    def __init__(self, league) -> None:
+    def __init__(self, league, keepers=None) -> None:
         print(f"creating draft monitor for: {league}")
         super(DraftMonitor, self).__init__()
-        self.league = league
+        self.league=league
         self._draft_listener=None
         self.draft_status = league.settings()['draft_status']
         self.drafted_players=[]
         self.last_notified_draft_index = None
         self.paused=False
         self.stop_flag = False
+        # list which holds which picks were used for keepers
+        self.keeper_pick_numbers = []
+        for _, team_keepers in keepers.items():
+            for keeper_draft in team_keepers:
+                self.keeper_pick_numbers.append(keeper_draft['number'])
     
     def toggle_paused(self):
         self.paused = not self.paused
@@ -63,8 +69,9 @@ class DraftMonitor(QRunnable):
                     if self.stop_flag:
                         break
                     if not self.paused:
-                        self._draft_listener.player_drafted(document)
-                        time.sleep(3)
+                        if document['pick'] not in self.keeper_pick_numbers:
+                            self._draft_listener.player_drafted(document)
+                            time.sleep(3)
                         break
                     else:
                         print("Waiting until paused changed false")
@@ -86,7 +93,7 @@ class DraftMonitor(QRunnable):
                     player_id = int(document['player_key'].split('.')[-1])
                     if player_id not in self.drafted_players:
                         self.drafted_players.append(player_id)
-                        self._draft_listener.player_drafted(int(player_id))
+                        self._draft_listener.player_drafted(document)
 
             time.sleep(30)
             
@@ -130,9 +137,17 @@ class DraftedRosterModel(QtCore.QAbstractTableModel):
     def _player_id_for_name_team(self, name, team):
         # self.projections_df.loc[self.projections_df.name.str.contains(keeper['name']) & 
         #                                 (self.projections_df.team == keeper['team']), 'draft_fantasy_key'] = team
-        matching =  self.player_projections.index[self.player_projections.name.str.contains(name) & (self.player_projections.team == team)].tolist()
-        assert len(matching) == 1, "Expecting 1 and only 1 match"
-        return matching[0]
+        matching = None
+        if '' != team: 
+            matching =  self.player_projections.index[self.player_projections.name.str.contains(name) & (self.player_projections.team == team)].tolist()
+        else:
+            matching =  self.player_projections.index[self.player_projections.name.str.contains(name)].tolist()
+
+        # assert len(matching) == 1,f"Expecting 1 and only 1 match {len(matching)}, name: {name}, team: {team}"
+        if len(matching) == 1:
+            return matching[0]
+        else: 
+            return f"{name}-{team}"
 
     def specify_team_key(self, team_key):
         self.team_key = team_key
@@ -141,7 +156,7 @@ class DraftedRosterModel(QtCore.QAbstractTableModel):
             print("Must add keepers to roster")
             my_keepers = self.league_keepers[team_key]
             for keeper in my_keepers:
-                self.team_roster.append(self._player_id_for_name_team(keeper['name'], keeper['team']))
+                self.team_roster.append(self._player_id_for_name_team(keeper['name'], keeper.get('team', '').upper()))
             pass
         # now add drafted players
         for entry in self.draft_list:
@@ -151,14 +166,9 @@ class DraftedRosterModel(QtCore.QAbstractTableModel):
 
 class PandasModel(QtCore.QAbstractTableModel):
     BG_DRAFTED = QtGui.QColor(215,214,213)
-    def __init__(self, data, parent=None, column_headers=None, valid_positions={'C', 'LW', 'RW', 'D'}, highlight_personal_ranking_differences=True, keepers=None):
+    def __init__(self, data, parent=None, column_headers=None, valid_positions=('C', 'LW', 'RW', 'D'), highlight_personal_ranking_differences=True):
         QtCore.QAbstractTableModel.__init__(self, parent)
         self._data = data
-        # if we have keepers, lets assign them via fantasy_team_id column in self._data dataframe
-        # if keepers:
-        #     for keeper in keeper_list:
-        #         print(keeper)
-        #         self._data[self._data.name.str.contains("Dalvin Cook") & (self._data.team == keeper['team'])]['fantasy_team_id']
         # this will reflect what we want to see with filtering.  speeds up rendering in data func
         self.current_data_view = self._data
         self._column_headers = column_headers
@@ -178,6 +188,21 @@ class PandasModel(QtCore.QAbstractTableModel):
         self._drafted_players = list()
         self.show_drafted = True
         self.positions_to_show = valid_positions
+        self.sort_info = None
+
+    def sort(self, column: int, order: Qt.SortOrder) -> None:
+        self.sort_info = column, order
+        sort_direction = "Ascending" if order == Qt.SortOrder.AscendingOrder else "Descending"
+        print(f"Sort column: {self._column_header_list[column]}, {sort_direction}")
+        self.current_data_view.sort_values(self.current_data_view.columns[self._columnheader_mapping[column]], ascending=order == Qt.SortOrder.AscendingOrder, inplace=True, ignore_index=True)
+        self.modelReset.emit()
+        return super().sort(column, order=order)
+
+    def do_sort(self):
+        if self.sort_info:
+            self.current_data_view.sort_values(self.current_data_view.columns[self._columnheader_mapping[self.sort_info[0]]], ascending=self.sort_info[1] == Qt.SortOrder.AscendingOrder, inplace=True, ignore_index=True)
+            self.modelReset.emit()
+        
 
     def rowCount(self, parent=None):
         return self._num_rows
@@ -219,6 +244,7 @@ class PandasModel(QtCore.QAbstractTableModel):
         self._drafted_players.append(player_id)
         self._data.loc[self._data.player_id == player_id, 'draft_fantasy_key'] = team_id
         self.apply_filters()
+        self.do_sort()
         self.modelReset.emit()
     
     def set_hide_drafted(self, flag):
@@ -233,19 +259,19 @@ class PandasModel(QtCore.QAbstractTableModel):
     def apply_filters(self):
         valid_by_position = ~self._data['position'].apply(lambda x: self.positions_to_show.isdisjoint(x))
         if not self.show_drafted:
-            # show_drafted = self._data.draft_fantasy_key == -1
             self.current_data_view=self._data[(self._data.draft_fantasy_key == -1) & valid_by_position]
         else:
             self.current_data_view=self._data[valid_by_position]
 
         self._num_rows = len(self.current_data_view.index)
+        self.do_sort()
         self.modelReset.emit()
 
 
 class App(QMainWindow):
-    game_filter_positions = {"nhl":{'C', 'LW', 'RW', 'D'}, "nfl":{'QB', 'RB', 'WR', 'TE'}}
+    game_filter_positions = {"nhl":['C', 'LW', 'RW', 'D'], "nfl":['QB', 'RB', 'WR', 'TE', 'K', 'DEF']}
     game_projection_columns = {"nhl":{'name':'Name','posn_display':'POS', 'team':'Team', 'csh_rank':'CSH', 'preseason_rank':'Preseason', 'current_rank':'Current', 'GP':'GP','fantasy_score':'Score'} ,
-                                "nfl":{'name':'Name','posn_display':'POS', 'team':'Team', 'Bye':'Bye','fan_points':'fan_points', 'overall_rank':'Rank'}}
+                                "nfl":{'name':'Name','posn_display':'POS', 'team':'Team', 'Bye':'Bye','fan_points':'fan_points', 'overall_rank':'Rank', 'fp_rank':'FP_rank', 'position_rank':'FP_Pos'}}
     # ['name', 'position', 'player_id', 'GP', 'Bye', 'fan_points',
     #    'overall_rank', 'percent_rostered', 'pass_yds', 'pass_td', 'pass_int',
     #    'pass_sack', 'rush_attempts', 'rush_yards', 'rush_tds',
@@ -272,8 +298,11 @@ class App(QMainWindow):
         self.draft_monitor = None
         self.draft_complete = False
         self.draft_results = []
+        self.position_filtering_layout = QHBoxLayout()
         self.draft_list_widget = QListWidget()
         self.projection_table = QTableView()
+        self.projection_table.setSortingEnabled(True)
+
         self.pause_draft_button = QPushButton("Pause")
         self.pause_draft_button.clicked.connect(self.pause_pressed)
         
@@ -283,7 +312,8 @@ class App(QMainWindow):
         self.roster_table = QTableView()
         self.roster_table_model = None
         
-        self.league_changed("403.l.41177", "nhl", 2020)
+        # self.league_changed("403.l.41177", "nhl", 2020)
+        self.league_changed("406.l.246660", "nfl", 2021)
         self.initUI()
 
     def setup_menubar(self):
@@ -291,7 +321,7 @@ class App(QMainWindow):
         menuBar.setNativeMenuBar(False)
         self.setMenuBar(menuBar)
         leagueMenu = menuBar.addMenu("&League")
-        years = [2021, 2020]
+        years = [2021, 2020, 2019,2018]
         fantasy_games = ['nhl', 'nfl']
         
         for year in years:
@@ -314,6 +344,18 @@ class App(QMainWindow):
         if not (q.league_id == self.league_id and q.year == self.game_year):
             self.league_changed(q.league_id, q.game_type, q.year)
 
+    def get_scraped_draft_results(self):
+        scraped_draft_results = None
+        draft_scrape_filename = f".cache/gui_draft/draft-scrape-{self.league_id}-{self.game_type}-{self.game_year}.pkl"
+        if os.path.exists(draft_scrape_filename):
+            with open(draft_scrape_filename, "rb") as f:
+                scraped_draft_results = pickle.load(f)
+        else:
+            scraped_draft_results = retrieve_draft_order(self.league)
+            with open(draft_scrape_filename, "wb") as f:
+                pickle.dump(scraped_draft_results, f)
+        return scraped_draft_results
+
     def league_changed(self, league_id, game_type, year):
         print(f"League changed, id: {league_id} - type: {game_type} - year:{year}")
         if self.draft_monitor is not None and self.league_id != league_id:
@@ -327,27 +369,20 @@ class App(QMainWindow):
         
         self.projections_df = self.retrieve_player_projections()
         
-        
         # figure out if we have keepers
         scraped_draft_results = None
         if "nfl" == self.game_type:
             # for keeper leagues, would be defined in a screen scrape.  lets do that and simulate them
-            draft_scrape_filename = f".cache/gui_draft/draft-scrape-{self.league_id}-{self.game_type}-{self.game_year}.pkl"
-            if os.path.exists(draft_scrape_filename):
-                with open(draft_scrape_filename, "rb") as f:
-                    scraped_draft_results = pickle.load(f)
-            else:
-                scraped_draft_results = retrieve_draft_order(self.league)
-                with open(draft_scrape_filename, "wb") as f:
-                    pickle.dump(scraped_draft_results, f)
+            scraped_draft_results = self.get_scraped_draft_results()
                 
             # assign keepers to teams
             for team, keepers in scraped_draft_results['keepers'].items():
                 for keeper in keepers:
-                    self.projections_df.loc[self.projections_df.name.str.contains(keeper['name']) & 
-                                        (self.projections_df.team == keeper['team']), 'draft_fantasy_key'] = team
-                    self.projections_df.loc[self.projections_df.name.str.contains(keeper['name']) & 
-                                        (self.projections_df.team == keeper['team']), 'is_keeper'] = True
+                    if 'team' in keeper.keys():
+                        self.projections_df.loc[self.projections_df.name.str.contains(keeper['name']) & 
+                                    (self.projections_df.team == keeper['team'].upper()), ['draft_fantasy_key','is_keeper']] = team, True
+                    else:
+                        self.projections_df.loc[self.projections_df.name.str.contains(keeper['name']), ['draft_fantasy_key','is_keeper']] = team, True
        
 
         self.projections_model = PandasModel(self.projections_df , column_headers=App.game_projection_columns[self.game_type],
@@ -356,16 +391,8 @@ class App(QMainWindow):
 
         self.team_name_by_id = {team['team_key']:team['name'] for team in self.league.teams()}
         self.team_key_by_name = {team['name']:team['team_key'] for team in self.league.teams()}
-        #TODO this has to be redone
-        if not self.positional_filter_checkboxes:
-            self.positional_filter_checkboxes = {QCheckBox(pos) for pos in ['C', 'LW', 'RW', 'D']}
-        else:
-            # change text of filter checkboxes according to game type
-            for checkbox, new_text in zip(self.positional_filter_checkboxes,App.game_filter_positions[self.game_type]):
-                checkbox.setText(new_text)
-
-        for checkbox in self.positional_filter_checkboxes:
-            checkbox.setChecked(True)
+        
+        self.build_filter_panel()
         
         self.projections_model.update_filters(self._position_filter_list())
         
@@ -386,11 +413,38 @@ class App(QMainWindow):
         self.roster_table.setModel(self.roster_table_model)
 
         self.draft_list_widget.clear()
+        self.update_picks_until_next_player_pick(0)
 
-        self.draft_monitor = DraftMonitor(self.league)
+        self.draft_monitor = DraftMonitor(self.league, keepers=scraped_draft_results['keepers'])
         self.draft_monitor.register_draft_listener(self)
         QThreadPool.globalInstance().start(self.draft_monitor)
 
+    
+    def build_filter_panel(self):
+        '''
+        builds the position checkbox filters
+        depends on game_type
+        '''
+        # clear any checkboxes
+        for i in reversed (range(self.position_filtering_layout.count())):
+            self.position_filtering_layout.itemAt(i).widget().close()
+            self.position_filtering_layout.takeAt(i)
+        self.positional_filter_checkboxes = []
+        for position in self.game_filter_positions[self.game_type]:
+            box = QCheckBox(position)
+            box.setChecked(True)
+            box.clicked.connect(self.filter_checked)
+            self.positional_filter_checkboxes.append(box)
+            self.position_filtering_layout.addWidget(box)
+        
+        all_button = QPushButton('All')
+        all_button.pressed.connect(self.filter_all_selected)
+        self.position_filtering_layout.addWidget(all_button)
+        none_button = QPushButton('None')
+        none_button.pressed.connect(self.filter_none_selected)
+        self.position_filtering_layout.addWidget(none_button)
+        
+    
     def retrieve_player_projections(self):
         projections = None
         if "nhl" == self.game_type:
@@ -405,7 +459,9 @@ class App(QMainWindow):
             
             projections['rank_diff'] = projections['csh_rank'] - projections['current_rank']
         else:
-            projections = pd.read_csv("2021-mdgc-predictions.csv", converters={"position": lambda x: x.strip("[]").replace('"', "").replace("'", "").replace(" ", "").split(",")})
+            projections = pd.read_csv(f"{self.game_year}-{self.league_id}-predictions-merged.csv", converters={"position": lambda x: x.strip("[]").replace('"', "").replace("'", "").replace(" ", "").split(",")})
+            projections.sort_values('overall_rank', inplace=True)
+            
         
         projections['draft_fantasy_key'] = -1
         projections['is_keeper'] = False
@@ -418,24 +474,11 @@ class App(QMainWindow):
         self.draft_status_label.setText("Status: Paused" if is_paused else "Status: Running")
         
     def _get_draft_picks(self, team_key):
-        draft_results = self.league.draft_results()
-        n_teams = len(self.league.teams())
-        n_rounds = int(len(draft_results)/ n_teams)
-
-        if self.game_type == "nhl":
-            # find first pick which matches team_key
-            draft_position = None
-            for draft_info in draft_results:
-                if draft_info['team_key'] == team_key:
-                    draft_position = int(draft_info['pick'])
-                    assert draft_info['round'] == 1, "Didnt find team key in first round of draft"
-                    break
-            
-            return generate_snake_draft_picks(n_teams=n_teams, n_rounds=n_rounds, draft_position=draft_position)
+        scraped = self.get_scraped_draft_results()
+        if 'predraft' == scraped['status']:
+            return scraped['draft_picks'][team_key]
         else:
-            n_rounds=10
-            #TODO this is a hack.  we only really handle snake drafts without trades for now.
-            return generate_snake_draft_picks(n_teams=n_teams, n_rounds=n_rounds, draft_position=4)
+            return [int(key['number']) for key in scraped['draft_picks'][team_key]]
 
     def initUI(self):
         self.setWindowTitle(self.title)
@@ -501,19 +544,6 @@ class App(QMainWindow):
 
         layout = QHBoxLayout()
         left_layout = QVBoxLayout()
-        # filtering
-        position_filtering_layout = QHBoxLayout()
-        for checkbox in self.positional_filter_checkboxes:
-            checkbox.clicked.connect(self.filter_checked)
-            position_filtering_layout.addWidget(checkbox)
-
-        # position_filtering_layout.addWidget(QCheckBox('G'))
-        all_button = QPushButton('All')
-        all_button.pressed.connect(self.filter_all_selected)
-        position_filtering_layout.addWidget(all_button)
-        none_button = QPushButton('None')
-        none_button.pressed.connect(self.filter_none_selected)
-        position_filtering_layout.addWidget(none_button)
         
         second_filter_layout = QHBoxLayout()
         hide_drafted = QCheckBox('Hide drafted')
@@ -527,7 +557,8 @@ class App(QMainWindow):
         
         second_filter_layout.addLayout(name_filter_layout)
         filtering_layout = QVBoxLayout()
-        filtering_layout.addLayout(position_filtering_layout)
+        
+        filtering_layout.addLayout(self.position_filtering_layout)
         filtering_layout.addLayout(second_filter_layout)
         second_filter_layout.addStretch(1)
 
@@ -570,7 +601,7 @@ class App(QMainWindow):
 
     def player_drafted(self, draft_entry):
         self.draft_results.append(draft_entry)
-
+        print(f"de: {draft_entry}")
         player_id = int(draft_entry['player_key'].split('.')[-1])
         draft_position = int(draft_entry['pick'])
         player_name = None
@@ -589,12 +620,19 @@ class App(QMainWindow):
         team_id = int(draft_entry['team_key'].split('.')[-1])
         self.projections_model.player_drafted(player_id, team_id)
         self.roster_table_model.player_drafted(draft_entry)
-        next_draft = next(x for x in self.my_draft_picks if x > draft_position)
-        
-        self.label_num_picks_before_pick.setText(f"Number picks until your turn: {next_draft-draft_position}")
+        try:
+            next_draft = next(x for x in self.my_draft_picks if x > draft_position)
+            self.label_num_picks_before_pick.setText(f"Number picks until your turn: {next_draft-draft_position}")        
+        except StopIteration:
+            pass
         self.draft_list_widget.insertItem(0, f"{draft_position}. {player_name} - {self.team_name_by_id[draft_entry['team_key']]} - ({draft_value})")
     
-
+    def update_picks_until_next_player_pick(self, current_draft_position):
+        try:
+            next_draft = next(x for x in self.my_draft_picks if x > current_draft_position)
+            self.label_num_picks_before_pick.setText(f"Number picks until your turn: {next_draft-current_draft_position}")
+        except StopIteration:
+            pass
     
 
 if __name__ == '__main__':

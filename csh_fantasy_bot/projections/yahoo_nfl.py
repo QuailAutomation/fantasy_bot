@@ -82,15 +82,19 @@ class YahooFantasyScraper:
 
         time.sleep(SLEEP_SECONDS)
 
-        stats = []
+        stats = None
         for cnt in range(0, num_pages, offset_size):
+            print(f"cnt is:{cnt}")
             try:
                 page_stats = self.process_page(driver, cnt, args)
             except Exception as e:
                 print('Failed to process page, sleeping and retrying', e)
                 time.sleep(SLEEP_SECONDS * 5)
                 page_stats = self.process_page(driver, cnt, args)
-            stats.append(page_stats)
+            if cnt == 0:
+                stats = page_stats
+            else:
+                stats.extend(page_stats)
             
         driver.close()
         
@@ -107,7 +111,6 @@ class YahooFantasyScraper:
         time.sleep(SLEEP_SECONDS)
         
         driver.get_screenshot_as_file('./pre-password.png')
-        
 
         try:
             password = driver.find_element_by_name('password')
@@ -191,8 +194,56 @@ class YahooDraftScraper(YahooFantasyScraper):
             return (team_name, team_picks)
         except Exception as e:
             print(e)
+scrape_info_stats_map = {"predraft": {"K":{
+    'name': 'Kickers',
+    'GP': 'GP*',
+    'bye': 'Bye',
+    'fan_points': 'Fan Pts',
+    'overall_rank': 'O-Rank',
+},
+"DEF":{
+    'name': 'Defense/Special Teams',
+    'GP': 'GP*',
+    'bye': 'Bye',
+    'fan_points': 'Fan Pts',
+    'overall_rank': 'O-Rank',
+},
+"O":{
+    'name': 'Offense',
+    'GP': 'GP*',
+    'bye': 'Bye',
+    'fan_points': 'Fan Pts',
+    'overall_rank': 'O-Rank',
+}
+}, "postdraft": {"K":{
+    'name': 'Kickers',
+    'GP': 'GP*',
+    'bye': 'Bye',
+    'fan_points': 'Fan Pts',
+    'preseason': 'Pre-Season',
+    'actual_rank': 'Actual'
+},
+"DEF":{
+    'name': 'Defense/Special Teams',
+    'GP': 'GP*',
+    'bye': 'Bye',
+    'fan_points': 'Fan Pts',
+    'preseason': 'Pre-Season',
+    'actual_rank': 'Actual'
+},
+"O":{
+    'name': 'Offense',
+    'GP': 'GP*',
+    'bye': 'Bye',
+    'fan_points': 'Fan Pts',
+    'preseason': 'Pre-Season',
+    'actual_rank': 'Actual'
+}
 
-stats_for_position_type = {"O":{
+}
+}
+
+scrape_info_for_position_type = {"O":{'n_scrape_pages':1, 'stat_code':'O', 'scoring_stats':{
         'name': 'td[contains(@class,"player")]/div/div/div[contains(@class,"ysf-player-name")]/a',
         'position': 'td[contains(@class,"player")]/div/div/div[contains(@class,"ysf-player-name")]/span',
         'player_id': 'td[contains(@class,"player")]/div/div/span/a',
@@ -211,17 +262,27 @@ stats_for_position_type = {"O":{
         'receiving_targets': 'td[19]',
         'receiving_receptions': 'td[20]',
         'receiving_yards': 'td[21]',
-        'receiving_tds': 'td[22]',},
-        "K":{
+        'receiving_tds': 'td[22]',}},
+        "K":{'n_scrape_pages':2,'stat_code':'K', 'scoring_stats':{
         'name': 'td[contains(@class,"player")]/div/div/div[contains(@class,"ysf-player-name")]/a',
         'position': 'td[contains(@class,"player")]/div/div/div[contains(@class,"ysf-player-name")]/span',
         'player_id': 'td[contains(@class,"player")]/div/div/span/a',
-        'GP': 'td[6]',
-        'Bye': 'td[7]',
-        'fan_points': 'td[8]',
-        'overall_rank': 'td[9]',
-        'percent_rostered': 'td[11]'}
-        }
+        'GP': 'td[5]',
+        'Bye': 'td[6]',
+        'fan_points': 'td[7]',
+        'overall_rank': 'td[8]',
+        'percent_rostered': 'td[10]'}
+        },
+        "D":{'n_scrape_pages':2, 'stat_code':'DEF', 'scoring_stats':{
+        'name': 'td[contains(@class,"player")]/div/div/div[contains(@class,"ysf-player-name")]/a',
+        'position': 'td[contains(@class,"player")]/div/div/div[contains(@class,"ysf-player-name")]/span',
+        'player_id': 'td[contains(@class,"player")]/div/div/span/a',
+        'GP': 'td[5]',
+        'Bye': 'td[6]',
+        'fan_points': 'td[7]',
+        'overall_rank': 'td[8]',
+        'percent_rostered': 'td[10]'}
+        }}
 class YahooProjectionScraper(YahooFantasyScraper):
     def __init__(self, league_id, scoring_categories) -> None:
         super().__init__(league_id)
@@ -247,25 +308,44 @@ class YahooProjectionScraper(YahooFantasyScraper):
         'receiving_yards': 'td[21]',
         'receiving_tds': 'td[22]',}
 
-        # for num, cat in enumerate(scoring_categories):
-        #     self.XPATH_MAP[cat] = f"td[{10 + num}]"
-
         self.fields = ['player_id', 'name', 'position', 'team', 'overall_rank', 'current_rank','GP'] + scoring_categories
+
+    def column_nums_for_stats(self, web_driver, stats):
+        """[summary]
+
+        Args:
+            web_driver ([webdriver]): [selenium webdriver containing page source]
+            stats ([list]): [stats of interest]
+        
+        Returns:
+            [dict]: stat:column_number(int)
+        """
+        col_xpath = "//div[contains(concat(' ',normalize-space(@class),' '),' players ')]/table/thead/tr[contains(@class, 'Alt Last')]/th"
+        columns = web_driver.find_elements_by_xpath(col_xpath)
+        return_value = {}
+        for index, column in enumerate(columns):
+            # strip out sort order indicator if there
+            clean_col_text = column.text.strip('\ue002')
+            if clean_col_text in stats.values():
+                return_value[list(stats.keys())[list(stats.values()).index(clean_col_text)]] = index + 1
+        
+        assert len(return_value) == len(stats), f"Column reference for status are unequal, stats len: {len(stats)}, len x-ref: {len(return_value)}" 
+        return return_value
 
     def process_page(self, driver, cnt, args):
         LOG.debug('Getting stats for count', cnt)
 
-        url = f'https://football.fantasysports.yahoo.com/f1/{self.league_suffix}/players?status=ALL&pos=O&stat1={args["projection_length"]}&sort=AR&sdir=1&count={cnt}'
+        url = f'https://football.fantasysports.yahoo.com/f1/{self.league_suffix}/players?status=ALL&pos={args["scrape_info"]["stat_code"]}&stat1={args["projection_length"]}&sort=AR&sdir=1&count={cnt}'
 
         driver.get(url)
-
+        stat_col_mapping = self.column_nums_for_stats(driver, scrape_info_stats_map[args['season_status']][args['scrape_info']['stat_code']])
         base_xpath = "//div[contains(concat(' ',normalize-space(@class),' '),' players ')]/table/tbody/tr"
 
         rows = driver.find_elements_by_xpath(base_xpath)
 
         stats = []
         for row in rows:
-            stats_item = self.process_stats_row(row)
+            stats_item = self.process_stats_row(row, stat_col_mapping, args)
             stats.append(stats_item)
 
         driver.find_element_by_tag_name('body').send_keys(Keys.END)
@@ -274,29 +354,42 @@ class YahooProjectionScraper(YahooFantasyScraper):
         time.sleep(random.randint(SLEEP_SECONDS, SLEEP_SECONDS * 2))
         return stats
 
-    def process_stats_row(self, stat_row):
+    def process_stats_row(self, stat_row, stats_mapping, args):
         stats_item = {}
-        for col_name, xpath in self.XPATH_MAP.items():
-            stats_item[col_name] = RE_REMOVE_HTML.sub('', stat_row.find_element_by_xpath(xpath).get_attribute('innerHTML'))
-        # Custom logic for team, position, and opponent
-        # stats_item['opp'] = stats_item['opp'].split(' ')[-1]
-        team, position = stats_item['position'].split(' - ')
-        stats_item['position'] = position
-        stats_item['team'] = team
+        for stat, col_number in stats_mapping.items():
+            if 'name' == stat:
+                # special case requires parsing
+                stats_item['name'] = stat_row.find_element_by_xpath('td[contains(@class,"player")]/div/div/div[contains(@class,"ysf-player-name")]/a').text
+                stats_item['team'], stats_item['position'] = stat_row.find_element_by_xpath('td[contains(@class,"player")]/div/div/div[contains(@class,"ysf-player-name")]/span').text.split(' - ')
+                # look at add to watch column and extract the 'player_id'
+                stats_item['player_id']  = int(stat_row.find_element_by_xpath("td[1]/div/a").get_attribute('name').split('-')[-1])
+            else:
+                try:
+                    val = float(stat_row.find_element_by_xpath(f'td[{col_number}]').text)
+                    if val.is_integer():
+                        val = int(val)
+                    stats_item[stat] = val
+                    
+                except Exception as e:
+                    print(e)
 
-        stats_item['player_id'] = int(stat_row.find_element_by_xpath('td[contains(@class,"player")]/div/div/span/a').get_attribute('data-ys-playerid'))
         return stats_item
 
     
 
-    def get_projections_df(self, projection_length):
-       
-        stats = self.scrape(projection_length=projection_length, num_pages=140, offset_size=25)
-        # driver.close()
-        df = pd.DataFrame.from_dict(stats) #pd.DataFrame(stats, columns=self.fields)
-        df.rename(columns={"id": "player_id"}, inplace=True)
-        return df
+    def get_projections_df(self, projection_length, season_status='postdraft'):
+        projections = []
 
+        for player_type in  ['O']: #, 'K', 'O' ]:
+            print(f"Processing: {player_type}")
+            n_pages_scrape = scrape_info_for_position_type[player_type]['n_scrape_pages']
+            stats = self.scrape(projection_length=projection_length, num_pages=n_pages_scrape* 25, offset_size=25, scrape_info=scrape_info_for_position_type[player_type], season_status=season_status)
+            df = pd.DataFrame.from_dict(stats)
+            if 'id' in df.columns:
+                df.rename(columns={"id": "player_id"}, inplace=True)
+            projections.append(df)
+        
+        return pd.concat(projections, axis=0, ignore_index=True)
 
 
 class PredictionType(Enum):
@@ -310,21 +403,21 @@ def category_name_list(raw_stat_categories, position_type=['P']):
 
 def retrieve_draft_order(lg):
     draft_scrape =  YahooDraftScraper(lg.league_id).scrape(fantasy_year=int(lg.settings()['season']))
-    # return val is keyed on team name, lets switch that to team key
-    # make a map of team name : team_key
     draft_results = {}
     draft_results['status'] = lg.settings()['draft_status']
     draft_results['draft_time'] =  datetime.datetime.fromtimestamp(int(lg.settings()['draft_time']))
     draft_results['keepers'] = {}
     draft_results['draft_picks'] = {}
+    # return val is keyed on team name, lets switch that to team key
+    # make a map of team name : team_key
     name_to_key_map = {team['name']:team['team_key'] for team in lg.teams()}
 
-    # Seperate keepers from draft results
-    for team, draft_picks in draft_scrape[0].items():
+    # Seperate keepers from drafted players
+    for team, draft_picks in draft_scrape.items():
         team_picks = []
         team_keepers = []
         for pick in draft_picks:
-            if isinstance(pick, dict):
+            if isinstance(pick, dict) and pick['is_keeper'] == True:
                 team_keepers.append(pick)
             else:
                 team_picks.append(pick)
@@ -338,7 +431,6 @@ def retrieve_draft_order(lg):
     return draft_results
 
 def generate_predictions(lg, predition_type=PredictionType.days_14):
-    player_types = ['O', 'K'] # , 'DEF'
 
     scoring_categories = category_name_list(lg.stat_categories(),position_type=['O'])
 
