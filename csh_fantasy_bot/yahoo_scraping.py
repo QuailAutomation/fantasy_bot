@@ -255,7 +255,7 @@ def generate_predictions(league_id, predition_type=PredictionType.days_14):
     lg = FantasyLeague(league_id)
     scoring_categories = lg.scoring_categories()
 
-    y_projections = YahooProjectionScraper(league_id, scoring_categories)
+    y_projections = YahooProjectionScraper(lg, scoring_categories)
     projections = y_projections.get_projections_df(predition_type.value)
     
     projections["team"].replace(nhl_team_mappings, inplace=True)
@@ -294,7 +294,7 @@ class YahooPredictions:
         lg = FantasyLeague(league_id)
         self.scoring_categories = lg.scoring_categories()
 
-        y_projections = YahooProjectionScraper(league_id, self.scoring_categories)
+        y_projections = YahooProjectionScraper(lg, self.scoring_categories)
         projections = y_projections.get_projections_df(predition_type.value)
         # if no projection, then zero
         projections.replace('-', 0, inplace=True)

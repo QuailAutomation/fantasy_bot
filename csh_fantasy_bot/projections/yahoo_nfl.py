@@ -44,10 +44,10 @@ YAHOO_RESULTS_PER_PAGE = 25 # Static but used to calculate offsets for loading n
 
 
 class YahooFantasyScraper:
-    def __init__(self, league_id) -> None:
-        self.league_id = league_id
+    def __init__(self, league) -> None:
+        self.league = league
+        self.league_id = league.league_id
         self.league_suffix = league_id.split('.')[-1]
-
         
     def scrape(self, num_pages=1, offset_size=1, **args):
 
@@ -133,8 +133,8 @@ class YahooFantasyScraper:
         time.sleep(SLEEP_SECONDS)
 
 class YahooDraftScraper(YahooFantasyScraper):
-    def __init__(self, league_id) -> None:
-        super().__init__(league_id)
+    def __init__(self, league) -> None:
+        super().__init__(league)
 
     def process_page(self, driver, cnt, args):
 
@@ -284,8 +284,8 @@ scrape_info_for_position_type = {"O":{'n_scrape_pages':1, 'stat_code':'O', 'scor
         'percent_rostered': 'td[10]'}
         }}
 class YahooProjectionScraper(YahooFantasyScraper):
-    def __init__(self, league_id, scoring_categories) -> None:
-        super().__init__(league_id)
+    def __init__(self, league, scoring_categories) -> None:
+        super().__init__(league)
         
         self.XPATH_MAP = {
         'name': 'td[contains(@class,"player")]/div/div/div[contains(@class,"ysf-player-name")]/a',
@@ -402,7 +402,7 @@ def category_name_list(raw_stat_categories, position_type=['P']):
         return [stat['display_name'] for stat in raw_stat_categories if stat['position_type'] in position_type]
 
 def retrieve_draft_order(lg):
-    draft_scrape =  YahooDraftScraper(lg.league_id).scrape(fantasy_year=int(lg.settings()['season']))
+    draft_scrape =  YahooDraftScraper(lg).scrape(fantasy_year=int(lg.settings()['season']))
     draft_results = {}
     draft_results['status'] = lg.settings()['draft_status']
     draft_results['draft_time'] =  datetime.datetime.fromtimestamp(int(lg.settings()['draft_time']))
@@ -434,7 +434,7 @@ def generate_predictions(lg, predition_type=PredictionType.days_14):
 
     scoring_categories = category_name_list(lg.stat_categories(),position_type=['O'])
 
-    y_projections = YahooProjectionScraper(lg.league_id, scoring_categories)
+    y_projections = YahooProjectionScraper(lg, scoring_categories)
     projections = y_projections.get_projections_df(predition_type.value)
     
     return projections
