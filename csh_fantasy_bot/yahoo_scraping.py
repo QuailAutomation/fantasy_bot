@@ -1,3 +1,4 @@
+from xmlrpc.client import FastParser
 import pandas as pd
 import datetime
 import logging
@@ -43,7 +44,7 @@ RE_REMOVE_HTML = re.compile('<.+?>')
 
 SLEEP_SECONDS = 1
 END_WEEK = 17
-PAGES_PER_WEEK = 40
+PAGES_PER_WEEK = 12
 YAHOO_RESULTS_PER_PAGE = 25 # Static but used to calculate offsets for loading new pages
 
 nhl_team_mappings = {'LA': 'LAK', 'Ott': 'OTT', 'Bos': 'BOS', 'SJ': 'SJS', 'Anh': 'ANA', 'Min': 'MIN',
@@ -255,8 +256,11 @@ def generate_predictions(league_id, predition_type=PredictionType.days_14):
     lg = FantasyLeague(league_id)
     scoring_categories = lg.scoring_categories()
 
-    y_projections = YahooProjectionScraper(lg, scoring_categories)
+    y_projections = YahooProjectionScraper(lg.league_id, scoring_categories)
     projections = y_projections.get_projections_df(predition_type.value)
+    
+    projections = projections.astype({'GP':'int32'}, copy=False)
+    projections =projections.astype({cat:'int32' for cat in lg.scoring_categories()}, copy=False)
     
     projections["team"].replace(nhl_team_mappings, inplace=True)
 
@@ -283,7 +287,7 @@ def generate_predictions(league_id, predition_type=PredictionType.days_14):
     # let's return projections per game
     for stat in scoring_categories:
         all_players[stat] = pd.to_numeric(all_players[stat], downcast="float")
-        all_players[stat] = all_players[stat] / all_players['GP']
+        all_players[stat + "_per_game"] = all_players[stat] / all_players['GP']
 
     # y_projections.get_stats(outfile, league_id, scoring_categories)
     return all_players

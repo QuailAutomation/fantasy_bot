@@ -36,9 +36,10 @@ class DraftMonitor(QRunnable):
         self.stop_flag = False
         # list which holds which picks were used for keepers
         self.keeper_pick_numbers = []
-        for _, team_keepers in keepers.items():
-            for keeper_draft in team_keepers:
-                self.keeper_pick_numbers.append(keeper_draft['number'])
+        if keepers:
+            for _, team_keepers in keepers.items():
+                for keeper_draft in team_keepers:
+                    self.keeper_pick_numbers.append(keeper_draft['number'])
     
     def toggle_paused(self):
         self.paused = not self.paused
@@ -270,7 +271,7 @@ class PandasModel(QtCore.QAbstractTableModel):
 
 class App(QMainWindow):
     game_filter_positions = {"nhl":['C', 'LW', 'RW', 'D'], "nfl":['QB', 'RB', 'WR', 'TE', 'K', 'DEF']}
-    game_projection_columns = {"nhl":{'name':'Name','posn_display':'POS', 'team':'Team', 'csh_rank':'CSH', 'preseason_rank':'Preseason', 'current_rank':'Current', 'GP':'GP','fantasy_score':'Score'} ,
+    game_projection_columns = {"nhl":{'name':'Name','posn_display':'POS', 'team':'Team', 'csh_rank':'CSH', 'preseason_rank':'Preseason', 'current_rank':'Current', 'GP':'GP','fantasy_score':'Score', 'G':'G', 'A':'A','+/-':'+/-', 'PIM':'PIM', 'SOG':'SOG', 'FW':'FW', 'HIT':'HIT'} ,
                                 "nfl":{'name':'Name','posn_display':'POS', 'team':'Team', 'Bye':'Bye','fan_points':'fan_points', 'overall_rank':'Rank', 'fp_rank':'FP_rank', 'position_rank':'FP_Pos'}}
     # ['name', 'position', 'player_id', 'GP', 'Bye', 'fan_points',
     #    'overall_rank', 'percent_rostered', 'pass_yds', 'pass_td', 'pass_int',
@@ -414,8 +415,8 @@ class App(QMainWindow):
 
         self.draft_list_widget.clear()
         self.update_picks_until_next_player_pick(0)
-
-        self.draft_monitor = DraftMonitor(self.league, keepers=scraped_draft_results['keepers'])
+        the_keepers = scraped_draft_results.get('keepers', None) if scraped_draft_results else None
+        self.draft_monitor = DraftMonitor(self.league, keepers=the_keepers)
         self.draft_monitor.register_draft_listener(self)
         QThreadPool.globalInstance().start(self.draft_monitor)
 
@@ -476,7 +477,7 @@ class App(QMainWindow):
     def _get_draft_picks(self, team_key):
         scraped = self.get_scraped_draft_results()
         if 'predraft' == scraped['status']:
-            return scraped['draft_picks'][team_key]
+            return scraped['draft_picks'].get('team_key', [])
         else:
             return [int(key['number']) for key in scraped['draft_picks'][team_key]]
 

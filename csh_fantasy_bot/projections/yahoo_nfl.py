@@ -47,7 +47,7 @@ class YahooFantasyScraper:
     def __init__(self, league) -> None:
         self.league = league
         self.league_id = league.league_id
-        self.league_suffix = league_id.split('.')[-1]
+        self.league_suffix = league.league_id.split('.')[-1]
         
     def scrape(self, num_pages=1, offset_size=1, **args):
 
@@ -405,7 +405,12 @@ def retrieve_draft_order(lg):
     draft_scrape =  YahooDraftScraper(lg).scrape(fantasy_year=int(lg.settings()['season']))
     draft_results = {}
     draft_results['status'] = lg.settings()['draft_status']
-    draft_results['draft_time'] =  datetime.datetime.fromtimestamp(int(lg.settings()['draft_time']))
+    if 'draft_time'  in lg.settings().keys():
+        draft_results['draft_time'] =  datetime.datetime.fromtimestamp(int(lg.settings().get('draft_time', None)))
+    else:
+        # draft time not set yet.  Default to day of season start
+        draft_results['draft_time'] = datetime.datetime.fromisoformat(lg.settings()['start_date'])
+
     draft_results['keepers'] = {}
     draft_results['draft_picks'] = {}
     # return val is keyed on team name, lets switch that to team key
@@ -425,9 +430,10 @@ def retrieve_draft_order(lg):
         draft_results['draft_picks'][name_to_key_map[team]] = team_picks
 
     # figure out num keepers and rounds by looking at first teams breakdown
-    first_team = next(iter(draft_results['draft_picks']))
-    draft_results['num_keepers'] = len(draft_results['keepers'][first_team])
-    draft_results['num_rounds'] = len(draft_results['draft_picks'][first_team])
+    if draft_scrape:
+        first_team = next(iter(draft_results['draft_picks']))
+        draft_results['num_keepers'] = len(draft_results['keepers'][first_team])
+        draft_results['num_rounds'] = len(draft_results['draft_picks'][first_team])
     return draft_results
 
 def generate_predictions(lg, predition_type=PredictionType.days_14):

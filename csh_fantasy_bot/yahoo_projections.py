@@ -4,7 +4,8 @@ yahoo_projections = {}
 
 def retrieve_yahoo_rest_of_season_projections(league_id):
     if league_id not in yahoo_projections:
-        prediction_csv = f'.cache/{league_id}/yahoo-projections-stats.csv'
+        prediction_csv = f"./.cache/gui_draft/{league_id}-yahoo-predictions.csv"
+        #f'.cache/{league_id}/yahoo-projections-stats.csv'
         predictions = pd.read_csv(prediction_csv,
                             converters={"position": lambda x: x.strip("[]").replace('"', "").replace("'", "").replace(" ", "").split(",")})
         predictions['league_id'] = league_id
