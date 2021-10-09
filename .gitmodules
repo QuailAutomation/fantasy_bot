@@ -3,4 +3,7 @@
 	url = git@github.com:QuailAutomation/nhl_scraper.git
 [submodule "library/yahoo_fantasy_api"]
 	path = library/yahoo_fantasy_api
-	url = git://github.com/QuailAutomation/yahoo_fantasy_api
+	url = git://github.com/QuailAutomation/yahoo_fantasy_api	
+[submodule "src/pygenetic"]
+	path = src/pygenetic
+	url = git+git://github.com/QuailAutomation/pygenetic
