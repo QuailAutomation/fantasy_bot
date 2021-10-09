@@ -8,7 +8,7 @@ f_year = 2021
 gm = yfa.Game(oauth, 'nhl')
 ids = gm.league_ids(year=f_year)
 
-lg = gm.to_league(ids[0])
+lg = gm.to_league(ids[1])
 league_id = lg.league_id
 print(lg)
 

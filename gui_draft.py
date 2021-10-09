@@ -9,6 +9,7 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QApplication, QComboBox, QLabel, QTableView, QTableWidget, QWidget, QPushButton, QHBoxLayout, QGroupBox, QDialog, QVBoxLayout, QGridLayout, QCheckBox, QListWidget, QTableWidgetItem, QLineEdit, QFormLayout, QMenuBar, QMainWindow, QAction
 from PyQt5.QtGui import QIcon, QBrush
 from PyQt5.QtCore import pyqtSlot, QCoreApplication, QRunnable, QThreadPool, QIdentityProxyModel
+from yahoo_fantasy_api import league
 from csh_fantasy_bot.bot import ManagerBot
 from csh_fantasy_bot.yahoo_projections import retrieve_yahoo_rest_of_season_projections, produce_csh_ranking
 from csh_fantasy_bot.projections.yahoo_nfl import generate_predictions, PredictionType, retrieve_draft_order
@@ -271,7 +272,7 @@ class PandasModel(QtCore.QAbstractTableModel):
 
 class App(QMainWindow):
     game_filter_positions = {"nhl":['C', 'LW', 'RW', 'D'], "nfl":['QB', 'RB', 'WR', 'TE', 'K', 'DEF']}
-    game_projection_columns = {"nhl":{'name':'Name','posn_display':'POS', 'team':'Team', 'csh_rank':'CSH', 'preseason_rank':'Preseason', 'current_rank':'Current', 'GP':'GP','fantasy_score':'Score', 'G':'G', 'A':'A','+/-':'+/-', 'PIM':'PIM', 'SOG':'SOG', 'FW':'FW', 'HIT':'HIT'} ,
+    game_projection_columns = {"nhl":{'name':'Name','posn_display':'POS', 'team':'Team', 'csh_rank':'CSH', 'preseason_rank':'Preseason', 'current_rank':'Current', 'GP':'GP','fantasy_score':'Score'} ,
                                 "nfl":{'name':'Name','posn_display':'POS', 'team':'Team', 'Bye':'Bye','fan_points':'fan_points', 'overall_rank':'Rank', 'fp_rank':'FP_rank', 'position_rank':'FP_Pos'}}
     # ['name', 'position', 'player_id', 'GP', 'Bye', 'fan_points',
     #    'overall_rank', 'percent_rostered', 'pass_yds', 'pass_td', 'pass_int',
@@ -385,8 +386,13 @@ class App(QMainWindow):
                     else:
                         self.projections_df.loc[self.projections_df.name.str.contains(keeper['name']), ['draft_fantasy_key','is_keeper']] = team, True
        
-
-        self.projections_model = PandasModel(self.projections_df , column_headers=App.game_projection_columns[self.game_type],
+        base_columns = App.game_projection_columns[self.game_type].copy()
+        # add league specifc scoring cats for hockey
+        if self.game_type == "nhl":
+            for stat in self.league.stat_categories():
+                if stat['position_type'] == 'P':
+                    base_columns[stat['display_name']] = stat['display_name']
+        self.projections_model = PandasModel(self.projections_df , column_headers=base_columns,
                                             valid_positions=App.game_filter_positions[self.game_type],
                                             highlight_personal_ranking_differences=self.game_type=="nhl")
 
