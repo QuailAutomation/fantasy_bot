@@ -1,6 +1,6 @@
 -r common.txt
-git+git://github.com/QuailAutomation/nhl_scraper@master#egg=nhl_scraper
-git+git://github.com/QuailAutomation/yahoo_fantasy_api@master#egg=yahoo_fantasy_api
+git+https://github.com/QuailAutomation/nhl_scraper@master#egg=nhl_scraper
+git+https://github.com/QuailAutomation/yahoo_fantasy_api@master#egg=yahoo_fantasy_api
 
 graypy==2.1.0
 get-docker-secret==1.0.1
