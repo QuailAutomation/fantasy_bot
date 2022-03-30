@@ -3,10 +3,10 @@
 	url = git@github.com:QuailAutomation/nhl_scraper.git
 [submodule "library/yahoo_fantasy_api"]
 	path = library/yahoo_fantasy_api
-	url = git@github.com/QuailAutomation/yahoo_fantasy_api.git
+	url = git@github.com:QuailAutomation/yahoo_fantasy_api.git
 [submodule "src/pygenetic"]
 	path = src/pygenetic
-	url = git@github.com/QuailAutomation/pygenetic.git
+	url = git@github.com:QuailAutomation/pygenetic.git
 [submodule "src/yahoo-oauth"]
 	path = src/yahoo-oauth
-	url = git@github.com/QuailAutomation/yahoo-oauth.git
+	url = git@github.com:QuailAutomation/yahoo-oauth.git
