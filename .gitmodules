@@ -7,3 +7,6 @@
 [submodule "src/pygenetic"]
 	path = src/pygenetic
 	url = git+git://github.com/QuailAutomation/pygenetic
+[submodule "src/yahoo-oauth"]
+	path = src/yahoo-oauth
+	url = git+git://github.com/QuailAutomation/yahoo-oauth
