@@ -6,7 +6,7 @@
 	url = git://github.com/QuailAutomation/yahoo_fantasy_api	
 [submodule "src/pygenetic"]
 	path = src/pygenetic
-	url = git+git://github.com/QuailAutomation/pygenetic
+	url = git://github.com/QuailAutomation/pygenetic
 [submodule "src/yahoo-oauth"]
 	path = src/yahoo-oauth
-	url = git+git://github.com/QuailAutomation/yahoo-oauth
+	url = git://github.com/QuailAutomation/yahoo-oauth
