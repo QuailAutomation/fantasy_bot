@@ -1,4 +1,5 @@
 import time
+import logging
 from math import e
 from collections import defaultdict
 
@@ -10,7 +11,7 @@ from gekko import GEKKO
 from nhl_scraper.nhl import Scraper
 import pandas as pd
 
-
+logger = logging.getLogger('GEKKO')
 nhl_scraper = Scraper()
 
 # available_positions = {
@@ -101,9 +102,13 @@ def score_gekko(team_projections, team_id, opponent_scoring, scoring_categories,
     m.solve(disp=False)
   except Exception as ex:
     print('Exception')
+    logger.exception("Exception in gekko scoring", ex)
     time.sleep(1)
-    m.solve()
-    
+    try:
+      m.solve()
+    except Exception as ex2:
+      logger.exception("Exception in retry gekko scoring", ex2)
+      raise ex2
 
   rostered_players = []
   for game_day_idx, game_day in enumerate(date_range):

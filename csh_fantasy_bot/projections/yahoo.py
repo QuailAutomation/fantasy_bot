@@ -37,7 +37,7 @@ SLEEP_SECONDS = 1
 class PredictionType(Enum):
     days_7 = "S_PS7" # S_PS7 or S_PSR
     days_14 = "S_PS14"
-    rest_season = "S_PSR_2021"
+    rest_season = "S_PSR"
 
 def scrape(league:League, num_pages=1, offset_size=1, **args):
 
@@ -62,7 +62,7 @@ def scrape(league:League, num_pages=1, offset_size=1, **args):
         chrome_options.add_argument("--disable-logging")
         chrome_options.add_argument("--log-level=3")
 
-        driver =  webdriver.Remote("http://192.168.1.20:3001/webdriver", chrome_options.to_capabilities())
+        driver =  webdriver.Remote("http://192.168.1.230:3001/webdriver", chrome_options.to_capabilities())
         
         # driver = webdriver.Chrome(chrome_options=chrome_options)
         driver.set_page_load_timeout(6000)

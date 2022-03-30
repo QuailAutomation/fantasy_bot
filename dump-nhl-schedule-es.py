@@ -13,8 +13,8 @@ pd.set_option('display.width', 1000)
 
 nhl = Scraper()
 
-a_day = datetime.date(2021,1,4)
-end_day = datetime.date(2021,7,14)
+a_day = datetime.date(2021,10,11)
+end_day = datetime.date(2021,12,18)
 games = nhl.linescores(a_day, end_day)
 
 
@@ -23,7 +23,7 @@ def doc_generator_linescores(games):
         game['timestamp'] = game['gameDate']
         # document['player_id'] = index
         yield {
-            "_index": 'fantasy-nhl-line-scores-2020',
+            "_index": 'fantasy-nhl-2021-line-scores',
             "_type": "_doc",
             "_id": game['gamePk'],
             "_source": game,

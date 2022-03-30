@@ -44,7 +44,7 @@ RE_REMOVE_HTML = re.compile('<.+?>')
 
 SLEEP_SECONDS = 1
 END_WEEK = 17
-PAGES_PER_WEEK = 12
+PAGES_PER_WEEK = 24
 YAHOO_RESULTS_PER_PAGE = 25 # Static but used to calculate offsets for loading new pages
 
 nhl_team_mappings = {'LA': 'LAK', 'Ott': 'OTT', 'Bos': 'BOS', 'SJ': 'SJS', 'Anh': 'ANA', 'Min': 'MIN',
@@ -192,7 +192,7 @@ class YahooProjectionScraper:
         chrome_options.add_argument("--disable-logging")
         chrome_options.add_argument("--log-level=3")
 
-        driver =  webdriver.Remote("http://192.168.1.20:3001/webdriver", chrome_options.to_capabilities())
+        driver =  webdriver.Remote("http://192.168.1.230:3001/webdriver", chrome_options.to_capabilities())
         
         # driver = webdriver.Chrome(chrome_options=chrome_options)
         driver.set_page_load_timeout(6000)
@@ -298,7 +298,7 @@ class YahooPredictions:
         lg = FantasyLeague(league_id)
         self.scoring_categories = lg.scoring_categories()
 
-        y_projections = YahooProjectionScraper(lg, self.scoring_categories)
+        y_projections = YahooProjectionScraper(lg.league_id, self.scoring_categories)
         projections = y_projections.get_projections_df(predition_type.value)
         # if no projection, then zero
         projections.replace('-', 0, inplace=True)
@@ -311,7 +311,8 @@ class YahooPredictions:
 
         all_players= projections.merge(nhl_teams, left_on='team', right_on='abbrev')
         all_players.rename(columns={'id': 'team_id'}, inplace=True)
-        
+        for rank in ['preseason_rank', 'current_rank']:
+            all_players[rank] = pd.to_numeric(all_players[rank], downcast="integer")
         # GP is incorrect for 7 and 14 day predictions, let's get nhl schedule and fix
         game_day = datetime.date.today()
         if predition_type != PredictionType.rest_season:
@@ -321,7 +322,7 @@ class YahooPredictions:
                 num_days = 14
             games = find_teams_playing(game_day, num_days)
             all_players['GP'] = all_players["team_id"].map(games)
-
+        all_players['GP'] = pd.to_numeric(all_players['GP'], downcast="float")
         # let's return projections per game
         for stat in self.scoring_categories:
             all_players[stat] = pd.to_numeric(all_players[stat], downcast="float")

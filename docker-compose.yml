@@ -47,22 +47,22 @@ services:
       - "5672:5672"
     container_name: rabbitmq
 
-  flower:
-    image: craigham/flower
-    ports:
-      - "8887:8887"
-    environment:
-      - CELERY_BROKER_URL=pyamqp://guest:guest@rabbitmq:5672
-      - FLOWER_PORT=8887
-      - CELERY_TIMEZONE='America/Pacific'
+  # flower:
+  #   image: craigham/flower
+  #   ports:
+  #     - "8887:8887"
+  #   environment:
+  #     - CELERY_BROKER_URL=pyamqp://guest:guest@rabbitmq:5672
+  #     - FLOWER_PORT=8887
+  #     - CELERY_TIMEZONE='America/Pacific'
 
-  rebrow:
-    image: marian/rebrow
-    ports:
-      - "5001:5001"
-#    networks:
-#      - fantasy-bot
-#      - proxy
-    depends_on:
-      - redis
+#   rebrow:
+#     image: marian/rebrow
+#     ports:
+#       - "5001:5001"
+# #    networks:
+# #      - fantasy-bot
+# #      - proxy
+#     depends_on:
+#       - redis
 

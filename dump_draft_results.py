@@ -21,7 +21,7 @@ from elasticsearch import helpers
 es = Elasticsearch(hosts='http://192.168.1.20:9200', http_compress=True)
 
 # league_id = "403.l.18782"
-league_id = "403.l.41177"
+league_id = "411.l.85094"
 
 manager: bot.ManagerBot = bot.ManagerBot(league_id=league_id)
 
@@ -62,8 +62,9 @@ def load_draft():
     print(f"Num players drafted: {len(draft_results)}")
     #  add name, eligible positions, team
     if len(draft_results) > 0:
-        all_players_df = manager.all_players.loc[:,['name', 'eligible_positions','team_id','team_abbr']]
-        # all_players_df.set_index('player_id', inplace=True)
+        all_players_df = manager.lg._all_players().loc[:,['name', 'eligible_positions','team_id','team_abbr']]
+        all_players_df = manager.lg._all_players()
+        all_players_df.set_index('player_id', inplace=True)
 
         # draft_results = draft_results.merge(all_players_df, left_on='player_id', right_on='player_id')
 
@@ -85,14 +86,14 @@ def load_draft():
                 except KeyError:
                     print('no player id found in yahoo list: {}'.format(document['player_id']))
                 yield {
-                    "_index": 'fantasy-bot-draft',
+                    "_index": f'fantasy-nhl-{manager.lg.settings()["season"]}-draft',
                     "_type": "doc",
                     "_id": f"{league_id}-{league_season}-{document['pick']}",
                     "_source": document,
                 }
 
 
-        helpers.bulk(es, doc_generator_projections(draft_results, datetime.date(2021,1,5)))
+        helpers.bulk(es, doc_generator_projections(draft_results, datetime.datetime.fromtimestamp(int(manager.lg.settings()['draft_time']))))
 
 if __name__ == "__main__":
     load_draft()

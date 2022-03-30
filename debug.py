@@ -7,7 +7,7 @@ from csh_fantasy_bot.roster_change_optimizer import RosterChangeSet
 dates = pd.date_range('2020-2-24', '2020-3-1')
 changes = []
 rc = RosterChangeSet(dates)
-rc.add(6376, 1600, dates[1])``
+rc.add(6376, 1600, dates[1])
 changes.append(rc)
 rc = RosterChangeSet(dates)
 rc.add(5698, 3266,dates[2])

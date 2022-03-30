@@ -36,9 +36,9 @@ def do_lookup(league_id):
         # else lookup by id
         try:
             player_id = int(opt)
-            print("Player Info: {}".format(lookup_player_id(player_id, manager.all_player_predictions)))
+            print("Player Info: {}".format(lookup_player_id(player_id, manager.game_week().all_player_predictions)))
         except ValueError:
-            print("Player Info: {}".format(lookup_player(opt, manager.all_player_predictions)))
+            print("Player Info: {}".format(lookup_player(opt, manager.game_week().all_player_predictions)))
         except KeyError:
             print("player id not found")
 
@@ -46,7 +46,7 @@ def do_lookup(league_id):
 
 
 if __name__ == "__main__":
-    league_id = '403.l.41177'
+    league_id = '411.l.85094'
     # league_id = "403.l.18782"
     do_lookup(league_id=league_id)
     pass

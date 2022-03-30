@@ -3,6 +3,7 @@ from calendar import week
 import logging
 import pickle
 import os
+from dotenv import load_dotenv
 from enum import Enum
 from collections import namedtuple
 from datetime import datetime, timedelta, date
@@ -20,9 +21,13 @@ from nhl_scraper.nhl import Scraper
 from csh_fantasy_bot import utils, yahoo_scraping
 from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.nhl import score_team
-from csh_fantasy_bot.yahoo_projections import retrieve_yahoo_rest_of_season_projections
+from csh_fantasy_bot.yahoo_projections import retrieve_yahoo_rest_of_season_projections, produce_csh_ranking
 
 from csh_fantasy_bot.scoring import ScoreComparer
+
+# load dotenv
+load_dotenv()
+default_league_id = os.getenv('default_league_id',default=None)
 
 LOG = logging.getLogger(__name__)
 
@@ -51,16 +56,6 @@ class TS(Enum):
     me = "me"
     opp = "opp"
     all = "all"
-
-def produce_csh_ranking(predictions, scoring_categories, selector, ranking_column_name='fantasy_score'):
-        """Create ranking by summing standard deviation of each stat, summing, then dividing by num stats."""
-        f_mean = predictions.loc[selector,scoring_categories].mean()
-        f_std =predictions.loc[selector,scoring_categories].std()
-        f_std_performance = (predictions.loc[selector,scoring_categories] - f_mean)/f_std
-        for stat in scoring_categories:
-            predictions.loc[selector, stat + '_std'] = (predictions[stat] - f_mean[stat])/f_std[stat]
-        predictions.loc[selector, ranking_column_name] = f_std_performance.sum(axis=1)/len(scoring_categories)
-        return predictions
 
 class TeamInfo:
     def __init__(self, key, game_week):
@@ -150,7 +145,7 @@ class GameWeek:
                     & (all_projections.position_type != 'G')    ].index
 
         # let's see if we rostered a player without projections.  if so we'll fall back on yahoo
-                #retrieve_yahoo_rest_of_season_projections(self.league_id).loc[roster_results[roster_results.G != roster_results.G].index.values]
+        # retrieve_yahoo_rest_of_season_projections(self.league_id).loc[roster_results[roster_results.G != roster_results.G].index.values]
         if len(players_no_projections_on_team) > 0:
             yahoo_projections = retrieve_yahoo_rest_of_season_projections(self.manager.lg.league_id)
             yahoo_projections[self.manager.stat_categories] = yahoo_projections[self.manager.stat_categories].div(yahoo_projections.GP, axis=0)
@@ -164,7 +159,7 @@ class GameWeek:
                     all_projections.index, ranking_column_name='fpts')
 
         #TODO this can be removed with support for goalies
-        return all_projections[(all_projections.position_type == 'P') & ((all_projections.status != 'IR') & (all_projections.status != 'IR-LT'))]
+        return all_projections[(all_projections.position_type == 'P')]
     
     def _get_num_roster_changes_made(self):
         # if the game week is in the future then we couldn't have already made changes
@@ -248,7 +243,12 @@ class GameWeek:
 
 class ManagerBot:
     """A class that encapsulates an automated Yahoo! fantasy manager."""
-    def __init__(self, league_id='403.l.41177', week = None, simulation_mode=False, as_of=None):
+    def __init__(self, league_id=None, week = None, simulation_mode=False, as_of=None):
+        if league_id is None:
+            if default_league_id is None:
+                raise ValueError('League id must be specified.  Default value was not present in .env')
+            league_id = default_league_id
+            
         self.simulation_mode = simulation_mode
         self.lg = FantasyLeague(league_id)
         self._stat_categories = None

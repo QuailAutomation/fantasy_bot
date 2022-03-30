@@ -19,3 +19,4 @@ PyQt5==5.15.4
 gekko
 # watcher (doesnt work on m1)
 
+python-dotenv==0.19.2

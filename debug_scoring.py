@@ -12,12 +12,12 @@ logging.basicConfig(level=logging.DEBUG)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
-league_id = '396.l.53432'
-league_id = "403.l.18782"
+
+league_id = "411.l.85094"
 manager = ManagerBot(league_id=league_id)
 
 league = manager.lg
-date_range = manager.week
+date_range = manager.current_week
 
 # league = league.as_of(date_range[0])
 # weights_series =  pd.Series([1, .75, 1, .5, 1, .1, 1], index=league.scoring_categories())
@@ -33,6 +33,7 @@ tracked_stats = league.scoring_categories()
 # set up available players
 # projected_stats = league.get_projections().query('position_type == "P" & status != "IR" & fantasy_status == 2').loc[:,tracked_stats + ['eligible_positions', 'team_id']]
 projected_stats = manager.ppool[manager.ppool.position_type == "P"][manager.ppool.fantasy_status == 8]  # & manager.ppool.position_type = "P"
+
 projected_stats['fpts'] = 0
 def produce_csh_ranking(predictions, scoring_categories, selector, ranking_column_name='fantasy_score'):
         """Create ranking by summing standard deviation of each stat, summing, then dividing by num stats."""

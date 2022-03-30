@@ -15,8 +15,11 @@ def retrieve_yahoo_rest_of_season_projections(league_id):
 
     return yahoo_projections[league_id]
 
-def produce_csh_ranking(predictions, scoring_categories, selector, ranking_column_name='fantasy_score'):
+def produce_csh_ranking(predictions, scoring_categories, selector=None, ranking_column_name='fantasy_score'):
         """Create ranking by summing standard deviation of each stat, summing, then dividing by num stats."""
+        predictions.round(2)
+        if selector is None:
+            selector = predictions.index
         f_mean = predictions.loc[selector,scoring_categories].mean()
         f_std =predictions.loc[selector,scoring_categories].std()
         f_std_performance = (predictions.loc[selector,scoring_categories] - f_mean)/f_std

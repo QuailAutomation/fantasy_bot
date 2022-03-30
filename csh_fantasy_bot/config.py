@@ -37,6 +37,7 @@ CELERYBEAT_SCHEDULE = {
 CELERY_TASK_FILE_WRITE_PATH = "/Users/craigh/dev/fantasy_bot"
 
 ELASTIC_URL = os.getenv("FB_ELASTIC_URL", default="http://localhost:9200")
+logging.getLogger().info(f"ELASTIC_URL is: {ELASTIC_URL}")
 GELF_URL = os.getenv("GELF_URL", default=None)
 
 CACHE_BACKING = CacheBacking[os.getenv("FB_CACHE_BACKING", default=CacheBacking.file.value)]

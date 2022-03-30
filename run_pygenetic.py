@@ -15,18 +15,18 @@ from csh_fantasy_bot.celery_app import app
 
 # this will hold player ids of players which can be dropped as overrides to the drop selection criteria
 white_list = {
-    '403.l.41177': [6759],
-    '403.l.18782': [],
+    # '403.l.41177': [6759],
+    '411.l.85094': [],
 }
 # this will hold player ids of players which can't be dropped as overrides to the drop selection criteria
 black_list = {
-    '403.l.41177': [4684, 5696],
-    '403.l.18782': [],
+    # '403.l.41177': [4684, 5696],
+    '411.l.85094': [],
 }
-def do_run(week=5, league_id='403.l.41177', population_size=800):
+def do_run(week=5, league_id='403.l.41177', population_size=200):
     """Run the algorithm."""
-    week = 16
-    league_id = '403.l.41177'
+    week = 23
+    league_id = '411.l.85094'
     # league_id = "403.l.18782"
     scoring=ScoringType.opponent
     # can override opponent.  useful for playoffs
@@ -39,7 +39,7 @@ def do_run(week=5, league_id='403.l.41177', population_size=800):
     team_key = league.team_key()
     my_team_id = int(team_key.split('.')[-1])
 
-    date_range = pd.date_range(*league.week_date_range(week))
+    date_range = pd.date_range(*league.week_date_range(week))  
     
     # this will retrieve rosters as of now
     league = league.as_of(datetime.now())
@@ -60,8 +60,8 @@ def do_run(week=5, league_id='403.l.41177', population_size=800):
 
     droppable_players = projected_stats[(((projected_stats.fantasy_status == my_team_id) & 
                                         ((projected_stats.percent_owned < 92) |
-                                        (projected_stats.index.isin(white_list[league_id])))) &
-                                        ~(projected_stats.index.isin(black_list[league_id])))
+                                        (projected_stats.index.isin(white_list.get(league_id,[]))))) &
+                                        ~(projected_stats.index.isin(black_list.get(league_id,[]))))
                                         ] # & (projected_stats.fpts < 1)
     drop_selector = RandomWeightedSelector(droppable_players, 'fpts', inverse=True)
     

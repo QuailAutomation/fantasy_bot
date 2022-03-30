@@ -154,11 +154,14 @@ def score_team(player_projections, start_date, end_date, scoring_categories, tea
         roster['eligible_positions'] = pd.eval(roster['eligible_positions'])
         
         if roster_change_sets:
-            log.debug(f"starting scoring for len change_sets {len(roster_change_sets)}")
-            the_scores = [league.score_team(roster, date_range, opponent_scores, roster_change_set=rc, simulation_mode=False, team_id=team_id) for rc in roster_change_sets]
-            log.debug("done scoring")
-            # just serialize the id of the roster change
-            return jsonpickle.encode([(rc._id,score) for rc,score in the_scores])
+            try:
+                log.debug(f"starting scoring for len change_sets {len(roster_change_sets)}")
+                the_scores = [league.score_team(roster, date_range, opponent_scores, roster_change_set=rc, simulation_mode=False, team_id=team_id) for rc in roster_change_sets]
+                log.debug("done scoring")
+                # just serialize the id of the roster change
+                return jsonpickle.encode([(rc._id,score) for rc,score in the_scores])
+            except Exception as e:
+                print(e)
     else:
         return []
     

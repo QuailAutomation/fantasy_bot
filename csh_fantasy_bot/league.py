@@ -79,7 +79,7 @@ class FantasyLeague(League):
         if self.as_of_date:
             return self._all_players_df
         else:
-            raise AsOfDateNotSetException()
+            raise NoAsOfDateException()
 
     def _all_players(self):
         """Return all players in league."""
@@ -98,7 +98,7 @@ class FantasyLeague(League):
             all_players.rename(columns={'id': 'team_id'}, inplace=True)
             return all_players
 
-        expiry = timedelta(days=1)
+        expiry = timedelta(days=7)
         return self.lg_cache.load_all_players(expiry, all_loader)
     
     def transactions(self):
@@ -125,7 +125,7 @@ class FantasyLeague(League):
                              'Dal': 'DAL', 'Van': 'VAN', 'NJ': 'NJD', 'Mon': 'MTL', 'Ari': 'ARI', 'Wpg': 'WPG',
                              'Pit': 'PIT',
                              'Was': 'WSH', 'Cls': 'CBJ', 'Col': 'COL', 'Car': 'CAR', 'Buf': 'BUF', 'Cgy': 'CGY',
-                             'Phi': 'PHI'}
+                             'Phi': 'PHI', 'Sea': 'SEA'}
         df["editorial_team_abbr"].replace(nhl_team_mappings, inplace=True)
     
     def draft_results(self, format='List'):
@@ -141,6 +141,7 @@ class FantasyLeague(League):
                     draft_df['player_id'] = draft_df.player_key.str.split('.', expand=True)[2].astype('int16')
                     draft_df['fantasy_team_id'] = draft_df.team_key.str.split('.', expand=True)[4].astype('int8')
                     draft_df.set_index(['player_id'], inplace=True)
+                    draft_df.rename(columns={'round': 'draft_round', 'pick': 'draft_pick'}, inplace=True)
                 except AttributeError:
                     print("Draft probably has not begun yet")
                 return draft_df
