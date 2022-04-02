@@ -142,28 +142,32 @@ def do_chunk(team_key, start_date, end_date, roster_change_sets_jp, opponent=Non
 @shared_task
 def score_team(player_projections, start_date, end_date, scoring_categories, team_id, opponent_scores, roster_change_sets_jp):
     """Score a team by applying roster change sets."""
-    league_id = _league_id_from_team_key(team_id)
-    
-    league = get_league(league_id)
-    roster_change_sets = jsonpickle.decode(roster_change_sets_jp)
-    if roster_change_sets:
-        date_range = pd.date_range(start_date, end_date)
-        # TODO figure out player projections....players on team and players getting added via roster change
-        roster = jsonpickle.decode(player_projections)
-        # json pickle seems to be decoding eligble_positions back into str...should be list
-        roster['eligible_positions'] = pd.eval(roster['eligible_positions'])
+    try:
+        league_id = _league_id_from_team_key(team_id)
         
+        league = get_league(league_id)
+        roster_change_sets = jsonpickle.decode(roster_change_sets_jp)
         if roster_change_sets:
-            try:
-                log.debug(f"starting scoring for len change_sets {len(roster_change_sets)}")
-                the_scores = [league.score_team(roster, date_range, opponent_scores, roster_change_set=rc, simulation_mode=False, team_id=team_id) for rc in roster_change_sets]
-                log.debug("done scoring")
-                # just serialize the id of the roster change
-                return jsonpickle.encode([(rc._id,score) for rc,score in the_scores])
-            except Exception as e:
-                print(e)
-    else:
-        return []
+            date_range = pd.date_range(start_date, end_date)
+            # TODO figure out player projections....players on team and players getting added via roster change
+            roster = jsonpickle.decode(player_projections)
+            # json pickle seems to be decoding eligble_positions back into str...should be list
+            roster['eligible_positions'] = pd.eval(roster['eligible_positions'])
+            
+            if roster_change_sets:
+                try:
+                    log.debug(f"starting scoring for len change_sets {len(roster_change_sets)}")
+                    the_scores = [league.score_team(roster, date_range, opponent_scores, roster_change_set=rc, simulation_mode=False, team_id=team_id) for rc in roster_change_sets]
+                    log.debug("done scoring")
+                    # just serialize the id of the roster change
+                    return jsonpickle.encode([(rc._id,score) for rc,score in the_scores])
+                except Exception as e:
+                    print(e)
+        else:
+            return []
+    except Exception as e:
+        log.exception(e)
+
     
 
 def score(team_key, start_date, end_date, roster_change_sets, opponent=None):
