@@ -165,7 +165,7 @@ def score_team(player_projections, start_date, end_date, scoring_categories, tea
                     # just serialize the id of the roster change
                     return jsonpickle.encode([(rc._id,score) for rc,score in the_scores])
                 except Exception as e:
-                    print(e)
+                    log.exception(e)
         else:
             return []
     except Exception as e:
