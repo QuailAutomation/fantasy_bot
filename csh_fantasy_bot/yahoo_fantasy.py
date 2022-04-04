@@ -6,12 +6,18 @@ from elasticsearch import RequestError
 from elasticsearch_dsl import connections
 
 from csh_fantasy_bot.config import ELASTIC_URL
-connections.create_connection(hosts=[ELASTIC_URL], timeout=20)
+
+log = logging.getLogger(__name__)
+
+try:
+    connections.create_connection(hosts=[ELASTIC_URL], timeout=20)
+except Exception as e:
+    log.exception(e)
 
 es_logger = logging.getLogger('elasticsearch')
 es_logger.setLevel(logging.WARNING)
 
-log = logging.getLogger(__name__)
+
 
 from elasticsearch_dsl import Document, Date, Nested, Boolean, \
     analyzer, InnerDoc, Completion, Keyword, Text, Search

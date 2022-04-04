@@ -1,4 +1,5 @@
 """Celery Tasks."""
+from email.quoprimime import header_decode
 import time
 from datetime import datetime, timedelta
 import random
@@ -69,6 +70,8 @@ def long_task(self):
 def check_roster_moves(self):
     """Check if there have been roster transactions since last check."""
     from csh_fantasy_bot.yahoo_fantasy import check_for_new_changes
+    # TODO fix this hardcode
+    league = get_league('411.l.85094')
     found_new_moves = check_for_new_changes(league, True)
     log.debug("found new roster moves: {}".format(found_new_moves))
     if found_new_moves:

@@ -68,8 +68,8 @@ def do_run(week=5, league_id='403.l.41177', population_size=200):
     # valid dates are next day we can make changes for to end of fantasy week
     first_add = datetime.strptime(league.settings()['edit_key'], "%Y-%m-%d")
     # TODO hack because we don't handle dates correctly yet
-    if league_id == "403.l.18782":
-        first_add += timedelta(days=1)
+    # if league_id == "411.l.85094":
+    #     first_add += timedelta(days=1)
     # can't be before start of week
     if first_add < date_range[0]:
         first_add = date_range[0]

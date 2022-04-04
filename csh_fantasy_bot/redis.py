@@ -1,5 +1,8 @@
 import redis
 import os
+import logging
+
+log = logging.getLogger(__name__)
 
 class Singleton(type):
     _instances = {}
@@ -12,6 +15,7 @@ class Singleton(type):
 class RedisClient(metaclass=Singleton):
     def __init__(self) -> None:
         redis_url = os.getenv("FB_REDIS_URL",default='localhost')
+        log.debug(f'Connecting to redis: {redis_url}')
         self.pool = redis.ConnectionPool(host = redis_url)
 
     @property
