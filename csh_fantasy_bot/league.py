@@ -369,25 +369,29 @@ class FantasyLeague(League):
         return roster_change_set, roster_week_results
     
     def score_team(self, player_projections, date_range, opponent_scores, roster_change_set=None, simulation_mode=True, date_last_use_actuals=None, team_id=None):
-        date_last_use_actuals = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(seconds=1)
-        # if date_range[0] > date_last_use_actuals:
-        #     date_last_use_actuals = date_range[0]
-        scoring_categories = self.scoring_categories()
-        # lets add actuals, they can't be optimized
-        actuals_results = self.score_actuals(team_id,date_range[date_range.slice_indexer(date_range[0],date_last_use_actuals)], scoring_categories)
-        actual_results_summed = None
-        if actuals_results is not None:
-            actual_results_summed = actuals_results.sum()
+        try:
+            date_last_use_actuals = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(seconds=1)
+            # if date_range[0] > date_last_use_actuals:
+            #     date_last_use_actuals = date_range[0]
+            scoring_categories = self.scoring_categories()
+            # lets add actuals, they can't be optimized
+            actuals_results = self.score_actuals(team_id,date_range[date_range.slice_indexer(date_range[0],date_last_use_actuals)], scoring_categories)
+            actual_results_summed = None
+            if actuals_results is not None:
+                actual_results_summed = actuals_results.sum()
 
-        roster_makeup = self.roster_makeup(position_type='P')    
-        projected_results = score_gekko(player_projections, team_id, opponent_scores,scoring_categories,date_range[date_range.slice_indexer(date_last_use_actuals)], roster_makeup, roster_change_set=roster_change_set, actual_scores=actual_results_summed)
+            roster_makeup = self.roster_makeup(position_type='P')    
+            projected_results = score_gekko(player_projections, team_id, opponent_scores,scoring_categories,date_range[date_range.slice_indexer(date_last_use_actuals)], roster_makeup, roster_change_set=roster_change_set, actual_scores=actual_results_summed)
 
-        if actuals_results is not None:
-            actuals_results.reset_index(inplace=True)
-            roster_week_results = actuals_results.append(projected_results)
-        else:
-            roster_week_results = projected_results
-        roster_week_results.set_index(['play_date', 'player_id'], inplace=True)
+            if actuals_results is not None:
+                actuals_results.reset_index(inplace=True)
+                roster_week_results = actuals_results.append(projected_results)
+            else:
+                roster_week_results = projected_results
+            roster_week_results.set_index(['play_date', 'player_id'], inplace=True)
+        except Exception as e:
+            LOG.exception(e)
+        
         return roster_change_set, roster_week_results
 
     def score_actuals(self, team_id, date_range, scoring_categories):

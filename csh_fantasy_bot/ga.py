@@ -110,6 +110,9 @@ def fitness(roster_change_sets, all_players, date_range, scoring_categories, sco
             change_set.scoring_summary = scoring_result.reset_index()
             # change_set.score = score_comparer.compute_score(scoring_result)
             score = score_comparer.score(scoring_result, opponent_scores).loc[scoring_type.value].sum()
+            if score is None:
+                log.warn(f"Score is None for: {change_set}")
+                
             change_set.score = score
         except KeyError as e:
             log.exception(e)
