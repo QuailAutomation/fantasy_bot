@@ -72,7 +72,7 @@ class YahooFantasyScraper:
         chrome_options.add_argument("--disable-logging")
         chrome_options.add_argument("--log-level=3")
 
-        driver =  webdriver.Remote("http://192.168.1.20:3001/webdriver", chrome_options.to_capabilities())
+        driver =  webdriver.Remote("http://192.168.1.230:3001/webdriver", chrome_options.to_capabilities())
         
         # driver = webdriver.Chrome(chrome_options=chrome_options)
         driver.set_page_load_timeout(6000)
@@ -243,7 +243,7 @@ scrape_info_stats_map = {"predraft": {"K":{
 }
 }
 
-scrape_info_for_position_type = {"O":{'n_scrape_pages':1, 'stat_code':'O', 'scoring_stats':{
+scrape_info_for_position_type = {"O":{'n_scrape_pages':20, 'stat_code':'O', 'scoring_stats':{
         'name': 'td[contains(@class,"player")]/div/div/div[contains(@class,"ysf-player-name")]/a',
         'position': 'td[contains(@class,"player")]/div/div/div[contains(@class,"ysf-player-name")]/span',
         'player_id': 'td[contains(@class,"player")]/div/div/span/a',
@@ -380,7 +380,7 @@ class YahooProjectionScraper(YahooFantasyScraper):
     def get_projections_df(self, projection_length, season_status='postdraft'):
         projections = []
 
-        for player_type in  ['O']: #, 'K', 'O' ]:
+        for player_type in  ['O', 'K', 'D']:
             print(f"Processing: {player_type}")
             n_pages_scrape = scrape_info_for_position_type[player_type]['n_scrape_pages']
             stats = self.scrape(projection_length=projection_length, num_pages=n_pages_scrape* 25, offset_size=25, scrape_info=scrape_info_for_position_type[player_type], season_status=season_status)

@@ -1,29 +1,29 @@
 #!/bin/python
-from calendar import week
-import logging
-import pickle
-import os
-from dotenv import load_dotenv
-from enum import Enum
-from collections import namedtuple
-from datetime import datetime, timedelta, date
-from collections import defaultdict
-from typing import ClassVar 
-import pandas as pd
-import numpy as np
+
 import importlib
+import logging
+import os
+import pickle
+from calendar import week
+from collections import defaultdict, namedtuple
+from datetime import date, datetime, timedelta
+from enum import Enum
+from typing import ClassVar
+
+import numpy as np
+import pandas as pd
+import yahoo_fantasy_api as yfa
+from dotenv import load_dotenv
+from nhl_scraper.nhl import Scraper
 from pandas.core.frame import DataFrame
 from pandas.core.indexes.datetimes import date_range
 
-
-import yahoo_fantasy_api as yfa
-from nhl_scraper.nhl import Scraper 
 from csh_fantasy_bot import utils, yahoo_scraping
 from csh_fantasy_bot.league import FantasyLeague
 from csh_fantasy_bot.nhl import score_team
-from csh_fantasy_bot.yahoo_projections import retrieve_yahoo_rest_of_season_projections, produce_csh_ranking
-
 from csh_fantasy_bot.scoring import ScoreComparer
+from csh_fantasy_bot.yahoo_projections import (
+    produce_csh_ranking, retrieve_yahoo_rest_of_season_projections)
 
 # load dotenv
 load_dotenv()
@@ -254,7 +254,7 @@ class ManagerBot:
         self._stat_categories = None
         self.stat_categories_goalies = [stat['display_name'] for stat in self.lg.stat_categories() if stat['position_type'] == 'G']
         self._tm = None
-        self._current_week = None
+        self._current_week = week
         self._game_weeks = {}
         self._as_of = as_of or datetime.now()
         self._game_weeks[self.current_week]= GameWeek(self, self.current_week, as_of = self._as_of)
@@ -313,20 +313,20 @@ class ManagerBot:
             self._game_weeks[week_number] = game_week
         return self._game_weeks[week_number]
         
-    def add_to_blacklist(self, plyr_name):
-        self.blacklist.append(plyr_name)
-        self._save_blacklist()
+    # def add_to_blacklist(self, plyr_name):
+    #     self.blacklist.append(plyr_name)
+    #     self._save_blacklist()
 
-    def remove_from_blacklist(self, plyr_name):
-        if plyr_name not in self.blacklist:
-            return False
-        else:
-            self.blacklist.remove(plyr_name)
-            self._save_blacklist()
-            return True
+    # def remove_from_blacklist(self, plyr_name):
+    #     if plyr_name not in self.blacklist:
+    #         return False
+    #     else:
+    #         self.blacklist.remove(plyr_name)
+    #         self._save_blacklist()
+    #         return True
 
-    def get_blacklist(self):
-        return self.blacklist
+    # def get_blacklist(self):
+    #     return self.blacklist
 
     @property
     def pred_bldr(self):

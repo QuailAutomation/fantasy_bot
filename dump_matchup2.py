@@ -69,7 +69,7 @@ def write_team_results_es(scoring_data, team_id):
 
 week_number = 5
 
-league_id = '403.l.41177'
+league_id = '419.l.90115'
 # league_id = "403.l.18782"
 
 simulation_mode = False
@@ -78,7 +78,7 @@ if 'YAHOO_OAUTH_FILE' in os.environ:
     auth_file = os.environ['YAHOO_OAUTH_FILE']
     manager = bot.ManagerBot(week_number,oauth_file=auth_file, league_id=league_id, simulation_mode=simulation_mode)
 else:
-    manager = bot.ManagerBot(week_number, league_id=league_id, simulation_mode=simulation_mode)
+    manager = bot.ManagerBot(league_id=league_id, week=week_number, simulation_mode=simulation_mode)
 
 
 my_team_id = manager.tm.team_key.split('.')[-1]

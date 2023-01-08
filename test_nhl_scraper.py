@@ -4,11 +4,11 @@ from csh_fantasy_bot.yahoo_scraping import generate_predictions, PredictionType
 
 oauth = OAuth2(None, None, from_file='oauth2.json')
 
-f_year = 2021
+f_year = 2022
 gm = yfa.Game(oauth, 'nhl')
 ids = gm.league_ids(year=f_year)
 
-lg = gm.to_league(ids[1])
+lg = gm.to_league(ids[0])
 league_id = lg.league_id
 print(lg)
 

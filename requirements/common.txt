@@ -1,22 +1,26 @@
-pandas==1.4.2
+pandas==1.5.2
 selenium==4.1.3
 beautifulsoup4==4.10.0
-lxml==4.8.0
+lxml==4.9.2
 # yahoo_oauth==1.1
 -e git+https://github.com/QuailAutomation/yahoo-oauth@master#egg=yahoo_oauth
 elasticsearch>=6.0.0,<7.0.0
-celery==5.2.3
+celery==5.2.7
 redis==3.5.3
 elasticsearch-dsl==6.4.0
 flask==2.1.1
 # jsons==1.1.2
-jsonpickle==2.1.0
+jsonpickle==3.0.0
 matplotlib==3.4.0
 #-e https://github.com/QuailAutomation/pygenetic.git
 -e git+https://github.com/QuailAutomation/pygenetic@master#egg=pygenetic  
 
-PyQt5==5.15.4
+# PyQt5==5.15.4
 gekko
 # watcher (doesnt work on m1)
 
 python-dotenv==0.19.2
+
+jsonpath-ng
+
+pymongo

@@ -66,15 +66,15 @@ class ScoreComparer:
         :return: Aggregation compuation for each category
         :rtype: DataFrame
         """
-        scores = pd.DataFrame()
+        scores = []
         for lineup in lineups:
             if type(lineup) is pd.DataFrame:
                 df = pd.DataFrame(data=lineup, columns=lineup.columns)
             else:
                 df = pd.DataFrame(data=lineup, columns=lineup[0].index)
-
-            scores = scores.append(df.loc[:,self.stat_cats].sum(), ignore_index=True)
-        return scores.agg([agg]).loc[agg,:]
+            scores.append(df.loc[:,self.stat_cats].sum())
+                
+        return pd.DataFrame(scores).agg([agg]).loc[agg,:]
 
     def score(self, team1_scores, team2_scores=None):
         """
@@ -95,7 +95,7 @@ class ScoreComparer:
         score_differential_opp = scoring_stats - opp_scoring_stats
         score_differential_league = scoring_stats - self.league_means
 
-        means = abs(pd.DataFrame([scoring_stats, opp_scoring_stats]).mean())
+        means = abs(pd.DataFrame([scoring_stats, opp_scoring_stats[self.stat_cats]]).mean())
         num_std_divs_opp = score_differential_opp/self.stdevs
         num_std_divs_league = score_differential_league/self.stdevs
         # differences / means

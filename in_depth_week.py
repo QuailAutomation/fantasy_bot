@@ -10,7 +10,7 @@ pd.set_option('display.width', 1000)
 
 logger = logging.getLogger(__name__)
 
-game_week = 17
+game_week = 5
 mgr = bot.ManagerBot(week=game_week)
 
 # what are days for this week matchup

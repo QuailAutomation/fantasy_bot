@@ -24,7 +24,10 @@ def produce_csh_ranking(predictions, scoring_categories, selector=None, ranking_
         f_std =predictions.loc[selector,scoring_categories].std()
         f_std_performance = (predictions.loc[selector,scoring_categories] - f_mean)/f_std
         for stat in scoring_categories:
-            predictions.loc[selector, stat + '_std'] = (predictions[stat] - f_mean[stat])/f_std[stat]
+            if 'HIT' != stat:
+                predictions.loc[selector, stat + '_std'] = (predictions[stat] - f_mean[stat])/f_std[stat]
+            else:
+                predictions.loc[selector, stat + '_std'] = ((predictions[stat] - f_mean[stat])/f_std[stat])/2
         predictions.loc[selector, ranking_column_name] = f_std_performance.sum(axis=1)/len(scoring_categories)
         return predictions
 

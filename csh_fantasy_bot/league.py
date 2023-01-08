@@ -217,6 +217,11 @@ class FantasyLeague(League):
             self.score_comparer = None
         return self
 
+    def _apply_trade(self, txn_info, post_draft_player_list):
+        if txn_info[1]['status'] == 'successful':
+            for player_index in range(txn_info[0]['players']['count']):
+                self._add_player(txn_info[0]['players'][str(player_index)], post_draft_player_list)
+            
     def _apply_adddrop(self, txn_info, post_draft_player_list):
         trans_info = txn_info[0]
         txn_timestamp = datetime.fromtimestamp( int(txn_info[1]['timestamp']))
@@ -359,7 +364,7 @@ class FantasyLeague(League):
                 if roster_week_results is None:
                     roster_week_results = roster_results
                 else:
-                    roster_week_results = roster_week_results.append(roster_results)
+                    roster_week_results = pd.concat([roster_week_results, roster_results])
 
 
         #TODO maybe we should formalize a return structure
@@ -369,6 +374,8 @@ class FantasyLeague(League):
         return roster_change_set, roster_week_results
     
     def score_team(self, player_projections, date_range, opponent_scores, roster_change_set=None, simulation_mode=True, date_last_use_actuals=None, team_id=None):
+        scoring_categories = self.scoring_categories()
+        roster_week_results = None
         try:
             date_last_use_actuals = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(seconds=1)
             # if date_range[0] > date_last_use_actuals:
@@ -378,14 +385,15 @@ class FantasyLeague(League):
             actuals_results = self.score_actuals(team_id,date_range[date_range.slice_indexer(date_range[0],date_last_use_actuals)], scoring_categories)
             actual_results_summed = None
             if actuals_results is not None:
-                actual_results_summed = actuals_results.sum()
+                actual_results_summed = actuals_results[scoring_categories].sum()
 
             roster_makeup = self.roster_makeup(position_type='P')    
             projected_results = score_gekko(player_projections, team_id, opponent_scores,scoring_categories,date_range[date_range.slice_indexer(date_last_use_actuals)], roster_makeup, roster_change_set=roster_change_set, actual_scores=actual_results_summed)
 
             if actuals_results is not None:
                 actuals_results.reset_index(inplace=True)
-                roster_week_results = actuals_results.append(projected_results)
+                # roster_week_results = actuals_results.append(projected_results)
+                roster_week_results = pd.concat([actuals_results, projected_results])
             else:
                 roster_week_results = projected_results
             roster_week_results.set_index(['play_date', 'player_id'], inplace=True)
@@ -407,7 +415,8 @@ class FantasyLeague(League):
                 if roster_week_results is None:
                     roster_week_results = roster_results
                 else:
-                    roster_week_results = roster_week_results.append(roster_results)
+                    # roster_week_results = roster_week_results.append(roster_results)
+                    roster_week_results = pd.concat([roster_week_results, roster_results])
         return roster_week_results
 
     

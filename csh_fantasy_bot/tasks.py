@@ -10,7 +10,7 @@ import jsonpickle
 import jsonpickle.ext.pandas as jsonpickle_pandas
 
 from csh_fantasy_bot.extensions import celery
-
+from csh_fantasy_bot.roster_change_optimizer import RosterChangeSet
 from functools import partial
 # from csh_fantasy_bot.nhl import score_team as nhl_score_team
 

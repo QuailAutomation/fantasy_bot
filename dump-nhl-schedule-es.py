@@ -6,15 +6,15 @@ from nhl_scraper.nhl import Scraper
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 
-es = Elasticsearch(hosts='http://192.168.1.20:9200', http_compress=True)
+# es = Elasticsearch(hosts='http://192.168.1.20:9200', http_compress=True)
 
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
 nhl = Scraper()
 
-a_day = datetime.date(2021,10,11)
-end_day = datetime.date(2021,12,18)
+a_day = datetime.date(2022,10,11)
+end_day = datetime.date(2022,10,12)
 games = nhl.linescores(a_day, end_day)
 
 

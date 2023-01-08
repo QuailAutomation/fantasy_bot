@@ -141,6 +141,7 @@ class RosterChangeSet:
         return return_string
 
     def pretty_print(self, score=None, projected_stats=None):
+        print(f"num roster changes: {len(self.roster_changes)}")
         for rc in self.roster_changes:
             # we may be called without names avail, just ignore
             out_name = "Unknown"

@@ -11,6 +11,8 @@ from gekko import GEKKO
 from nhl_scraper.nhl import Scraper
 import pandas as pd
 
+from csh_fantasy_bot.roster_change_optimizer import RosterChange
+
 logger = logging.getLogger('GEKKO')
 nhl_scraper = Scraper()
 
@@ -57,8 +59,14 @@ def score_gekko(team_projections, team_id, opponent_scoring, scoring_categories,
       with suppress(Exception):
           rc.in_projections['eligible_positions'] = pd.eval(rc.in_projections['eligible_positions'])
       # add player in projections to projection dataframe
-      current_projections = current_projections.append(rc.in_projections)
-      projections_with_added_players = projections_with_added_players.append(rc.in_projections)
+      if type(rc.in_projections) is pd.Series:
+        current_projections = pd.concat([current_projections, rc.in_projections.to_frame().T])
+        projections_with_added_players = pd.concat([projections_with_added_players, rc.in_projections.to_frame().T])
+      else:
+        current_projections = pd.concat([current_projections, rc.in_projections])
+        projections_with_added_players = pd.concat([projections_with_added_players, rc.in_projections])
+      # projections_with_added_players = projections_with_added_players.append(rc.in_projections)
+      
       current_projections.drop(rc.out_player_id, inplace=True)
       # current_projections.sort_values(by='fpts', ascending=False, inplace=True)
 

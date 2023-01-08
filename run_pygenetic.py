@@ -10,7 +10,7 @@ from pygenetic import Utils
 from csh_fantasy_bot.ga import RosterChangeSetFactory, fitness, RandomWeightedSelector, CeleryFitnessGAEngine, ScoringType
 from csh_fantasy_bot.bot import ManagerBot
 from csh_fantasy_bot.league import FantasyLeague
-from csh_fantasy_bot.roster_change_optimizer import RosterException
+from csh_fantasy_bot.roster_change_optimizer import RosterException, RosterChangeSet
 from csh_fantasy_bot.celery_app import app
 
 # this will hold player ids of players which can be dropped as overrides to the drop selection criteria
@@ -23,10 +23,10 @@ black_list = {
     # '403.l.41177': [4684, 5696],
     '411.l.85094': [],
 }
-def do_run(week=5, league_id='403.l.41177', population_size=200):
+def do_run(week=5, league_id='403.l.41177', population_size=500):
     """Run the algorithm."""
-    week = 24
-    league_id = '411.l.85094'
+    week = 14
+    league_id = '419.l.90115'
     # league_id = "403.l.18782"
     scoring=ScoringType.opponent
     # can override opponent.  useful for playoffs
@@ -54,12 +54,14 @@ def do_run(week=5, league_id='403.l.41177', population_size=200):
 
     addable_players = projected_stats[ (projected_stats.fantasy_status == 'FA') & 
                                         (projected_stats.status != 'O') &
+                                        (projected_stats.status != 'IR') &
                                         (projected_stats.fantasy_status != my_team_id) & 
                                         (projected_stats.percent_owned > 5)]
     add_selector = RandomWeightedSelector(addable_players,'fpts')
 
     droppable_players = projected_stats[(((projected_stats.fantasy_status == my_team_id) & 
                                         ((projected_stats.percent_owned < 92) |
+                                        (projected_stats.status != 'IR') &
                                         (projected_stats.index.isin(white_list.get(league_id,[]))))) &
                                         ~(projected_stats.index.isin(black_list.get(league_id,[]))))
                                         ] # & (projected_stats.fpts < 1)
@@ -68,8 +70,8 @@ def do_run(week=5, league_id='403.l.41177', population_size=200):
     # valid dates are next day we can make changes for to end of fantasy week
     first_add = datetime.strptime(league.settings()['edit_key'], "%Y-%m-%d")
     # TODO hack because we don't handle dates correctly yet
-    # if league_id == "411.l.85094":
-    #     first_add += timedelta(days=1)
+    if league_id == "419.l.90115":
+        first_add += timedelta(days=1)
     # can't be before start of week
     if first_add < date_range[0]:
         first_add = date_range[0]
@@ -81,7 +83,7 @@ def do_run(week=5, league_id='403.l.41177', population_size=200):
         return
     factory = RosterChangeSetFactory(projected_stats[rostering_columns], valid_roster_change_dates, num_moves=num_allowed_player_adds, add_selector=add_selector, drop_selector=drop_selector)
     gea = CeleryFitnessGAEngine(factory=factory,population_size=population_size,
-                                cross_prob=0.5,mut_prob = 0.1)
+                                cross_prob=0.5,mut_prob = 0.1, adaptive_mutation=False)
 
     def mutate(chromosome, add_selector, drop_selector, date_range, scoring_categories):
         if len(chromosome.roster_changes) == 0:
@@ -96,7 +98,7 @@ def do_run(week=5, league_id='403.l.41177', population_size=200):
         if random_number < 40:
             # lets mutate date
             while True:
-                drop_date = random.choice(date_range).date()
+                drop_date = date_range[random.choice(range(len(date_range)))].date()
                 if drop_date != roster_change_to_mutate.change_date:
                     with suppress(RosterException):
                         chromosome.replace(roster_change_to_mutate, roster_change_to_mutate._replace(change_date=drop_date))

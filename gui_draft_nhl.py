@@ -214,6 +214,7 @@ class App(QDialog):
         
         # lg_id = "403.l.18782"
         lg_id = "403.l.41177"
+        lg_id = "419.l.90115"
         
         self.manager = ManagerBot(league_id=lg_id)
         my_team_key = self.manager.lg.team_key()

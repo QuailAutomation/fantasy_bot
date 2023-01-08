@@ -5,7 +5,7 @@ import logging
 from enum import Enum
 
 class CacheBacking(Enum):
-    file = "file" # S_PS7 or S_PSR
+    file = "file" 
     redis= "redis"
 
 LOG_LEVEL=os.getenv("LOG_LEVEL", 'INFO')

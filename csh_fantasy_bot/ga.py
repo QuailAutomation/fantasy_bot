@@ -35,8 +35,8 @@ class RosterChangeSetFactory(ChromosomeFactory.ChromosomeFactory):
         if self.added_no_changes:
             roster_changes = random.randint(1, self.max_n_moves)
             while len(rcs) < roster_changes:
-                drop_date = random.choice(self.valid_dates).date()
-                player_to_add = self.add_selector.select()
+                drop_date = self.valid_dates[random.choice(range(len(self.valid_dates)))].date()
+                player_to_add = self.add_selector.select()  
                 player_to_drop = self.drop_selector.select()
                 with suppress(RosterException):
                     rcs.add(RosterChange(player_to_drop.index.values[0], player_to_add.index.values[0], drop_date, player_to_add))

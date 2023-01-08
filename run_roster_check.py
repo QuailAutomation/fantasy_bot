@@ -3,7 +3,7 @@ import pandas as pd
 
 from csh_fantasy_bot.bot import ManagerBot
 
-leagues = ['411.l.85094']
+leagues = ['419.l.90115']
 
 # TODO should ignore players designated out if they are not on yahoo roster
 

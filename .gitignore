@@ -7,3 +7,4 @@ celerybeat-schedule.db
 .history/
 #settings.py
 redis/data
+box-scores/

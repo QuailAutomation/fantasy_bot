@@ -16,6 +16,9 @@ from csh_fantasy_bot.projections.yahoo_nfl import generate_predictions, Predicti
 from csh_fantasy_bot.projections.fantasypros_nfl import get_projections
 
 from csh_fantasy_bot.draft import generate_snake_draft_picks
+
+from gui.rostermodels import NFLDraftedRosterModel
+
 import yahoo_fantasy_api as yfa
 from yahoo_oauth import OAuth2
 
@@ -78,7 +81,7 @@ class DraftMonitor(QRunnable):
                     else:
                         print("Waiting until paused changed false")
                         while True:
-                            time.sleep(1)
+                            time.sleep(3)
                             if not self.paused:
                                 print("paused not false")
                                 break
@@ -314,7 +317,7 @@ class App(QMainWindow):
         self.roster_table = QTableView()
         self.roster_table_model = None
         
-        # self.league_changed("403.l.41177", "nhl", 2020)
+        # self.league_changed("403.l.41177", "nhl", 2021)
         self.league_changed("406.l.246660", "nfl", 2021)
         self.initUI()
 
@@ -323,7 +326,7 @@ class App(QMainWindow):
         menuBar.setNativeMenuBar(False)
         self.setMenuBar(menuBar)
         leagueMenu = menuBar.addMenu("&League")
-        years = [2021, 2020, 2019,2018]
+        years = [2022, 2021, 2020, 2019,2018]
         fantasy_games = ['nhl', 'nfl']
         
         for year in years:
@@ -414,9 +417,14 @@ class App(QMainWindow):
         for team in self.league.teams():
             self.team_combo_box.addItem(team['name'], team['team_key'])
         self.team_combo_box.setCurrentIndex(self.team_combo_box.findData(self.league.team_key()))
-        
-        self.roster_table_model = DraftedRosterModel(self.draft_results, self.league.team_key(), self.projections_df, 
+        print(f'game type: {self.game_type}')
+        if self.game_type == "nfl":
+            self.roster_table_model = NFLDraftedRosterModel(self.draft_results, self.league.team_key(), self.projections_df, 
+                                    keepers=scraped_draft_results['keepers'] if scraped_draft_results else None)                                
+        else:                                    
+            self.roster_table_model = DraftedRosterModel(self.draft_results, self.league.team_key(), self.projections_df, 
                                     keepers=scraped_draft_results['keepers'] if scraped_draft_results else None)
+
         self.roster_table.setModel(self.roster_table_model)
 
         self.draft_list_widget.clear()
@@ -467,7 +475,10 @@ class App(QMainWindow):
             projections['rank_diff'] = projections['csh_rank'] - projections['current_rank']
         else:
             projections = pd.read_csv(f"{self.game_year}-{self.league_id}-predictions-merged.csv", converters={"position": lambda x: x.strip("[]").replace('"', "").replace("'", "").replace(" ", "").split(",")})
-            projections.sort_values('overall_rank', inplace=True)
+            sort_col = 'preseason'
+            if 'overall_rank' in projections.columns:
+                sort_col = 'overall_rank'
+            projections.sort_values(sort_col, inplace=True)
             
         
         projections['draft_fantasy_key'] = -1
