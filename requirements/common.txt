@@ -6,7 +6,7 @@ lxml==4.9.2
 -e git+https://github.com/QuailAutomation/yahoo-oauth@master#egg=yahoo_oauth
 elasticsearch>=6.0.0,<7.0.0
 celery==5.2.7
-redis==3.5.3
+redis==4.4.4
 elasticsearch-dsl==6.4.0
 flask==2.1.1
 # jsons==1.1.2
